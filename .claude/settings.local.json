@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(php --version)",
+      "PowerShell(composer --version)",
+      "PowerShell(laravel --version 2>&1)",
+      "Bash(php --version)",
+      "Bash(composer --version)",
+      "Bash(laravel --version)",
+      "Bash(mkdir -p backend frontend docs database)",
+      "Bash(laravel new *)",
+      "Bash(composer require *)"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+# Dependencias
+backend/laravel-app/vendor/
+frontend/react-app/node_modules/
+
+# Variables de entorno (nunca al repositorio)
+backend/laravel-app/.env
+frontend/react-app/.env
+frontend/react-app/.env.local
+
+# Almacenamiento generado
+backend/laravel-app/storage/app/private/
+backend/laravel-app/storage/logs/
+
+# Caché de Laravel
+backend/laravel-app/bootstrap/cache/*.php
+
+# Compilados de frontend
+frontend/react-app/dist/
+frontend/react-app/build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
