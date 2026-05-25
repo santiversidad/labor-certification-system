@@ -30,9 +30,10 @@ export function FuncionarioDetailPage() {
       </div>
       <Card title={`${data.data.nombres} ${data.data.apellidos}`} description="Informacion laboral basica.">
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted">Documento</dt><dd className="font-medium">{data.data.documento}</dd></div>
-          <div><dt className="text-muted">Correo</dt><dd className="font-medium">{data.data.email}</dd></div>
+          <div><dt className="text-muted">Documento</dt><dd className="font-medium">{data.data.numero_documento}</dd></div>
+          <div><dt className="text-muted">Correo</dt><dd className="font-medium">{data.data.correo_institucional ?? 'Sin correo'}</dd></div>
           <div><dt className="text-muted">Dependencia</dt><dd className="font-medium">{data.data.dependencia}</dd></div>
+          <div><dt className="text-muted">Cargo</dt><dd className="font-medium">{data.data.cargo?.denominacion ?? 'Sin cargo'}</dd></div>
           <div><dt className="text-muted">Estado</dt><dd><Badge tone="green">{data.data.estado}</Badge></dd></div>
         </dl>
       </Card>

@@ -9,14 +9,14 @@ import type { LoginCredentials, LoginResponse } from '../types/auth.types';
 export const authService = {
   async login(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> {
     if (env.useMocks) {
-      const user = mockUsers.find((item) => item.email.toLowerCase() === credentials.email.toLowerCase());
+      const user = mockUsers.find((item) => item.documento === credentials.cedula);
 
       if (!user) {
         throw new Error('Usuario mock no encontrado.');
       }
 
       return mockResponse({
-        token: `mock-token-${user.role}`,
+        token: `mock-token-${user.roles[0]}`,
         user,
       });
     }

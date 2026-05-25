@@ -10,7 +10,7 @@ export function waitForMock<T>(payload: T): Promise<T> {
 }
 
 export function mockResponse<T>(data: T, message = 'Respuesta mock generada correctamente'): Promise<ApiResponse<T>> {
-  return waitForMock({ data, message, status: 200 });
+  return waitForMock({ success: true, data, message });
 }
 
 export function mockPaginatedResponse<T>(data: T[], message = 'Listado mock generado correctamente'): Promise<ApiResponse<PaginatedResponse<T>>> {
@@ -18,13 +18,13 @@ export function mockPaginatedResponse<T>(data: T[], message = 'Listado mock gene
     data: {
       data,
       meta: {
-        currentPage: 1,
-        perPage: data.length || 10,
+        current_page: 1,
+        per_page: data.length || 10,
         total: data.length,
-        lastPage: 1,
+        last_page: 1,
       },
     },
     message,
-    status: 200,
+    success: true,
   });
 }

@@ -1,7 +1,7 @@
 import type { User } from '../../../types/common.types';
 
 export type LoginCredentials = {
-  email: string;
+  cedula: string;
   password: string;
 };
 

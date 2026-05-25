@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string().email('Ingrese un correo institucional valido.'),
+  cedula: z.string().min(1, 'Ingrese la cedula.').max(20, 'Maximo 20 caracteres.'),
   password: z.string().min(1, 'Ingrese una contrasena.'),
 });
 

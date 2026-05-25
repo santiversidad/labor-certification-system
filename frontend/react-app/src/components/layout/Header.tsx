@@ -2,11 +2,13 @@ import { LogOut, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { roleLabels } from '../../config/roles';
+import { getPrimaryRole } from '../../lib/auth/permissions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const primaryRole = getPrimaryRole(user);
 
   function handleLogout() {
     logout();
@@ -19,7 +21,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         <Button aria-label="Abrir menu" className="lg:hidden" icon={<Menu size={18} />} onClick={onMenuClick} type="button" variant="secondary" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-text">{user?.name ?? 'Usuario'}</p>
-          <p className="truncate text-xs text-muted">{user ? roleLabels[user.role] : 'Sin rol'}</p>
+          <p className="truncate text-xs text-muted">{primaryRole ? roleLabels[primaryRole] : 'Sin rol'}</p>
         </div>
       </div>
       <Button icon={<LogOut size={16} />} onClick={handleLogout} type="button" variant="secondary">

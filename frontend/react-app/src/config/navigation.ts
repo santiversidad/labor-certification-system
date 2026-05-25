@@ -18,13 +18,13 @@ export const appNavigation: NavigationItem[] = [
 ];
 
 export const adminNavigation: NavigationItem[] = [
-  { label: 'Dashboard', path: '/admin/dashboard', icon: Gauge, roles: ['administrador'] },
-  { label: 'Funcionarios', path: '/admin/funcionarios', icon: Users, roles: ['administrador'] },
-  { label: 'Cargos y grados', path: '/admin/cargos', icon: BriefcaseBusiness, roles: ['administrador'] },
-  { label: 'Rangos salariales', path: '/admin/rangos-salariales', icon: Landmark, roles: ['administrador'] },
-  { label: 'Solicitudes', path: '/admin/solicitudes', icon: ClipboardList, roles: ['administrador'] },
-  { label: 'Pagos', path: '/admin/pagos', icon: CreditCard, roles: ['administrador'] },
-  { label: 'Certificados', path: '/admin/certificados', icon: BadgeCheck, roles: ['administrador'] },
-  { label: 'Auditoria', path: '/admin/auditoria', icon: ScrollText, roles: ['administrador'] },
-  { label: 'Reportes', path: '/admin/reportes', icon: FileCheck, roles: ['administrador'] },
+  { label: 'Dashboard', path: '/admin/dashboard', icon: Gauge, roles: ['admin'] },
+  { label: 'Funcionarios', path: '/admin/funcionarios', icon: Users, roles: ['admin'] },
+  { label: 'Cargos y grados', path: '/admin/cargos', icon: BriefcaseBusiness, roles: ['admin'] },
+  { label: 'Rangos salariales', path: '/admin/rangos-salariales', icon: Landmark, roles: ['admin'] },
+  { label: 'Solicitudes', path: '/admin/solicitudes', icon: ClipboardList, roles: ['admin'] },
+  { label: 'Pagos', path: '/admin/pagos', icon: CreditCard, roles: ['admin'] },
+  { label: 'Certificados', path: '/admin/certificados', icon: BadgeCheck, roles: ['admin'] },
+  { label: 'Auditoria', path: '/admin/auditoria', icon: ScrollText, roles: ['admin'] },
+  { label: 'Reportes', path: '/admin/reportes', icon: FileCheck, roles: ['admin'] },
 ];

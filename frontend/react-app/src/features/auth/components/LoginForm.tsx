@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
+import { isAdmin } from '../../../lib/auth/permissions';
 import { authStorage } from '../../../lib/auth/authStorage';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { authService } from '../services/auth.service';
@@ -16,8 +17,8 @@ export function LoginForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'funcionario@villavicencio.gov.co',
-      password: 'demo',
+      cedula: '000000003',
+      password: 'password',
     },
   });
 
@@ -25,15 +26,15 @@ export function LoginForm() {
     mutationFn: authService.login,
     onSuccess: (response) => {
       authStorage.setSession(response.data);
-      const target = response.data.user.role === 'administrador' ? '/admin/dashboard' : '/app/dashboard';
+      const target = isAdmin(response.data.user) ? '/admin/dashboard' : '/app/dashboard';
       navigate(target, { replace: true });
     },
   });
 
   return (
-    <Card title="Iniciar sesion" description="Use un usuario mock; cualquier contrasena no vacia es valida en esta fase.">
+    <Card title="Iniciar sesion" description="Ingrese cedula y contrasena para acceder al sistema.">
       <form className="space-y-4" onSubmit={handleSubmit((values) => loginMutation.mutate(values))}>
-        <Input error={errors.email?.message} label="Correo institucional" type="email" {...register('email')} />
+        <Input error={errors.cedula?.message} label="Cedula" {...register('cedula')} />
         <Input error={errors.password?.message} label="Contrasena" type="password" {...register('password')} />
         {loginMutation.isError ? <p className="text-sm text-villavoRed">{getErrorMessage(loginMutation.error)}</p> : null}
         <Button className="w-full" disabled={loginMutation.isPending} icon={<LogIn size={16} />} type="submit">
@@ -41,9 +42,9 @@ export function LoginForm() {
         </Button>
       </form>
       <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted">
-        <p>funcionario@villavicencio.gov.co</p>
-        <p>secretario@villavicencio.gov.co</p>
-        <p>admin@villavicencio.gov.co</p>
+        <p>000000003 / password</p>
+        <p>000000002 / password</p>
+        <p>000000001 / password</p>
       </div>
     </Card>
   );

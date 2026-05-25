@@ -13,8 +13,10 @@ export function CargoForm() {
   return (
     <Card title="Cargo y grado" description="Formulario base para catalogo de cargos.">
       <form className="grid gap-4 md:grid-cols-3" onSubmit={handleSubmit(() => undefined)}>
-        <Input error={errors.nombre?.message} label="Nombre" {...register('nombre')} />
+        <Input error={errors.codigo?.message} label="Codigo" {...register('codigo')} />
+        <Input error={errors.denominacion?.message} label="Denominacion" {...register('denominacion')} />
         <Input error={errors.grado?.message} label="Grado" {...register('grado')} />
+        <Input error={errors.nivel?.message} label="Nivel" {...register('nivel')} />
         <Input error={errors.dependencia?.message} label="Dependencia" {...register('dependencia')} />
         <div className="md:col-span-3">
           <Button type="submit">Guardar cargo mock</Button>

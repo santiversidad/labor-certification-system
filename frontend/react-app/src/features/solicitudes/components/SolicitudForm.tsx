@@ -34,11 +34,11 @@ export function SolicitudForm() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-muted">Correo institucional</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.email ?? 'funcionario@villavicencio.gov.co'}</p>
+            <p className="mt-1 text-sm font-medium text-text">{user?.funcionario?.correo_institucional ?? 'Sin correo registrado'}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-muted">Dependencia</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.dependencia ?? 'Secretaria Administrativa'}</p>
+            <p className="mt-1 text-sm font-medium text-text">{user?.funcionario?.dependencia ?? 'Sin dependencia registrada'}</p>
           </div>
         </section>
 

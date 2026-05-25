@@ -4,11 +4,11 @@ import { formatCurrency } from '../../../lib/formatters/currency';
 import type { RangoSalarial } from '../types/rangoSalarial.types';
 
 const columns: TableColumn<RangoSalarial>[] = [
-  { header: 'Cargo ID', accessor: 'cargoId' },
+  { header: 'Codigo', accessor: 'codigo' },
   { header: 'Grado', accessor: 'grado' },
-  { header: 'Salario base', accessor: (row) => formatCurrency(row.salarioBase) },
-  { header: 'Vigencia desde', accessor: 'vigenciaDesde' },
-  { header: 'Estado', accessor: (row) => <Badge tone={row.activo ? 'green' : 'gray'}>{row.activo ? 'Activo' : 'Inactivo'}</Badge> },
+  { header: 'Vigencia', accessor: 'vigencia_anio' },
+  { header: 'Salario basico', accessor: (row) => formatCurrency(Number(row.salario_basico)) },
+  { header: 'Estado', accessor: (row) => <Badge tone={row.estado ? 'green' : 'gray'}>{row.estado ? 'Activo' : 'Inactivo'}</Badge> },
 ];
 
 export function RangosSalarialesTable({ rangos }: { rangos: RangoSalarial[] }) {

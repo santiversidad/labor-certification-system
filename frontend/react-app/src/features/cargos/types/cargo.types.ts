@@ -1,7 +1,11 @@
 export type Cargo = {
   id: string;
-  nombre: string;
+  codigo: string;
   grado: string;
-  dependencia: string;
-  activo: boolean;
+  denominacion: string;
+  nivel?: string | null;
+  dependencia?: string | null;
+  estado: boolean;
+  created_at?: string;
+  updated_at?: string;
 };

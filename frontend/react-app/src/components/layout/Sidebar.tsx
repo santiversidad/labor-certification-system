@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { env } from '../../config/env';
 import { adminNavigation, appNavigation } from '../../config/navigation';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { hasAnyRole } from '../../lib/auth/permissions';
 import { cn } from '../../lib/utils/cn';
 import { Button } from '../ui/Button';
 
@@ -14,7 +15,7 @@ type SidebarProps = {
 
 export function Sidebar({ mobileOpen = false, onClose, variant = 'app' }: SidebarProps) {
   const { user } = useAuth();
-  const items = (variant === 'admin' ? adminNavigation : appNavigation).filter((item) => user && item.roles.includes(user.role));
+  const items = (variant === 'admin' ? adminNavigation : appNavigation).filter((item) => hasAnyRole(user, item.roles));
 
   const content = (
     <>

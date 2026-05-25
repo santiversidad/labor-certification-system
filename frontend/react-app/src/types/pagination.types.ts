@@ -1,8 +1,8 @@
 export type PaginationMeta = {
-  currentPage: number;
-  perPage: number;
+  current_page: number;
+  per_page: number;
   total: number;
-  lastPage: number;
+  last_page: number;
 };
 
 export type PaginatedResponse<T> = {

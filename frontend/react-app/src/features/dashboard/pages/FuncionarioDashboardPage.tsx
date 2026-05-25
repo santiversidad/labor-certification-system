@@ -11,7 +11,7 @@ import { dashboardService } from '../services/dashboard.service';
 export function FuncionarioDashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard-summary', user?.role],
+    queryKey: ['dashboard-summary', user?.roles.join(',')],
     queryFn: dashboardService.getSummary,
   });
 

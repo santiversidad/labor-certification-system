@@ -6,9 +6,13 @@ export function hasAnyRole(user: User | null, allowedRoles: Role[]): boolean {
     return false;
   }
 
-  return allowedRoles.includes(user.role);
+  return user.roles.some((role) => allowedRoles.includes(role));
 }
 
 export function isAdmin(user: User | null): boolean {
-  return user?.role === 'administrador';
+  return Boolean(user?.roles.includes('admin'));
+}
+
+export function getPrimaryRole(user: User | null): Role | null {
+  return user?.roles[0] ?? null;
 }

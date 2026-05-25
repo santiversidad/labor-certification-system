@@ -1,9 +1,12 @@
 export type RangoSalarial = {
   id: string;
-  cargoId: string;
+  codigo: string;
   grado: string;
-  salarioBase: number;
-  vigenciaDesde: string;
-  vigenciaHasta?: string;
-  activo: boolean;
+  vigencia_anio: number;
+  salario_basico: number | string;
+  moneda: string;
+  observaciones?: string | null;
+  estado: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
