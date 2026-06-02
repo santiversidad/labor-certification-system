@@ -1,0 +1,46 @@
+import type { Funcionario } from '../../features/funcionarios/types/funcionario.types';
+
+export const mockFuncionarios: Funcionario[] = [
+  {
+    id: 'fun-001',
+    tipo_documento: 'CC',
+    numero_documento: '1020304050',
+    nombres: 'Laura Marcela',
+    apellidos: 'Gomez Rojas',
+    nombre_completo: 'Laura Marcela Gomez Rojas',
+    correo_institucional: 'laura.gomez@villavicencio.gov.co',
+    dependencia: 'Talento Humano',
+    cargo: {
+      id: 'car-001',
+      codigo: '219',
+      grado: '12',
+      denominacion: 'Profesional Universitario',
+      nivel: 'Profesional',
+      dependencia: 'Talento Humano',
+      estado: true,
+    },
+    estado: 'activo',
+    fecha_ingreso: '2021-02-15',
+  },
+  {
+    id: 'fun-002',
+    tipo_documento: 'CC',
+    numero_documento: '80706050',
+    nombres: 'Carlos Andres',
+    apellidos: 'Martinez Silva',
+    nombre_completo: 'Carlos Andres Martinez Silva',
+    correo_institucional: 'carlos.martinez@villavicencio.gov.co',
+    dependencia: 'Hacienda',
+    cargo: {
+      id: 'car-002',
+      codigo: '367',
+      grado: '08',
+      denominacion: 'Tecnico Administrativo',
+      nivel: 'Tecnico',
+      dependencia: 'Hacienda',
+      estado: true,
+    },
+    estado: 'activo',
+    fecha_ingreso: '2019-08-01',
+  },
+];
