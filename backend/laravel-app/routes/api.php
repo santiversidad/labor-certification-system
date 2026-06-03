@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\RangoSalarialController;
+use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/',                         [SolicitudCertificacionController::class, 'store'])->name('store');
             Route::get('/{solicitud}',               [SolicitudCertificacionController::class, 'show'])->name('show');
             Route::patch('/{solicitud}/estado',      [SolicitudCertificacionController::class, 'cambiarEstado'])->name('cambiarEstado');
+            // Carga de soporte de pago por parte del funcionario
+            Route::post('/{solicitud}/soporte-pago', [PagoSoporteController::class, 'cargar'])->name('soporte-pago.cargar');
+        });
+
+        // Pagos y soportes (validación por secretario/admin)
+        Route::prefix('pagos')->name('pagos.')->group(function () {
+            Route::get('/',              [PagoSoporteController::class, 'index'])->name('index');
+            Route::patch('/{pago}/validar',  [PagoSoporteController::class, 'validar'])->name('validar');
+            Route::patch('/{pago}/rechazar', [PagoSoporteController::class, 'rechazar'])->name('rechazar');
         });
 
     });
