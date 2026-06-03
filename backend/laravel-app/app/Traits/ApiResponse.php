@@ -19,6 +19,7 @@ trait ApiResponse
 
         if ($data !== null) {
             if ($data instanceof LengthAwarePaginator) {
+                // Paginador Eloquent directo
                 $response['data'] = $data->items();
                 $response['meta'] = [
                     'current_page' => $data->currentPage(),
@@ -26,6 +27,11 @@ trait ApiResponse
                     'total'        => $data->total(),
                     'last_page'    => $data->lastPage(),
                 ];
+            } elseif (is_array($data) && isset($data['data'], $data['meta'])) {
+                // Resultado de ResourceCollection->response()->getData(true)
+                // La paginación ya viene extraída: subimos meta al nivel raíz
+                $response['data'] = $data['data'];
+                $response['meta'] = $data['meta'];
             } else {
                 $response['data'] = $data;
             }

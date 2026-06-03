@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Models\AuditLog;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 
 class RegistrarAuditoriaAction
@@ -15,8 +14,12 @@ class RegistrarAuditoriaAction
         ?string $descripcion = null,
         ?array $metadata = null,
     ): AuditLog {
+        // Request::user() respeta el guard activo en la petición (Sanctum en API).
+        // Es más fiable que Auth::id() que podría resolver el guard 'web' en tests.
+        $userId = Request::user()?->getKey();
+
         return AuditLog::create([
-            'user_id'     => Auth::id(),
+            'user_id'     => $userId,
             'accion'      => $accion,
             'modelo'      => $modelo,
             'modelo_id'   => $modeloId,

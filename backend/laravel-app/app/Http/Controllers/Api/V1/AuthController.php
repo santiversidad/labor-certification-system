@@ -83,7 +83,8 @@ class AuthController extends Controller
             descripcion: "Cierre de sesión: cédula {$user->documento}",
         );
 
-        $user->currentAccessToken()->delete();
+        // currentAccessToken() puede ser null en entorno de tests con actingAs()
+        $user->currentAccessToken()?->delete();
 
         return $this->successResponse(null, 'Sesión cerrada correctamente.');
     }

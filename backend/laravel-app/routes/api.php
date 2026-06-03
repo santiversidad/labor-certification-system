@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\RangoSalarialController;
+use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -55,6 +56,14 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/{funcionario}',    [FuncionarioController::class, 'show'])->name('show');
             Route::put('/{funcionario}',    [FuncionarioController::class, 'update'])->name('update');
             Route::delete('/{funcionario}', [FuncionarioController::class, 'destroy'])->name('destroy');
+        });
+
+        // Solicitudes de certificación
+        Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
+            Route::get('/',                          [SolicitudCertificacionController::class, 'index'])->name('index');
+            Route::post('/',                         [SolicitudCertificacionController::class, 'store'])->name('store');
+            Route::get('/{solicitud}',               [SolicitudCertificacionController::class, 'show'])->name('show');
+            Route::patch('/{solicitud}/estado',      [SolicitudCertificacionController::class, 'cambiarEstado'])->name('cambiarEstado');
         });
 
     });

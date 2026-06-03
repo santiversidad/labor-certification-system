@@ -2,23 +2,21 @@
 
 namespace App\Providers;
 
+use App\Models\SolicitudCertificacion;
+use App\Policies\SolicitudCertificacionPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Policies del sistema
+        Gate::policy(SolicitudCertificacion::class, SolicitudCertificacionPolicy::class);
     }
 }
