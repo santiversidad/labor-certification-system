@@ -14,7 +14,7 @@ class PagoSoporteResource extends JsonResource
             'solicitud_id'            => $this->solicitud_certificacion_id,
             'archivo_original_nombre' => $this->archivo_original_nombre,
             // La ruta física (archivo_path) nunca se expone al frontend
-            'estado'                  => $this->estado,
+            'estado'                  => $this->estado?->value ?? $this->estado,
             'observaciones'           => $this->observaciones,
             'validado_at'             => $this->validado_at?->toISOString(),
             'created_at'              => $this->created_at?->toISOString(),
@@ -27,6 +27,11 @@ class PagoSoporteResource extends JsonResource
                 'nombres' => $this->funcionario->nombres,
                 'apellidos' => $this->funcionario->apellidos,
                 'numero_documento' => $this->funcionario->numero_documento,
+            ]),
+            'solicitud'               => $this->whenLoaded('solicitud', fn () => [
+                'id'       => $this->solicitud->id,
+                'radicado' => $this->solicitud->radicado,
+                'estado'   => $this->solicitud->estado?->value ?? $this->solicitud->estado,
             ]),
         ];
     }

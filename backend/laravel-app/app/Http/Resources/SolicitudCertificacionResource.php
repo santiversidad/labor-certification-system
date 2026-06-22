@@ -12,8 +12,8 @@ class SolicitudCertificacionResource extends JsonResource
         return [
             'id'               => $this->id,
             'radicado'         => $this->radicado,
-            'tipo_certificado' => $this->tipo_certificado,
-            'estado'           => $this->estado,
+            'tipo_certificado' => $this->tipo_certificado?->value ?? $this->tipo_certificado,
+            'estado'           => $this->estado?->value ?? $this->estado,
             'requiere_pago'    => $this->requiere_pago,
             'requiere_salario' => $this->requiere_salario,
             'observaciones'    => $this->observaciones,
@@ -41,10 +41,10 @@ class SolicitudCertificacionResource extends JsonResource
                 ];
             }),
             'pago_soporte' => $this->whenLoaded('pagoSoporte',
-                fn () => new PagoSoporteResource($this->pagoSoporte)
+                fn () => $this->pagoSoporte ? new PagoSoporteResource($this->pagoSoporte) : null
             ),
             'certificado'  => $this->whenLoaded('certificado',
-                fn () => new CertificadoResource($this->certificado)
+                fn () => $this->certificado ? new CertificadoResource($this->certificado) : null
             ),
         ];
     }

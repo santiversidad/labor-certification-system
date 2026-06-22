@@ -8,7 +8,7 @@ class StorePagoSoporteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('pagos.ver');
+        return $this->user()->can('pagos.cargar');
     }
 
     public function rules(): array

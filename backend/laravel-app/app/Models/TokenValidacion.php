@@ -46,10 +46,6 @@ class TokenValidacion extends Model
 
     public function estaVigente(): bool
     {
-        if ($this->used_at !== null) {
-            return false;
-        }
-
         if ($this->expires_at !== null && $this->expires_at->isPast()) {
             return false;
         }

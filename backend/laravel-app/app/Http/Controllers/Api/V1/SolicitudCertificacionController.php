@@ -5,15 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\RegistrarAuditoriaAction;
 use App\Enums\EstadoSolicitudEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CambiarEstadoSolicitudRequest;
+use App\Http\Requests\RechazarSolicitudRequest;
 use App\Http\Requests\StoreSolicitudCertificacionRequest;
+use App\Http\Requests\UpdateEstadoSolicitudRequest;
 use App\Http\Resources\SolicitudCertificacionResource;
 use App\Models\ParametroSistema;
 use App\Models\SolicitudCertificacion;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class SolicitudCertificacionController extends Controller
 {
@@ -23,31 +23,23 @@ class SolicitudCertificacionController extends Controller
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
     ) {}
 
-    /**
-     * GET /api/v1/solicitudes
-     *
-     * Admin y secretario: ven todas las solicitudes con filtros.
-     * Funcionario: solo ve las propias.
-     */
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', SolicitudCertificacion::class);
 
-        $query = SolicitudCertificacion::with(['funcionario', 'creadoPor', 'revisadoPor'])
-            ->when(
-                $request->user()->hasRole('funcionario'),
-                // Funcionario solo ve las suyas
-                fn ($q) => $q->where('funcionario_id', $request->user()->funcionario?->id)
-            )
-            ->when($request->filled('estado'),
-                fn ($q) => $q->where('estado', $request->estado)
-            )
-            ->when($request->filled('tipo_certificado'),
-                fn ($q) => $q->where('tipo_certificado', $request->tipo_certificado)
-            )
-            ->when($request->filled('funcionario_id'),
-                fn ($q) => $q->where('funcionario_id', $request->funcionario_id)
-            )
+        $estado = null;
+        if ($request->filled('estado')) {
+            try {
+                $estado = EstadoSolicitudEnum::fromInput((string) $request->estado)->value;
+            } catch (\ValueError) {
+                return $this->errorResponse('El estado indicado no es valido.', ['estado' => ['Estado no valido.']], 422);
+            }
+        }
+
+        $query = SolicitudCertificacion::with(['funcionario.cargo', 'creadoPor', 'revisadoPor'])
+            ->when($estado !== null, fn ($q) => $q->where('estado', $estado))
+            ->when($request->filled('tipo_certificado'), fn ($q) => $q->where('tipo_certificado', $request->tipo_certificado))
+            ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->funcionario_id))
             ->latest();
 
         $solicitudes = $query->paginate($request->integer('per_page', 15));
@@ -58,12 +50,6 @@ class SolicitudCertificacionController extends Controller
         );
     }
 
-    /**
-     * POST /api/v1/solicitudes
-     *
-     * Un funcionario crea una nueva solicitud para sí mismo.
-     * El estado inicial es 'pendiente'.
-     */
     public function store(StoreSolicitudCertificacionRequest $request): JsonResponse
     {
         $this->authorize('create', SolicitudCertificacion::class);
@@ -90,30 +76,25 @@ class SolicitudCertificacionController extends Controller
             'funcionario_id'   => $funcionario->id,
             'tipo_certificado' => $request->tipo_certificado,
             'estado'           => EstadoSolicitudEnum::Pendiente,
-            'requiere_pago'    => false,   // El admin/secretario lo define al revisar
+            'requiere_pago'    => false,
             'requiere_salario' => $request->boolean('requiere_salario', false),
             'observaciones'    => $request->observaciones,
             'created_by'       => $request->user()->id,
         ]);
 
         $this->registrarAuditoria->execute(
-            accion: 'crear',
+            accion: 'crear_solicitud',
             modelo: 'SolicitudCertificacion',
             modeloId: $solicitud->id,
-            descripcion: "Solicitud de certificado '{$solicitud->tipo_certificado->value}' creada por funcionario ID {$funcionario->id}.",
+            descripcion: "Solicitud {$solicitud->radicado} creada por funcionario ID {$funcionario->id}.",
         );
 
         return $this->createdResponse(
-            new SolicitudCertificacionResource($solicitud->load('funcionario')),
-            'Solicitud creada correctamente. Quedó en estado pendiente.'
+            new SolicitudCertificacionResource($solicitud->load('funcionario.cargo')),
+            'Solicitud creada correctamente.'
         );
     }
 
-    /**
-     * GET /api/v1/solicitudes/{solicitud}
-     *
-     * Retorna el detalle completo de una solicitud con todas sus relaciones.
-     */
     public function show(Request $request, int $solicitud): JsonResponse
     {
         $solicitudModel = SolicitudCertificacion::with([
@@ -132,86 +113,68 @@ class SolicitudCertificacionController extends Controller
         );
     }
 
-    /**
-     * PATCH /api/v1/solicitudes/{solicitud}/estado
-     *
-     * Endpoint genérico de transición de estado.
-     * Transiciones válidas:
-     *   pendiente      → en_revision | rechazado | cancelado
-     *   en_revision    → requiere_pago | aprobado | rechazado
-     *   requiere_pago  → cancelado  (soporte → pago_pendiente via PagoSoporteController)
-     *   pago_pendiente → pago_validado | rechazado
-     *   pago_validado  → aprobado
-     *   aprobado       → cancelado  (generado via CertificadoController)
-     */
-    public function cambiarEstado(CambiarEstadoSolicitudRequest $request, int $solicitud): JsonResponse
+    public function cambiarEstado(UpdateEstadoSolicitudRequest $request, int $solicitud): JsonResponse
     {
         $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
         $this->authorize('cambiarEstado', $solicitudModel);
 
+        $nuevoEstado = EstadoSolicitudEnum::from($request->estado);
+
+        if ($nuevoEstado === EstadoSolicitudEnum::PendientePago) {
+            return $this->marcarPago($request, $solicitud);
+        }
+
+        if ($nuevoEstado === EstadoSolicitudEnum::CertificadoGenerado) {
+            return $this->errorResponse(
+                'Use el endpoint de generacion de certificados para generar el certificado.',
+                null,
+                422
+            );
+        }
+
         return $this->procesarTransicion(
-            request:        $request,
+            request: $request,
             solicitudModel: $solicitudModel,
-            nuevoEstado:    EstadoSolicitudEnum::from($request->estado),
-            motivoRechazo:  $request->motivo_rechazo,
-            observaciones:  $request->filled('observaciones') ? $request->observaciones : null,
-            requierePago:   $request->filled('requiere_pago') ? $request->boolean('requiere_pago') : null,
+            nuevoEstado: $nuevoEstado,
+            motivoRechazo: $request->motivo_rechazo,
+            observaciones: $request->filled('observaciones') ? $request->observaciones : null,
+            requierePago: $request->filled('requiere_pago') ? $request->boolean('requiere_pago') : null,
+            accionAuditoria: 'cambiar_estado_solicitud',
         );
     }
 
-    /**
-     * PATCH /api/v1/solicitudes/{solicitud}/aprobar
-     *
-     * Alias explícito para aprobar una solicitud.
-     * La solicitud debe estar en un estado que permita ir a 'aprobado'.
-     */
     public function aprobar(Request $request, int $solicitud): JsonResponse
     {
         $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
-        $this->authorize('cambiarEstado', $solicitudModel);
+        $this->authorize('aprobar', $solicitudModel);
 
         return $this->procesarTransicion(
-            request:        $request,
+            request: $request,
             solicitudModel: $solicitudModel,
-            nuevoEstado:    EstadoSolicitudEnum::Aprobado,
+            nuevoEstado: EstadoSolicitudEnum::Aprobada,
+            accionAuditoria: 'aprobar_solicitud',
         );
     }
 
-    /**
-     * PATCH /api/v1/solicitudes/{solicitud}/rechazar
-     *
-     * Alias explícito para rechazar. Exige motivo_rechazo.
-     */
-    public function rechazar(Request $request, int $solicitud): JsonResponse
+    public function rechazar(RechazarSolicitudRequest $request, int $solicitud): JsonResponse
     {
-        $request->validate([
-            'motivo_rechazo' => ['required', 'string', 'max:500'],
-        ], [
-            'motivo_rechazo.required' => 'Debe indicar el motivo del rechazo.',
-        ]);
-
         $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
-        $this->authorize('cambiarEstado', $solicitudModel);
+        $this->authorize('rechazar', $solicitudModel);
 
         return $this->procesarTransicion(
-            request:        $request,
+            request: $request,
             solicitudModel: $solicitudModel,
-            nuevoEstado:    EstadoSolicitudEnum::Rechazado,
-            motivoRechazo:  $request->motivo_rechazo,
+            nuevoEstado: EstadoSolicitudEnum::Rechazada,
+            motivoRechazo: $request->motivo_rechazo,
+            accionAuditoria: 'rechazar_solicitud',
         );
     }
 
-    /**
-     * PATCH /api/v1/solicitudes/{solicitud}/marcar-pago
-     *
-     * Alias explícito para marcar que la solicitud requiere pago.
-     * Bloqueado si el módulo de pagos está desactivado globalmente.
-     */
     public function marcarPago(Request $request, int $solicitud): JsonResponse
     {
         if (! ParametroSistema::valor('requiere_pago_certificado', false)) {
             return $this->errorResponse(
-                'El módulo de pagos está desactivado. No se puede marcar la solicitud como pendiente de pago.',
+                'El modulo de pagos esta desactivado. No se puede marcar la solicitud como pendiente de pago.',
                 null,
                 422
             );
@@ -221,26 +184,22 @@ class SolicitudCertificacionController extends Controller
         $this->authorize('cambiarEstado', $solicitudModel);
 
         return $this->procesarTransicion(
-            request:        $request,
+            request: $request,
             solicitudModel: $solicitudModel,
-            nuevoEstado:    EstadoSolicitudEnum::RequierePago,
-            requierePago:   true,
+            nuevoEstado: EstadoSolicitudEnum::PendientePago,
+            requierePago: true,
+            accionAuditoria: 'marcar_pendiente_pago',
         );
     }
 
-    // ─── Helpers privados ────────────────────────────────────────────────────
-
-    /**
-     * Ejecuta el cambio de estado validando la transición, persistiendo y auditando.
-     * Compartido por cambiarEstado() y todos los alias methods.
-     */
     private function procesarTransicion(
-        Request                 $request,
-        SolicitudCertificacion  $solicitudModel,
-        EstadoSolicitudEnum     $nuevoEstado,
-        ?string                 $motivoRechazo = null,
-        ?string                 $observaciones = null,
-        ?bool                   $requierePago  = null,
+        Request $request,
+        SolicitudCertificacion $solicitudModel,
+        EstadoSolicitudEnum $nuevoEstado,
+        ?string $motivoRechazo = null,
+        ?string $observaciones = null,
+        ?bool $requierePago = null,
+        string $accionAuditoria = 'cambiar_estado_solicitud',
     ): JsonResponse {
         if (! $this->transicionValida($solicitudModel->estado, $nuevoEstado)) {
             return $this->errorResponse(
@@ -250,65 +209,64 @@ class SolicitudCertificacionController extends Controller
             );
         }
 
+        $estadoAnterior = $solicitudModel->estado->value;
+
         $solicitudModel->update([
             'estado'         => $nuevoEstado,
             'motivo_rechazo' => $motivoRechazo,
             'observaciones'  => $observaciones ?? $solicitudModel->observaciones,
-            'requiere_pago'  => $requierePago  ?? $solicitudModel->requiere_pago,
+            'requiere_pago'  => $requierePago ?? $solicitudModel->requiere_pago,
             'reviewed_by'    => $request->user()->id,
             'reviewed_at'    => now(),
         ]);
 
         $this->registrarAuditoria->execute(
-            accion:      'cambiar_estado',
-            modelo:      'SolicitudCertificacion',
-            modeloId:    $solicitudModel->id,
-            descripcion: "Estado cambiado a '{$nuevoEstado->value}' por usuario ID {$request->user()->id}.",
+            accion: $accionAuditoria,
+            modelo: 'SolicitudCertificacion',
+            modeloId: $solicitudModel->id,
+            descripcion: "Solicitud {$solicitudModel->radicado} cambio de '{$estadoAnterior}' a '{$nuevoEstado->value}'.",
             metadata: [
-                'estado_anterior' => $solicitudModel->getOriginal('estado'),
+                'estado_anterior' => $estadoAnterior,
                 'estado_nuevo'    => $nuevoEstado->value,
                 'motivo_rechazo'  => $motivoRechazo,
             ],
         );
 
         return $this->successResponse(
-            new SolicitudCertificacionResource($solicitudModel->fresh('funcionario', 'revisadoPor')),
+            new SolicitudCertificacionResource($solicitudModel->fresh('funcionario.cargo', 'revisadoPor', 'pagoSoporte')),
             "Estado actualizado a '{$nuevoEstado->label()}'."
         );
     }
 
-    /**
-     * Define las transiciones de estado permitidas.
-     * Cada clave es el estado actual; el valor es el array de destinos válidos.
-     */
     private function transicionValida(EstadoSolicitudEnum $actual, EstadoSolicitudEnum $nuevo): bool
     {
         $mapa = [
-            EstadoSolicitudEnum::Pendiente->value     => [
+            EstadoSolicitudEnum::Pendiente->value => [
                 EstadoSolicitudEnum::EnRevision->value,
-                EstadoSolicitudEnum::Rechazado->value,
-                EstadoSolicitudEnum::Cancelado->value,
+                EstadoSolicitudEnum::PendientePago->value,
+                EstadoSolicitudEnum::Aprobada->value,
+                EstadoSolicitudEnum::Rechazada->value,
             ],
-            EstadoSolicitudEnum::EnRevision->value    => [
-                EstadoSolicitudEnum::RequierePago->value,
-                EstadoSolicitudEnum::Aprobado->value,
-                EstadoSolicitudEnum::Rechazado->value,
+            EstadoSolicitudEnum::EnRevision->value => [
+                EstadoSolicitudEnum::PendientePago->value,
+                EstadoSolicitudEnum::Aprobada->value,
+                EstadoSolicitudEnum::Rechazada->value,
             ],
-            EstadoSolicitudEnum::RequierePago->value  => [
-                EstadoSolicitudEnum::Cancelado->value,
+            EstadoSolicitudEnum::PendientePago->value => [
+                EstadoSolicitudEnum::PagoEnRevision->value,
+                EstadoSolicitudEnum::Rechazada->value,
+                EstadoSolicitudEnum::Cerrada->value,
             ],
-            EstadoSolicitudEnum::PagoPendiente->value => [
-                EstadoSolicitudEnum::PagoValidado->value,
-                EstadoSolicitudEnum::Rechazado->value,
+            EstadoSolicitudEnum::PagoEnRevision->value => [
+                EstadoSolicitudEnum::Aprobada->value,
+                EstadoSolicitudEnum::PendientePago->value,
+                EstadoSolicitudEnum::Rechazada->value,
             ],
-            EstadoSolicitudEnum::PagoValidado->value  => [
-                EstadoSolicitudEnum::Aprobado->value,
-            ],
-            EstadoSolicitudEnum::Aprobado->value      => [
-                EstadoSolicitudEnum::Cancelado->value,
+            EstadoSolicitudEnum::Aprobada->value => [
+                EstadoSolicitudEnum::Cerrada->value,
             ],
         ];
 
-        return in_array($nuevo->value, $mapa[$actual->value] ?? []);
+        return in_array($nuevo->value, $mapa[$actual->value] ?? [], true);
     }
 }

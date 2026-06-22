@@ -6,6 +6,7 @@ use App\Enums\EstadoCertificadoEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Certificado extends Model
 {
@@ -20,6 +21,9 @@ class Certificado extends Model
         'fecha_generacion',
         'generado_por',
         'estado',
+        'motivo_anulacion',
+        'anulado_por',
+        'anulado_at',
     ];
 
     protected $hidden = [
@@ -32,6 +36,7 @@ class Certificado extends Model
         return [
             'estado'           => EstadoCertificadoEnum::class,
             'fecha_generacion' => 'datetime',
+            'anulado_at'       => 'datetime',
         ];
     }
 
@@ -52,8 +57,18 @@ class Certificado extends Model
         return $this->belongsTo(User::class, 'generado_por');
     }
 
+    public function anuladoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anulado_por');
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(TokenValidacion::class);
+    }
+
+    public function tokenValidacion(): HasOne
+    {
+        return $this->hasOne(TokenValidacion::class)->where('tipo', 'validacion')->latestOfMany();
     }
 }

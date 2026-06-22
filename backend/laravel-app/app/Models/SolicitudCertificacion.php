@@ -49,10 +49,9 @@ class SolicitudCertificacion extends Model
         return [
             EstadoSolicitudEnum::Pendiente->value,
             EstadoSolicitudEnum::EnRevision->value,
-            EstadoSolicitudEnum::RequierePago->value,
-            EstadoSolicitudEnum::PagoPendiente->value,
-            EstadoSolicitudEnum::PagoValidado->value,
-            EstadoSolicitudEnum::Aprobado->value,
+            EstadoSolicitudEnum::PendientePago->value,
+            EstadoSolicitudEnum::PagoEnRevision->value,
+            EstadoSolicitudEnum::Aprobada->value,
         ];
     }
 
@@ -94,6 +93,11 @@ class SolicitudCertificacion extends Model
     public function pagoSoporte(): HasOne
     {
         return $this->hasOne(PagoSoporte::class);
+    }
+
+    public function pagoAprobado(): HasOne
+    {
+        return $this->hasOne(PagoSoporte::class)->where('estado', \App\Enums\EstadoPagoEnum::Aprobado->value);
     }
 
     public function certificado(): HasOne

@@ -21,7 +21,7 @@ class ValidarPagoAction
 
         // Avanzar la solicitud al siguiente estado
         $pago->solicitud->update([
-            'estado'      => EstadoSolicitudEnum::PagoValidado,
+            'estado'      => EstadoSolicitudEnum::Aprobada,
             'reviewed_by' => $validador->id,
             'reviewed_at' => now(),
         ]);
@@ -37,10 +37,10 @@ class ValidarPagoAction
             'validado_at'   => now(),
         ]);
 
-        // Devolver la solicitud a requiere_pago para que el funcionario
+        // Devolver la solicitud a pendiente_pago para que el funcionario
         // pueda subir un nuevo soporte corregido
         $pago->solicitud->update([
-            'estado'        => EstadoSolicitudEnum::RequierePago,
+            'estado'        => EstadoSolicitudEnum::PendientePago,
             'motivo_rechazo' => $observaciones,
             'reviewed_by'   => $validador->id,
             'reviewed_at'   => now(),

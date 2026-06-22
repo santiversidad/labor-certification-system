@@ -58,6 +58,16 @@ class Funcionario extends Model
         return $this->hasMany(ActuacionAdministrativa::class);
     }
 
+    public function historialCargos(): HasMany
+    {
+        return $this->hasMany(FuncionarioCargo::class);
+    }
+
+    public function cargoBase(): HasOne
+    {
+        return $this->hasOne(FuncionarioCargo::class)->where('es_cargo_base', true)->latestOfMany('fecha_inicio');
+    }
+
     public function certificados(): HasMany
     {
         return $this->hasMany(Certificado::class);

@@ -103,15 +103,11 @@ class RolesPermisosSeeder extends Seeder
             'reportes.ver',
         ]);
 
-        // ─── Funcionario: solo crear y ver sus propias solicitudes ────────────
+        // Funcionario: crea solicitudes y carga soporte propio solo si el pago opcional aplica.
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
-            'solicitudes.ver',
             'solicitudes.crear',
-            'pagos.ver',
             'pagos.cargar',
-            'certificados.ver',
-            'certificados.descargar',
         ]);
 
         $this->command->info('Roles y permisos creados correctamente.');

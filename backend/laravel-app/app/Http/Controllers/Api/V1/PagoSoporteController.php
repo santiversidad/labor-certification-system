@@ -23,30 +23,31 @@ class PagoSoporteController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly PagoSoporteService    $pagoSoporteService,
-        private readonly ValidarPagoAction     $validarPagoAction,
+        private readonly PagoSoporteService $pagoSoporteService,
+        private readonly ValidarPagoAction $validarPagoAction,
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
     ) {}
 
-    /**
-     * GET /api/v1/pagos/{pago}
-     *
-     * Detalle de un soporte de pago.
-     * Admin/secretario: cualquier soporte.
-     * Funcionario: solo el propio.
-     */
+    public function index(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', PagoSoporte::class);
+
+        $pagos = PagoSoporte::with(['solicitud', 'funcionario', 'validadoPor'])
+            ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->estado))
+            ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->funcionario_id))
+            ->latest()
+            ->paginate($request->integer('per_page', 15));
+
+        return $this->successResponse(
+            PagoSoporteResource::collection($pagos)->response()->getData(true),
+            'Soportes de pago consultados correctamente.'
+        );
+    }
+
     public function show(Request $request, int $pago): JsonResponse
     {
-        if (! $request->user()->can('pagos.ver')) {
-            return $this->forbiddenResponse('No tiene permisos para consultar soportes de pago.');
-        }
-
         $pagoModel = PagoSoporte::with(['solicitud', 'funcionario', 'validadoPor'])->findOrFail($pago);
-
-        if ($request->user()->hasRole('funcionario')
-            && $pagoModel->funcionario_id !== $request->user()->funcionario?->id) {
-            return $this->forbiddenResponse('No tiene permisos para ver este soporte de pago.');
-        }
+        $this->authorize('view', $pagoModel);
 
         return $this->successResponse(
             new PagoSoporteResource($pagoModel),
@@ -54,18 +55,11 @@ class PagoSoporteController extends Controller
         );
     }
 
-    /**
-     * POST /api/v1/solicitudes/{solicitud}/soporte-pago
-     *
-     * El funcionario sube el comprobante de pago para una solicitud
-     * que está en estado 'requiere_pago'.
-     */
     public function cargar(StorePagoSoporteRequest $request, int $solicitud): JsonResponse
     {
-        // Bloquear si el módulo de pagos está desactivado globalmente
         if (! ParametroSistema::valor('requiere_pago_certificado', false)) {
             return $this->errorResponse(
-                'El módulo de pagos está desactivado. No se requiere soporte de pago en este momento.',
+                'El modulo de pagos esta desactivado. No se requiere soporte de pago en este momento.',
                 null,
                 422
             );
@@ -73,15 +67,13 @@ class PagoSoporteController extends Controller
 
         $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
 
-        // Solo el funcionario dueño de la solicitud puede subir el soporte
         if ($request->user()->funcionario?->id !== $solicitudModel->funcionario_id) {
             return $this->forbiddenResponse('Solo el funcionario titular puede cargar el soporte de pago.');
         }
 
-        // La solicitud debe estar en estado 'requiere_pago'
-        if ($solicitudModel->estado !== EstadoSolicitudEnum::RequierePago) {
+        if (! $solicitudModel->requiere_pago || $solicitudModel->estado !== EstadoSolicitudEnum::PendientePago) {
             return $this->errorResponse(
-                "La solicitud debe estar en estado 'requiere_pago' para cargar un soporte. Estado actual: '{$solicitudModel->estado->value}'.",
+                "La solicitud debe estar en estado 'pendiente_pago' y requerir pago para cargar un soporte.",
                 null,
                 422
             );
@@ -95,63 +87,26 @@ class PagoSoporteController extends Controller
         );
 
         $this->registrarAuditoria->execute(
-            accion: 'cargar_soporte',
+            accion: 'cargar_soporte_pago',
             modelo: 'PagoSoporte',
             modeloId: $pago->id,
-            descripcion: "Soporte de pago cargado para solicitud ID {$solicitud} por funcionario ID {$solicitudModel->funcionario_id}.",
+            descripcion: "Soporte de pago cargado para solicitud {$solicitudModel->radicado}.",
         );
 
         return $this->createdResponse(
-            new PagoSoporteResource($pago),
-            'Soporte de pago cargado correctamente. Quedó en revisión.'
+            new PagoSoporteResource($pago->load('solicitud', 'funcionario')),
+            'Soporte de pago cargado correctamente. Quedo en revision.'
         );
     }
 
-    /**
-     * GET /api/v1/pagos
-     *
-     * Lista todos los soportes de pago (admin/secretario).
-     * Permite filtrar por estado.
-     */
-    public function index(Request $request): JsonResponse
-    {
-        if (! $request->user()->can('pagos.ver')) {
-            return $this->forbiddenResponse();
-        }
-
-        $pagos = PagoSoporte::with(['solicitud', 'funcionario', 'validadoPor'])
-            ->when($request->filled('estado'),
-                fn ($q) => $q->where('estado', $request->estado)
-            )
-            ->when($request->filled('funcionario_id'),
-                fn ($q) => $q->where('funcionario_id', $request->funcionario_id)
-            )
-            ->latest()
-            ->paginate($request->integer('per_page', 15));
-
-        return $this->successResponse(
-            PagoSoporteResource::collection($pagos)->response()->getData(true),
-            'Soportes de pago consultados correctamente.'
-        );
-    }
-
-    /**
-     * PATCH /api/v1/pagos/{pago}/validar
-     *
-     * Secretario o admin aprueba el soporte de pago.
-     * La solicitud avanza a 'pago_validado'.
-     */
     public function validar(ValidarPagoRequest $request, int $pago): JsonResponse
     {
-        if (! $request->user()->can('pagos.validar')) {
-            return $this->forbiddenResponse('No tiene permisos para validar pagos.');
-        }
-
         $pagoModel = PagoSoporte::with('solicitud')->findOrFail($pago);
+        $this->authorize('validar', $pagoModel);
 
-        if ($pagoModel->estado !== EstadoPagoEnum::Pendiente) {
+        if (! in_array($pagoModel->estado, [EstadoPagoEnum::Pendiente, EstadoPagoEnum::Cargado], true)) {
             return $this->errorResponse(
-                "Solo se pueden validar soportes en estado 'pendiente'. Estado actual: '{$pagoModel->estado->value}'.",
+                "Solo se pueden aprobar soportes pendientes o cargados. Estado actual: '{$pagoModel->estado->value}'.",
                 null,
                 422
             );
@@ -164,36 +119,26 @@ class PagoSoporteController extends Controller
         );
 
         $this->registrarAuditoria->execute(
-            accion: 'validar_pago',
+            accion: 'aprobar_pago',
             modelo: 'PagoSoporte',
             modeloId: $pagoModel->id,
-            descripcion: "Soporte de pago ID {$pago} aprobado por usuario ID {$request->user()->id}.",
+            descripcion: "Soporte de pago ID {$pago} aprobado.",
         );
 
         return $this->successResponse(
-            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud')),
-            'Pago aprobado correctamente. La solicitud avanzó a pago validado.'
+            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud', 'funcionario')),
+            'Pago aprobado correctamente. La solicitud quedo aprobada.'
         );
     }
 
-    /**
-     * PATCH /api/v1/pagos/{pago}/rechazar
-     *
-     * Secretario o admin rechaza el soporte de pago.
-     * La solicitud regresa a 'requiere_pago' para que el funcionario
-     * pueda subir un nuevo soporte corregido.
-     */
     public function rechazar(ValidarPagoRequest $request, int $pago): JsonResponse
     {
-        if (! $request->user()->can('pagos.rechazar')) {
-            return $this->forbiddenResponse('No tiene permisos para rechazar pagos.');
-        }
-
         $pagoModel = PagoSoporte::with('solicitud')->findOrFail($pago);
+        $this->authorize('rechazar', $pagoModel);
 
-        if ($pagoModel->estado !== EstadoPagoEnum::Pendiente) {
+        if (! in_array($pagoModel->estado, [EstadoPagoEnum::Pendiente, EstadoPagoEnum::Cargado], true)) {
             return $this->errorResponse(
-                "Solo se pueden rechazar soportes en estado 'pendiente'. Estado actual: '{$pagoModel->estado->value}'.",
+                "Solo se pueden rechazar soportes pendientes o cargados. Estado actual: '{$pagoModel->estado->value}'.",
                 null,
                 422
             );
@@ -217,12 +162,12 @@ class PagoSoporteController extends Controller
             accion: 'rechazar_pago',
             modelo: 'PagoSoporte',
             modeloId: $pagoModel->id,
-            descripcion: "Soporte de pago ID {$pago} rechazado. Motivo: {$request->observaciones}",
+            descripcion: "Soporte de pago ID {$pago} rechazado.",
         );
 
         return $this->successResponse(
-            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud')),
-            'Soporte rechazado. La solicitud regresó a estado requiere_pago.'
+            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud', 'funcionario')),
+            'Soporte rechazado. La solicitud regreso a pendiente_pago.'
         );
     }
 }

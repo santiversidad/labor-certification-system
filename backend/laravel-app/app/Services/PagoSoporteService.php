@@ -27,23 +27,22 @@ class PagoSoporteService
         $nombreSeg = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $archivo->getClientOriginalName());
         $ruta      = Storage::disk('local')->putFileAs($carpeta, $archivo, $nombreSeg);
 
-        // Crear o actualizar el registro de soporte
-        // (una solicitud solo puede tener un soporte activo a la vez)
+        // Crear o actualizar el registro de soporte.
+        // Una solicitud solo conserva un soporte activo a la vez.
         $pago = PagoSoporte::updateOrCreate(
             ['solicitud_certificacion_id' => $solicitud->id],
             [
                 'funcionario_id'          => $solicitud->funcionario_id,
                 'archivo_path'            => $ruta,
                 'archivo_original_nombre' => $archivo->getClientOriginalName(),
-                'estado'                  => EstadoPagoEnum::Pendiente,
+                'estado'                  => EstadoPagoEnum::Cargado,
                 'observaciones'           => $observaciones,
                 'validado_por'            => null,
                 'validado_at'             => null,
             ]
         );
 
-        // Avanzar solicitud a pago_pendiente
-        $solicitud->update(['estado' => EstadoSolicitudEnum::PagoPendiente]);
+        $solicitud->update(['estado' => EstadoSolicitudEnum::PagoEnRevision]);
 
         return $pago;
     }
