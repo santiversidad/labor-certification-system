@@ -1,4 +1,4 @@
-export type CertificadoEstado = 'generado' | 'descargado' | 'vencido' | 'anulado';
+export type CertificadoEstado = 'vigente' | 'descargado' | 'vencido' | 'anulado';
 
 export type Certificado = {
   id: string;
@@ -8,4 +8,6 @@ export type Certificado = {
   fechaGeneracion: string;
   fechaVencimiento: string;
   descargaUrl?: string;
+  funcionarioNombre?: string;
+  solicitudRadicado?: string;
 };

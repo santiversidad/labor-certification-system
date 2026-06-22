@@ -27,7 +27,7 @@ export function RangosSalarialesPage() {
         <p className="mt-1 text-sm text-muted">Tabla salarial por cargo, grado y vigencia.</p>
       </div>
       <RangoSalarialForm />
-      <Card title="Rangos activos" description="Datos mock preparados para el backend Laravel.">
+      <Card title="Rangos activos" description="Catalogo salarial preparado para integracion con el backend.">
         <RangosSalarialesTable rangos={data.data.data} />
       </Card>
     </div>

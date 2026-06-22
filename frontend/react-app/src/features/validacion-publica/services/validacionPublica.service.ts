@@ -8,12 +8,20 @@ import type { ValidacionCertificado } from '../types/validacionPublica.types';
 export const validacionPublicaService = {
   async validate(token: string): Promise<ApiResponse<ValidacionCertificado>> {
     if (env.useMocks) {
+      if (!token || token.toLowerCase() === 'invalido') {
+        return mockResponse({
+          valido: false,
+          estado: 'anulado',
+          mensaje: 'El token no corresponde a un certificado vigente o no fue encontrado.',
+        });
+      }
+
       return mockResponse({
         valido: true,
         codigoValidacion: token,
         funcionario: 'Carlos Andres Martinez Silva',
         cargo: 'Tecnico Administrativo',
-        estado: 'generado',
+        estado: 'vigente',
         fechaGeneracion: '2026-05-13',
       });
     }

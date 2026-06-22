@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { PageHeader } from '../../../components/ui/PageHeader';
 import { auditoriaService } from '../../auditoria/services/auditoria.service';
 import { certificadosService } from '../../certificados/services/certificados.service';
 import { funcionariosService } from '../../funcionarios/services/funcionarios.service';
@@ -43,23 +44,26 @@ export function AdminDashboardPage() {
 
   const solicitudes = dashboardQuery.data.data.recentRequests;
   const solicitudesPendientes = solicitudes.filter((solicitud) => ['pendiente', 'en_revision', 'pendiente_pago', 'pago_en_revision'].includes(solicitud.estado)).length;
+  const solicitudesAprobadas = solicitudes.filter((solicitud) => ['aprobada', 'certificado_generado'].includes(solicitud.estado)).length;
+  const solicitudesRechazadas = solicitudes.filter((solicitud) => solicitud.estado === 'rechazada').length;
   const pagosPorValidar = pagosQuery.data.data.data.filter((pago) => pago.estado === 'cargado' || pago.estado === 'pendiente').length;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-govBlue/15 bg-surface p-6">
-        <p className="text-sm font-semibold text-govBlue">Panel Administrativo V2</p>
-        <h1 className="mt-2 text-2xl font-semibold text-text">Control institucional de certificaciones</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Supervise solicitudes, pagos, certificados y catalogos maestros desde una vista sobria preparada para la API Laravel.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Administrador"
+        title="Control institucional de certificaciones"
+        description="Supervise funcionarios, solicitudes, pagos, certificados y actividad reciente."
+      />
 
       <AdminStatsGrid
         certificadosGenerados={certificadosQuery.data.data.data.length}
         funcionariosRegistrados={funcionariosQuery.data.data.meta.total}
         pagosPorValidar={pagosPorValidar}
+        solicitudesAprobadas={solicitudesAprobadas}
         solicitudesPendientes={solicitudesPendientes}
+        solicitudesRechazadas={solicitudesRechazadas}
+        solicitudesTotales={solicitudes.length}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">

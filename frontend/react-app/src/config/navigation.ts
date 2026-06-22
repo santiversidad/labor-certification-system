@@ -10,11 +10,11 @@ export type NavigationItem = {
 };
 
 export const appNavigation: NavigationItem[] = [
-  { label: 'Mi panel', path: '/app/dashboard', icon: Gauge, roles: ['funcionario', 'secretario'] },
-  { label: 'Mis solicitudes', path: '/app/solicitudes', icon: ClipboardList, roles: ['funcionario', 'secretario'] },
   { label: 'Nueva solicitud', path: '/app/solicitudes/nueva', icon: FileCheck, roles: ['funcionario'] },
-  { label: 'Mis certificados', path: '/app/certificados', icon: BadgeCheck, roles: ['funcionario', 'secretario'] },
+  { label: 'Dashboard', path: '/app/dashboard', icon: Gauge, roles: ['secretario'] },
+  { label: 'Revisar solicitudes', path: '/app/solicitudes', icon: ClipboardList, roles: ['secretario'] },
   { label: 'Pagos', path: '/app/pagos', icon: CreditCard, roles: ['secretario'] },
+  { label: 'Certificados', path: '/app/certificados', icon: BadgeCheck, roles: ['secretario'] },
 ];
 
 export const adminNavigation: NavigationItem[] = [

@@ -1,36 +1,34 @@
-import { useQuery } from '@tanstack/react-query';
-import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
+import { FileCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { FuncionarioCertificateActions } from '../components/FuncionarioCertificateActions';
-import { FuncionarioRecentRequests } from '../components/FuncionarioRecentRequests';
-import { FuncionarioStatsGrid } from '../components/FuncionarioStatsGrid';
-import { FuncionarioWelcomeCard } from '../components/FuncionarioWelcomeCard';
-import { dashboardService } from '../services/dashboard.service';
 
 export function FuncionarioDashboardPage() {
   const { user } = useAuth();
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard-summary', user?.roles.join(',')],
-    queryFn: dashboardService.getSummary,
-  });
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (isError || !data) {
-    return <ErrorState />;
-  }
 
   return (
     <div className="space-y-6">
-      <FuncionarioWelcomeCard user={user} />
-      <FuncionarioStatsGrid metrics={data.data.metrics} />
-      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-        <FuncionarioRecentRequests solicitudes={data.data.recentRequests} />
-        <FuncionarioCertificateActions />
-      </div>
+      <PageHeader
+        eyebrow="Funcionario"
+        title="Solicitud de certificacion laboral"
+        description="Desde esta pantalla puede registrar una nueva solicitud. La Direccion de Personal revisara la informacion enviada."
+      />
+
+      <Card
+        title={`Bienvenido${user?.name ? `, ${user.name}` : ''}`}
+        description="Para iniciar el tramite, diligencie el formulario de solicitud de certificacion laboral."
+        actions={(
+          <Link to="/app/solicitudes/nueva">
+            <Button icon={<FileCheck size={16} />} type="button">Solicitar certificado laboral</Button>
+          </Link>
+        )}
+      >
+        <p className="text-sm leading-6 text-muted">
+          No se muestran estadisticas, historiales ni listados administrativos para este rol.
+        </p>
+      </Card>
     </div>
   );
 }

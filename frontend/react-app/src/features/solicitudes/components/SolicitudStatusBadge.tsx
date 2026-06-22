@@ -1,7 +1,7 @@
-import { Badge } from '../../../components/ui/Badge';
+import { StatusBadge } from '../../../components/ui/StatusBadge';
 import type { SolicitudEstado } from '../types/solicitud.types';
 
-const labels: Record<SolicitudEstado, string> = {
+const solicitudEstadoLabels: Record<SolicitudEstado, string> = {
   pendiente: 'Pendiente',
   en_revision: 'En revision',
   pendiente_pago: 'Pendiente pago',
@@ -12,8 +12,17 @@ const labels: Record<SolicitudEstado, string> = {
   cerrada: 'Cerrada',
 };
 
-export function SolicitudStatusBadge({ estado }: { estado: SolicitudEstado }) {
-  const tone = estado === 'rechazada' ? 'red' : estado === 'certificado_generado' || estado === 'aprobada' ? 'green' : 'gold';
+const solicitudEstadoTones: Partial<Record<SolicitudEstado, 'blue' | 'green' | 'red' | 'gold' | 'gray'>> = {
+  pendiente: 'gold',
+  en_revision: 'blue',
+  pendiente_pago: 'gold',
+  pago_en_revision: 'blue',
+  aprobada: 'green',
+  rechazada: 'red',
+  certificado_generado: 'green',
+  cerrada: 'gray',
+};
 
-  return <Badge tone={tone}>{labels[estado]}</Badge>;
+export function SolicitudStatusBadge({ estado }: { estado: SolicitudEstado }) {
+  return <StatusBadge labels={solicitudEstadoLabels} status={estado} tones={solicitudEstadoTones} />;
 }

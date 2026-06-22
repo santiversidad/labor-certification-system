@@ -12,7 +12,7 @@ export const authService = {
       const user = mockUsers.find((item) => item.documento === credentials.cedula);
 
       if (!user) {
-        throw new Error('Usuario mock no encontrado.');
+        throw new Error('Usuario no encontrado.');
       }
 
       return mockResponse({

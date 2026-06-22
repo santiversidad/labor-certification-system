@@ -39,10 +39,59 @@ export const solicitudesService = {
         estado: 'pendiente',
         fechaSolicitud: new Date().toISOString().slice(0, 10),
         observaciones: payload.observaciones,
-      }, 'Solicitud mock creada correctamente.');
+        pagoEstado: payload.incluyeSalario ? 'pendiente' : 'no_requerido',
+        eventos: [
+          {
+            id: `evt-${Date.now()}`,
+            titulo: 'Solicitud registrada',
+            fecha: new Date().toISOString().slice(0, 10),
+            descripcion: 'La solicitud fue enviada por el funcionario.',
+          },
+        ],
+      }, 'Solicitud creada correctamente.');
     }
 
     const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudes, payload);
+    return response.data;
+  },
+
+  async approve(id: string): Promise<ApiResponse<SolicitudCertificacion>> {
+    if (env.useMocks) {
+      const solicitud = mockSolicitudes.find((item) => item.id === id) ?? mockSolicitudes[0];
+      return mockResponse({ ...solicitud, estado: 'aprobada' }, 'Solicitud aprobada.');
+    }
+
+    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudesActions.aprobar(id));
+    return response.data;
+  },
+
+  async reject(id: string, observacion: string): Promise<ApiResponse<SolicitudCertificacion>> {
+    if (env.useMocks) {
+      const solicitud = mockSolicitudes.find((item) => item.id === id) ?? mockSolicitudes[0];
+      return mockResponse({ ...solicitud, estado: 'rechazada', observaciones: observacion }, 'Solicitud rechazada.');
+    }
+
+    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudesActions.rechazar(id), { observacion });
+    return response.data;
+  },
+
+  async markPaymentPending(id: string): Promise<ApiResponse<SolicitudCertificacion>> {
+    if (env.useMocks) {
+      const solicitud = mockSolicitudes.find((item) => item.id === id) ?? mockSolicitudes[0];
+      return mockResponse({ ...solicitud, estado: 'pendiente_pago', pagoEstado: 'pendiente' }, 'Solicitud marcada como pendiente de pago.');
+    }
+
+    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudesActions.pendientePago(id));
+    return response.data;
+  },
+
+  async generateCertificate(id: string): Promise<ApiResponse<SolicitudCertificacion>> {
+    if (env.useMocks) {
+      const solicitud = mockSolicitudes.find((item) => item.id === id) ?? mockSolicitudes[0];
+      return mockResponse({ ...solicitud, estado: 'certificado_generado' }, 'Certificado generado.');
+    }
+
+    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudesActions.generarCertificado(id));
     return response.data;
   },
 };

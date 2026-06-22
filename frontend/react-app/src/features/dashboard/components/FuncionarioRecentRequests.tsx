@@ -13,7 +13,7 @@ export function FuncionarioRecentRequests({ solicitudes }: { solicitudes: Solici
         </Link>
       )}
       title="Solicitudes recientes"
-      description="Estado actualizado desde el servicio mock, listo para conectarse a Laravel."
+      description="Estado actualizado desde el servicio de solicitudes."
     >
       <div className="divide-y divide-border">
         {solicitudes.map((solicitud) => (

@@ -26,4 +26,14 @@ export const certificadosService = {
     const response = await apiClient.get<ApiResponse<Certificado>>(`${endpoints.certificados}/${id}`);
     return response.data;
   },
+
+  async annul(id: string, motivo: string): Promise<ApiResponse<Certificado>> {
+    if (env.useMocks) {
+      const certificado = mockCertificados.find((item) => item.id === id) ?? mockCertificados[0];
+      return mockResponse({ ...certificado, estado: 'anulado' }, motivo);
+    }
+
+    const response = await apiClient.post<ApiResponse<Certificado>>(endpoints.certificadosActions.anular(id), { motivo });
+    return response.data;
+  },
 };

@@ -19,7 +19,7 @@ export function CargoForm() {
         <Input error={errors.nivel?.message} label="Nivel" {...register('nivel')} />
         <Input error={errors.dependencia?.message} label="Dependencia" {...register('dependencia')} />
         <div className="md:col-span-3">
-          <Button type="submit">Guardar cargo mock</Button>
+          <Button type="submit">Guardar cargo</Button>
         </div>
       </form>
     </Card>

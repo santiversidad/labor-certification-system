@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import { PublicLayout } from '../components/layout/PublicLayout';
+import { HomeRedirect } from '../components/guards/HomeRedirect';
 import { ProtectedRoute } from '../components/guards/ProtectedRoute';
 import { RoleRoute } from '../components/guards/RoleRoute';
 import { LoginPage } from '../features/auth/pages/LoginPage';
@@ -11,12 +12,14 @@ import { CertificadoDetailPage } from '../features/certificados/pages/Certificad
 import { CertificadosPage } from '../features/certificados/pages/CertificadosPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { FuncionarioDashboardPage } from '../features/dashboard/pages/FuncionarioDashboardPage';
+import { SecretarioDashboardPage } from '../features/dashboard/pages/SecretarioDashboardPage';
 import { FuncionarioDetailPage } from '../features/funcionarios/pages/FuncionarioDetailPage';
 import { FuncionarioFormPage } from '../features/funcionarios/pages/FuncionarioFormPage';
 import { FuncionariosPage } from '../features/funcionarios/pages/FuncionariosPage';
 import { PagosPage } from '../features/pagos/pages/PagosPage';
 import { RangosSalarialesPage } from '../features/rangos-salariales/pages/RangosSalarialesPage';
 import { ReportesPage } from '../features/reportes/pages/ReportesPage';
+import { SolicitudConfirmacionPage } from '../features/solicitudes/pages/SolicitudConfirmacionPage';
 import { SolicitudCertificadoPage } from '../features/solicitudes/pages/SolicitudCertificadoPage';
 import { SolicitudDetailPage } from '../features/solicitudes/pages/SolicitudDetailPage';
 import { SolicitudesPage } from '../features/solicitudes/pages/SolicitudesPage';
@@ -49,14 +52,16 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate replace to="/app/dashboard" /> },
-      { path: 'dashboard', element: <FuncionarioDashboardPage /> },
-      { path: 'solicitudes', element: <SolicitudesPage /> },
+      { index: true, element: <HomeRedirect /> },
+      { path: 'inicio', element: <RoleRoute allowedRoles={['funcionario']}><FuncionarioDashboardPage /></RoleRoute> },
+      { path: 'dashboard', element: <RoleRoute allowedRoles={['secretario']}><SecretarioDashboardPage /></RoleRoute> },
+      { path: 'solicitudes', element: <RoleRoute allowedRoles={['secretario']}><SolicitudesPage /></RoleRoute> },
       { path: 'solicitudes/nueva', element: <RoleRoute allowedRoles={['funcionario']}><SolicitudCertificadoPage /></RoleRoute> },
-      { path: 'solicitudes/:id', element: <SolicitudDetailPage /> },
+      { path: 'solicitudes/confirmacion', element: <RoleRoute allowedRoles={['funcionario']}><SolicitudConfirmacionPage /></RoleRoute> },
+      { path: 'solicitudes/:id', element: <RoleRoute allowedRoles={['secretario']}><SolicitudDetailPage /></RoleRoute> },
       { path: 'pagos', element: <RoleRoute allowedRoles={['secretario']}><PagosPage /></RoleRoute> },
-      { path: 'certificados', element: <CertificadosPage /> },
-      { path: 'certificados/:id', element: <CertificadoDetailPage /> },
+      { path: 'certificados', element: <RoleRoute allowedRoles={['secretario']}><CertificadosPage /></RoleRoute> },
+      { path: 'certificados/:id', element: <RoleRoute allowedRoles={['secretario']}><CertificadoDetailPage /></RoleRoute> },
     ],
   },
   {

@@ -2,9 +2,10 @@ import type { CertificadoEstado } from '../../certificados/types/certificado.typ
 
 export type ValidacionCertificado = {
   valido: boolean;
-  codigoValidacion: string;
-  funcionario: string;
-  cargo: string;
+  codigoValidacion?: string;
+  funcionario?: string;
+  cargo?: string;
   estado: CertificadoEstado;
-  fechaGeneracion: string;
+  fechaGeneracion?: string;
+  mensaje?: string;
 };

@@ -11,7 +11,7 @@ export function RangoSalarialForm() {
   });
 
   return (
-    <Card title="Rango salarial" description="Formulario mock para la tabla salarial por vigencia.">
+    <Card title="Rango salarial" description="Formulario para la tabla salarial por vigencia.">
       <form className="grid gap-4 md:grid-cols-4" onSubmit={handleSubmit(() => undefined)}>
         <Input error={errors.codigo?.message} label="Codigo" {...register('codigo')} />
         <Input error={errors.grado?.message} label="Grado" {...register('grado')} />
@@ -20,7 +20,7 @@ export function RangoSalarialForm() {
         <Input error={errors.moneda?.message} label="Moneda" {...register('moneda')} />
         <Input error={errors.observaciones?.message} label="Observaciones" {...register('observaciones')} />
         <div className="md:col-span-4">
-          <Button type="submit">Guardar rango mock</Button>
+          <Button type="submit">Guardar rango</Button>
         </div>
       </form>
     </Card>

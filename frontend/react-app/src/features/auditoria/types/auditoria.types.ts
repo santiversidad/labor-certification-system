@@ -6,6 +6,8 @@ export type AuditLog = {
   userName: string;
   action: AuditAction;
   module: string;
+  entity?: string;
+  ip?: string;
   description: string;
   createdAt: string;
 };
