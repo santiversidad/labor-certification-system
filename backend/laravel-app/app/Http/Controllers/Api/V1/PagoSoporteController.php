@@ -11,6 +11,7 @@ use App\Http\Requests\StorePagoSoporteRequest;
 use App\Http\Requests\ValidarPagoRequest;
 use App\Http\Resources\PagoSoporteResource;
 use App\Models\PagoSoporte;
+use App\Models\ParametroSistema;
 use App\Models\SolicitudCertificacion;
 use App\Services\PagoSoporteService;
 use App\Traits\ApiResponse;
@@ -28,6 +29,32 @@ class PagoSoporteController extends Controller
     ) {}
 
     /**
+     * GET /api/v1/pagos/{pago}
+     *
+     * Detalle de un soporte de pago.
+     * Admin/secretario: cualquier soporte.
+     * Funcionario: solo el propio.
+     */
+    public function show(Request $request, int $pago): JsonResponse
+    {
+        if (! $request->user()->can('pagos.ver')) {
+            return $this->forbiddenResponse('No tiene permisos para consultar soportes de pago.');
+        }
+
+        $pagoModel = PagoSoporte::with(['solicitud', 'funcionario', 'validadoPor'])->findOrFail($pago);
+
+        if ($request->user()->hasRole('funcionario')
+            && $pagoModel->funcionario_id !== $request->user()->funcionario?->id) {
+            return $this->forbiddenResponse('No tiene permisos para ver este soporte de pago.');
+        }
+
+        return $this->successResponse(
+            new PagoSoporteResource($pagoModel),
+            'Soporte de pago consultado correctamente.'
+        );
+    }
+
+    /**
      * POST /api/v1/solicitudes/{solicitud}/soporte-pago
      *
      * El funcionario sube el comprobante de pago para una solicitud
@@ -35,6 +62,15 @@ class PagoSoporteController extends Controller
      */
     public function cargar(StorePagoSoporteRequest $request, int $solicitud): JsonResponse
     {
+        // Bloquear si el módulo de pagos está desactivado globalmente
+        if (! ParametroSistema::valor('requiere_pago_certificado', false)) {
+            return $this->errorResponse(
+                'El módulo de pagos está desactivado. No se requiere soporte de pago en este momento.',
+                null,
+                422
+            );
+        }
+
         $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
 
         // Solo el funcionario dueño de la solicitud puede subir el soporte

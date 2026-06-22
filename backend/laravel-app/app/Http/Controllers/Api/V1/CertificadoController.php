@@ -39,6 +39,16 @@ class CertificadoController extends Controller
     }
 
     /**
+     * POST /api/v1/solicitudes/{solicitud}/generar-certificado
+     *
+     * TODO Fase 3: implementar GenerarCertificadoService, PDF y token.
+     */
+    public function generar(Request $request, int $solicitud): JsonResponse
+    {
+        return $this->errorResponse('Generación de certificados disponible en próxima versión.', null, 501);
+    }
+
+    /**
      * GET /api/v1/certificados/{certificado}
      */
     public function show(Request $request, int $certificado): JsonResponse

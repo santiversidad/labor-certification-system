@@ -37,34 +37,18 @@ export const solicitudesService = {
   },
 
   async approve(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(
-      `${endpoints.solicitudes}/${id}/estado`,
-      { estado: 'aprobado' },
-    );
-    return response.data;
+    return solicitudesService.cambiarEstado(id, { estado: 'aprobado' });
   },
 
   async reject(id: string | number, observacion: string): Promise<ApiResponse<SolicitudCertificacion>> {
-    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(
-      `${endpoints.solicitudes}/${id}/estado`,
-      { estado: 'rechazado', motivo_rechazo: observacion },
-    );
-    return response.data;
+    return solicitudesService.cambiarEstado(id, { estado: 'rechazado', motivo_rechazo: observacion });
   },
 
   async markPaymentPending(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(
-      `${endpoints.solicitudes}/${id}/estado`,
-      { estado: 'requiere_pago' },
-    );
-    return response.data;
+    return solicitudesService.cambiarEstado(id, { estado: 'requiere_pago' });
   },
 
   async generateCertificate(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(
-      `${endpoints.solicitudes}/${id}/estado`,
-      { estado: 'generado' },
-    );
-    return response.data;
+    return solicitudesService.cambiarEstado(id, { estado: 'generado' });
   },
 };

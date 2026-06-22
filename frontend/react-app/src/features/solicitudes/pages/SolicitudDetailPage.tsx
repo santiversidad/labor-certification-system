@@ -10,8 +10,10 @@ import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { Modal } from '../../../components/ui/Modal';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { formatDate } from '../../../lib/formatters/dates';
+import { isGestorRole } from '../../../lib/auth/permissions';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { SolicitudStatusBadge } from '../components/SolicitudStatusBadge';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { solicitudesService } from '../services/solicitudes.service';
 
 const tipoLabels: Record<string, string> = {
@@ -23,6 +25,8 @@ const tipoLabels: Record<string, string> = {
 
 export function SolicitudDetailPage() {
   const { id = '' } = useParams();
+  const { user } = useAuth();
+  const esGestor = isGestorRole(user);
   const queryClient = useQueryClient();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'aprobar' | 'pendiente_pago' | 'generar' | null>(null);
@@ -98,7 +102,7 @@ export function SolicitudDetailPage() {
         actions={<SolicitudStatusBadge estado={solicitud.estado} />}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className={`grid gap-6 ${esGestor ? 'xl:grid-cols-[1fr_360px]' : ''}`}>
         <div className="space-y-6">
           <Card title="Datos del funcionario">
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -121,52 +125,58 @@ export function SolicitudDetailPage() {
           </Card>
         </div>
 
-        <Card title="Acciones de revision" description="Las acciones se habilitan segun el estado de la solicitud.">
-          <div className="space-y-3">
-            <Button className="w-full" disabled={!canApprove || activeMutation} icon={<Check size={16} />} onClick={() => setConfirmAction('aprobar')} type="button">
-              Aprobar solicitud
-            </Button>
-            <Button className="w-full" disabled={!canReject || activeMutation} icon={<X size={16} />} onClick={() => setRejectOpen(true)} type="button" variant="danger">
-              Rechazar solicitud
-            </Button>
-            <Button className="w-full" disabled={!canMarkPayment || activeMutation} icon={<CreditCard size={16} />} onClick={() => setConfirmAction('pendiente_pago')} type="button" variant="secondary">
-              Marcar pendiente de pago
-            </Button>
-            <Button className="w-full" disabled={!canGenerate || activeMutation} icon={<FileCheck size={16} />} onClick={() => setConfirmAction('generar')} type="button" variant="secondary">
-              Generar certificado
-            </Button>
-            {approveMutation.isError || rejectMutation.isError || paymentMutation.isError || generateMutation.isError ? (
-              <p className="text-sm text-villavoRed">
-                {getErrorMessage(approveMutation.error ?? rejectMutation.error ?? paymentMutation.error ?? generateMutation.error)}
-              </p>
-            ) : null}
-          </div>
-        </Card>
+        {esGestor && (
+          <Card title="Acciones de revision" description="Las acciones se habilitan segun el estado de la solicitud.">
+            <div className="space-y-3">
+              <Button className="w-full" disabled={!canApprove || activeMutation} icon={<Check size={16} />} onClick={() => setConfirmAction('aprobar')} type="button">
+                Aprobar solicitud
+              </Button>
+              <Button className="w-full" disabled={!canReject || activeMutation} icon={<X size={16} />} onClick={() => setRejectOpen(true)} type="button" variant="danger">
+                Rechazar solicitud
+              </Button>
+              <Button className="w-full" disabled={!canMarkPayment || activeMutation} icon={<CreditCard size={16} />} onClick={() => setConfirmAction('pendiente_pago')} type="button" variant="secondary">
+                Marcar pendiente de pago
+              </Button>
+              <Button className="w-full" disabled={!canGenerate || activeMutation} icon={<FileCheck size={16} />} onClick={() => setConfirmAction('generar')} type="button" variant="secondary">
+                Generar certificado
+              </Button>
+              {approveMutation.isError || rejectMutation.isError || paymentMutation.isError || generateMutation.isError ? (
+                <p className="text-sm text-villavoRed">
+                  {getErrorMessage(approveMutation.error ?? rejectMutation.error ?? paymentMutation.error ?? generateMutation.error)}
+                </p>
+              ) : null}
+            </div>
+          </Card>
+        )}
       </div>
 
-      <ConfirmDialog
-        confirmLabel={confirmAction === 'generar' ? 'Generar' : confirmAction === 'pendiente_pago' ? 'Marcar' : 'Aprobar'}
-        loading={activeMutation}
-        message={confirmAction === 'generar' ? 'Se solicitara la generacion del certificado.' : confirmAction === 'pendiente_pago' ? 'La solicitud quedara pendiente de pago.' : 'La solicitud quedara aprobada para continuar el proceso.'}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleConfirmAction}
-        open={Boolean(confirmAction)}
-        title="Confirmar accion"
-      />
+      {esGestor && (
+        <>
+          <ConfirmDialog
+            confirmLabel={confirmAction === 'generar' ? 'Generar' : confirmAction === 'pendiente_pago' ? 'Marcar' : 'Aprobar'}
+            loading={activeMutation}
+            message={confirmAction === 'generar' ? 'Se solicitara la generacion del certificado.' : confirmAction === 'pendiente_pago' ? 'La solicitud quedara pendiente de pago.' : 'La solicitud quedara aprobada para continuar el proceso.'}
+            onClose={() => setConfirmAction(null)}
+            onConfirm={handleConfirmAction}
+            open={Boolean(confirmAction)}
+            title="Confirmar accion"
+          />
 
-      <Modal onClose={() => setRejectOpen(false)} open={rejectOpen} title="Rechazar solicitud">
-        <label className="space-y-1 text-sm">
-          <span className="font-medium text-text">Observacion obligatoria</span>
-          <textarea className="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2" value={observacion} onChange={(event) => setObservacion(event.target.value)} />
-        </label>
-        {rejectError ? <p className="mt-2 text-sm text-villavoRed">{rejectError}</p> : null}
-        <div className="mt-5 flex justify-end gap-2">
-          <Button disabled={rejectMutation.isPending} onClick={() => setRejectOpen(false)} type="button" variant="secondary">Cancelar</Button>
-          <Button disabled={rejectMutation.isPending} onClick={handleReject} type="button" variant="danger">
-            {rejectMutation.isPending ? 'Rechazando...' : 'Rechazar'}
-          </Button>
-        </div>
-      </Modal>
+          <Modal onClose={() => setRejectOpen(false)} open={rejectOpen} title="Rechazar solicitud">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-text">Observacion obligatoria</span>
+              <textarea className="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2" value={observacion} onChange={(event) => setObservacion(event.target.value)} />
+            </label>
+            {rejectError ? <p className="mt-2 text-sm text-villavoRed">{rejectError}</p> : null}
+            <div className="mt-5 flex justify-end gap-2">
+              <Button disabled={rejectMutation.isPending} onClick={() => setRejectOpen(false)} type="button" variant="secondary">Cancelar</Button>
+              <Button disabled={rejectMutation.isPending} onClick={handleReject} type="button" variant="danger">
+                {rejectMutation.isPending ? 'Rechazando...' : 'Rechazar'}
+              </Button>
+            </div>
+          </Modal>
+        </>
+      )}
     </div>
   );
 }

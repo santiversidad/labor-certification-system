@@ -37,9 +37,12 @@ class RolesPermisosSeeder extends Seeder
         'solicitudes.crear',
         'solicitudes.editar',
         'solicitudes.cambiar_estado',
+        'solicitudes.aprobar',
+        'solicitudes.rechazar',
 
         // Pagos
         'pagos.ver',
+        'pagos.cargar',
         'pagos.validar',
         'pagos.rechazar',
 
@@ -47,9 +50,21 @@ class RolesPermisosSeeder extends Seeder
         'certificados.ver',
         'certificados.generar',
         'certificados.descargar',
+        'certificados.anular',
+
+        // Validación pública
+        'tokens.validar',
 
         // Auditoría
         'auditoria.ver',
+
+        // Reportes
+        'reportes.ver',
+
+        // Actuaciones administrativas
+        'actuaciones.ver',
+        'actuaciones.crear',
+        'actuaciones.editar',
     ];
 
     public function run(): void
@@ -75,20 +90,26 @@ class RolesPermisosSeeder extends Seeder
             'solicitudes.ver',
             'solicitudes.editar',
             'solicitudes.cambiar_estado',
+            'solicitudes.aprobar',
+            'solicitudes.rechazar',
             'pagos.ver',
             'pagos.validar',
             'pagos.rechazar',
             'certificados.ver',
             'certificados.generar',
             'certificados.descargar',
+            'certificados.anular',
+            'actuaciones.ver',
+            'reportes.ver',
         ]);
 
-        // ─── Funcionario: solo sus propias solicitudes y certificados ──────────
+        // ─── Funcionario: solo crear y ver sus propias solicitudes ────────────
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
             'solicitudes.ver',
             'solicitudes.crear',
             'pagos.ver',
+            'pagos.cargar',
             'certificados.ver',
             'certificados.descargar',
         ]);

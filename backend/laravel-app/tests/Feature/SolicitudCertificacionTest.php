@@ -106,6 +106,100 @@ class SolicitudCertificacionTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
+    public function test_funcionario_no_puede_crear_segunda_solicitud_activa(): void
+    {
+        // Primera solicitud en estado activo
+        SolicitudCertificacion::create([
+            'funcionario_id'   => $this->funcionario->id,
+            'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            'estado'           => EstadoSolicitudEnum::Pendiente,
+            'created_by'       => $this->userFuncionario->id,
+        ]);
+
+        // Intento de crear segunda solicitud
+        $this->actingAs($this->userFuncionario, 'sanctum')
+            ->postJson('/api/v1/solicitudes', [
+                'tipo_certificado' => TipoCertificadoEnum::Funciones->value,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_funcionario_puede_crear_solicitud_si_anterior_fue_rechazada(): void
+    {
+        // Solicitud rechazada (estado terminal, no bloquea)
+        SolicitudCertificacion::create([
+            'funcionario_id'   => $this->funcionario->id,
+            'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            'estado'           => EstadoSolicitudEnum::Rechazado,
+            'created_by'       => $this->userFuncionario->id,
+        ]);
+
+        $this->actingAs($this->userFuncionario, 'sanctum')
+            ->postJson('/api/v1/solicitudes', [
+                'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_solicitud_creada_tiene_radicado(): void
+    {
+        $response = $this->actingAs($this->userFuncionario, 'sanctum')
+            ->postJson('/api/v1/solicitudes', [
+                'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            ]);
+
+        $response->assertCreated();
+        $radicado = $response->json('data.radicado');
+        $this->assertNotNull($radicado);
+        $this->assertMatchesRegularExpression('/^CL-\d{4}-\d{6}$/', $radicado);
+    }
+
+    public function test_secretario_puede_aprobar_via_alias(): void
+    {
+        $solicitud = SolicitudCertificacion::create([
+            'funcionario_id'   => $this->funcionario->id,
+            'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            'estado'           => EstadoSolicitudEnum::EnRevision,
+        ]);
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->patchJson("/api/v1/solicitudes/{$solicitud->id}/aprobar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', EstadoSolicitudEnum::Aprobado->value);
+    }
+
+    public function test_secretario_puede_rechazar_via_alias(): void
+    {
+        $solicitud = SolicitudCertificacion::create([
+            'funcionario_id'   => $this->funcionario->id,
+            'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            'estado'           => EstadoSolicitudEnum::Pendiente,
+        ]);
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->patchJson("/api/v1/solicitudes/{$solicitud->id}/rechazar", [
+                'motivo_rechazo' => 'Documentación incompleta presentada por el funcionario.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.estado', EstadoSolicitudEnum::Rechazado->value);
+    }
+
+    public function test_rechazar_via_alias_sin_motivo_falla(): void
+    {
+        $solicitud = SolicitudCertificacion::create([
+            'funcionario_id'   => $this->funcionario->id,
+            'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+            'estado'           => EstadoSolicitudEnum::Pendiente,
+        ]);
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->patchJson("/api/v1/solicitudes/{$solicitud->id}/rechazar")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['motivo_rechazo']);
+    }
+
     // ─── Listado ──────────────────────────────────────────────────────────────
 
     public function test_admin_ve_todas_las_solicitudes(): void

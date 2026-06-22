@@ -63,12 +63,23 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         // Solicitudes de certificación
         Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
-            Route::get('/',                          [SolicitudCertificacionController::class, 'index'])->name('index');
-            Route::post('/',                         [SolicitudCertificacionController::class, 'store'])->name('store');
-            Route::get('/{solicitud}',               [SolicitudCertificacionController::class, 'show'])->name('show');
-            Route::patch('/{solicitud}/estado',      [SolicitudCertificacionController::class, 'cambiarEstado'])->name('cambiarEstado');
-            // Carga de soporte de pago por parte del funcionario
-            Route::post('/{solicitud}/soporte-pago', [PagoSoporteController::class, 'cargar'])->name('soporte-pago.cargar');
+            Route::get('/',                                 [SolicitudCertificacionController::class, 'index'])->name('index');
+            Route::post('/',                                [SolicitudCertificacionController::class, 'store'])->name('store');
+            Route::get('/{solicitud}',                      [SolicitudCertificacionController::class, 'show'])->name('show');
+
+            // Endpoint genérico de transición de estado
+            Route::patch('/{solicitud}/estado',             [SolicitudCertificacionController::class, 'cambiarEstado'])->name('cambiarEstado');
+
+            // Alias de acciones específicas (secretario / admin)
+            Route::patch('/{solicitud}/aprobar',            [SolicitudCertificacionController::class, 'aprobar'])->name('aprobar');
+            Route::patch('/{solicitud}/rechazar',           [SolicitudCertificacionController::class, 'rechazar'])->name('rechazar');
+            Route::patch('/{solicitud}/marcar-pago',        [SolicitudCertificacionController::class, 'marcarPago'])->name('marcarPago');
+
+            // Carga de soporte (funcionario titular)
+            Route::post('/{solicitud}/soporte-pago',        [PagoSoporteController::class, 'cargar'])->name('soporte-pago.cargar');
+
+            // Generación de certificado — se completa en Fase 3
+            Route::post('/{solicitud}/generar-certificado', [CertificadoController::class, 'generar'])->name('generar-certificado');
         });
 
         // Certificados
@@ -82,7 +93,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         // Pagos y soportes (validación por secretario/admin)
         Route::prefix('pagos')->name('pagos.')->group(function () {
-            Route::get('/',              [PagoSoporteController::class, 'index'])->name('index');
+            Route::get('/',                  [PagoSoporteController::class, 'index'])->name('index');
+            Route::get('/{pago}',            [PagoSoporteController::class, 'show'])->name('show');
             Route::patch('/{pago}/validar',  [PagoSoporteController::class, 'validar'])->name('validar');
             Route::patch('/{pago}/rechazar', [PagoSoporteController::class, 'rechazar'])->name('rechazar');
         });

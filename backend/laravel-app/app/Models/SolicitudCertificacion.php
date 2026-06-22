@@ -14,6 +14,7 @@ class SolicitudCertificacion extends Model
 
     protected $fillable = [
         'funcionario_id',
+        'radicado',
         'tipo_certificado',
         'estado',
         'requiere_pago',
@@ -24,6 +25,43 @@ class SolicitudCertificacion extends Model
         'reviewed_by',
         'reviewed_at',
     ];
+
+    // ─── Eventos ─────────────────────────────────────────────────────────────
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (self $solicitud): void {
+            if (empty($solicitud->radicado)) {
+                $anio        = now()->year;
+                $consecutivo = static::whereYear('created_at', $anio)->count() + 1;
+                $solicitud->radicado = sprintf('CL-%d-%06d', $anio, $consecutivo);
+            }
+        });
+    }
+
+    // ─── Consultas de negocio ────────────────────────────────────────────────
+
+    /** Estados que bloquean una nueva solicitud del mismo funcionario. */
+    public static function estadosActivos(): array
+    {
+        return [
+            EstadoSolicitudEnum::Pendiente->value,
+            EstadoSolicitudEnum::EnRevision->value,
+            EstadoSolicitudEnum::RequierePago->value,
+            EstadoSolicitudEnum::PagoPendiente->value,
+            EstadoSolicitudEnum::PagoValidado->value,
+            EstadoSolicitudEnum::Aprobado->value,
+        ];
+    }
+
+    public static function tieneActivaPara(int $funcionarioId): bool
+    {
+        return static::where('funcionario_id', $funcionarioId)
+            ->whereIn('estado', static::estadosActivos())
+            ->exists();
+    }
 
     protected function casts(): array
     {

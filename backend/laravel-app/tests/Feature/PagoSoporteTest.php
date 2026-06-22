@@ -10,6 +10,7 @@ use App\Enums\TipoCertificadoEnum;
 use App\Models\Cargo;
 use App\Models\Funcionario;
 use App\Models\PagoSoporte;
+use App\Models\ParametroSistema;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
@@ -76,6 +77,7 @@ class PagoSoporteTest extends TestCase
 
     public function test_funcionario_puede_cargar_soporte_pdf(): void
     {
+        $this->activarPagos();
         $archivo = UploadedFile::fake()->create('soporte.pdf', 500, 'application/pdf');
 
         $response = $this->actingAs($this->userFuncionario, 'sanctum')
@@ -100,6 +102,7 @@ class PagoSoporteTest extends TestCase
 
     public function test_funcionario_puede_cargar_soporte_imagen(): void
     {
+        $this->activarPagos();
         $archivo = UploadedFile::fake()->image('recibo.jpg');
 
         $this->actingAs($this->userFuncionario, 'sanctum')
@@ -111,6 +114,8 @@ class PagoSoporteTest extends TestCase
 
     public function test_cargar_soporte_falla_sin_archivo(): void
     {
+        $this->activarPagos();
+
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", [])
             ->assertStatus(422)
@@ -119,6 +124,7 @@ class PagoSoporteTest extends TestCase
 
     public function test_cargar_soporte_falla_con_tipo_no_permitido(): void
     {
+        $this->activarPagos();
         $archivo = UploadedFile::fake()->create('virus.exe', 100, 'application/octet-stream');
 
         $this->actingAs($this->userFuncionario, 'sanctum')
@@ -131,6 +137,8 @@ class PagoSoporteTest extends TestCase
 
     public function test_no_se_puede_cargar_soporte_si_solicitud_no_requiere_pago(): void
     {
+        $this->activarPagos();
+
         $otraSolicitud = SolicitudCertificacion::create([
             'funcionario_id'   => $this->funcionario->id,
             'tipo_certificado' => TipoCertificadoEnum::Laboral,
@@ -149,6 +157,8 @@ class PagoSoporteTest extends TestCase
 
     public function test_funcionario_ajeno_no_puede_cargar_soporte(): void
     {
+        $this->activarPagos();
+
         $otroUser = User::factory()->create(['estado' => true]);
         $otroUser->assignRole(RoleEnum::Funcionario->value);
         Funcionario::create([
@@ -270,5 +280,79 @@ class PagoSoporteTest extends TestCase
         $this->patchJson('/api/v1/pagos/1/validar', [])->assertUnauthorized();
         $this->patchJson('/api/v1/pagos/1/rechazar', [])->assertUnauthorized();
         $this->getJson('/api/v1/pagos')->assertUnauthorized();
+        $this->getJson('/api/v1/pagos/1')->assertUnauthorized();
+    }
+
+    // ─── Detalle de soporte (show) ────────────────────────────────────────────
+
+    public function test_secretario_puede_ver_detalle_de_pago(): void
+    {
+        $pago = $this->crearPagoPendiente();
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->getJson("/api/v1/pagos/{$pago->id}")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', $pago->id)
+            ->assertJsonPath('data.estado', EstadoPagoEnum::Pendiente->value);
+    }
+
+    public function test_funcionario_puede_ver_su_propio_soporte(): void
+    {
+        $pago = $this->crearPagoPendiente();
+
+        $this->actingAs($this->userFuncionario, 'sanctum')
+            ->getJson("/api/v1/pagos/{$pago->id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $pago->id);
+    }
+
+    public function test_funcionario_no_puede_ver_soporte_ajeno(): void
+    {
+        $pago = $this->crearPagoPendiente();
+
+        $otroUser = User::factory()->create(['estado' => true]);
+        $otroUser->assignRole(RoleEnum::Funcionario->value);
+
+        $this->actingAs($otroUser, 'sanctum')
+            ->getJson("/api/v1/pagos/{$pago->id}")
+            ->assertForbidden();
+    }
+
+    // ─── Módulo de pagos desactivado ──────────────────────────────────────────
+
+    private function activarPagos(): void
+    {
+        ParametroSistema::updateOrCreate(
+            ['clave' => 'requiere_pago_certificado'],
+            ['valor' => 'true', 'tipo' => 'boolean'],
+        );
+    }
+
+    public function test_no_se_puede_cargar_soporte_si_pagos_desactivados(): void
+    {
+        // Por defecto el parámetro no existe en tests (RefreshDatabase) → false
+        $archivo = UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->userFuncionario, 'sanctum')
+            ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", [
+                'archivo' => $archivo,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_se_puede_cargar_soporte_si_pagos_activados(): void
+    {
+        $this->activarPagos();
+
+        $archivo = UploadedFile::fake()->create('soporte.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->userFuncionario, 'sanctum')
+            ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", [
+                'archivo' => $archivo,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('success', true);
     }
 }

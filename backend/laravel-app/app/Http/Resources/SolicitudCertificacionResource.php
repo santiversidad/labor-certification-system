@@ -11,6 +11,7 @@ class SolicitudCertificacionResource extends JsonResource
     {
         return [
             'id'               => $this->id,
+            'radicado'         => $this->radicado,
             'tipo_certificado' => $this->tipo_certificado,
             'estado'           => $this->estado,
             'requiere_pago'    => $this->requiere_pago,
