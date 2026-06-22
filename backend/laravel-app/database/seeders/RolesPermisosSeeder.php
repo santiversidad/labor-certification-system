@@ -54,6 +54,9 @@ class RolesPermisosSeeder extends Seeder
 
     public function run(): void
     {
+        // Limpiar caché de Spatie para evitar datos obsoletos tras migrate:fresh
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         // Crear todos los permisos
         foreach ($this->permisos as $permiso) {
             Permission::firstOrCreate(['name' => $permiso, 'guard_name' => 'web']);

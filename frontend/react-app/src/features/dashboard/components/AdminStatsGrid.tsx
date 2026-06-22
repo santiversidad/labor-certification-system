@@ -17,13 +17,15 @@ export function AdminStatsGrid({
   solicitudesPendientes: number;
   certificadosGenerados: number;
   pagosPorValidar: number;
-  funcionariosRegistrados: number;
+  funcionariosRegistrados?: number;
 }) {
   const stats: AdminStat[] = [
     { label: 'Solicitudes pendientes', value: solicitudesPendientes, helper: 'Requieren revision', icon: Clock3 },
     { label: 'Certificados generados', value: certificadosGenerados, helper: 'Disponibles para descarga', icon: BadgeCheck },
     { label: 'Pagos por validar', value: pagosPorValidar, helper: 'Soportes cargados', icon: CreditCard },
-    { label: 'Funcionarios registrados', value: funcionariosRegistrados, helper: 'Base institucional', icon: Users },
+    ...(funcionariosRegistrados !== undefined
+      ? [{ label: 'Funcionarios registrados', value: funcionariosRegistrados, helper: 'Base institucional', icon: Users }]
+      : []),
   ];
 
   return (

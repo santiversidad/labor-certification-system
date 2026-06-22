@@ -26,8 +26,8 @@ export function ReportesPage() {
         <p className="mt-1 text-sm text-muted">Resumen institucional inicial para analitica y exportaciones futuras.</p>
       </div>
       <ReportsSummary resumen={data.data} />
-      <Card title="Integracion pendiente" description="La pantalla esta lista para conectar filtros, graficas y exportaciones desde la API Laravel.">
-        <p className="text-sm text-muted">Los indicadores actuales provienen de servicios mock centralizados.</p>
+      <Card title="Integración pendiente" description="El endpoint /reportes aún no está disponible en el backend. Pantalla preparada para conectar filtros, gráficas y exportaciones.">
+        <p className="text-sm text-muted">Esta vista quedará operativa al implementar el módulo de reportes en el backend.</p>
       </Card>
     </div>
   );

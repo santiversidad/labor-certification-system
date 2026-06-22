@@ -23,10 +23,10 @@ export function SolicitudesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text">Solicitudes</h1>
-        <p className="mt-1 text-sm text-muted">Listado inicial de solicitudes con datos mock.</p>
+        <p className="mt-1 text-sm text-muted">Listado de solicitudes registradas.</p>
       </div>
-      <Card title="Solicitudes registradas" description="La tabla consume servicios mock y quedara lista para la API.">
-        <SolicitudesTable solicitudes={data.data.data} />
+      <Card title="Solicitudes registradas" description="Información proveniente del backend en tiempo real.">
+        <SolicitudesTable solicitudes={data.data} />
       </Card>
     </div>
   );

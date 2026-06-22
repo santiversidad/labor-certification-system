@@ -10,7 +10,6 @@ import { CargosPage } from '../features/cargos/pages/CargosPage';
 import { CertificadoDetailPage } from '../features/certificados/pages/CertificadoDetailPage';
 import { CertificadosPage } from '../features/certificados/pages/CertificadosPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
-import { FuncionarioDashboardPage } from '../features/dashboard/pages/FuncionarioDashboardPage';
 import { FuncionarioDetailPage } from '../features/funcionarios/pages/FuncionarioDetailPage';
 import { FuncionarioFormPage } from '../features/funcionarios/pages/FuncionarioFormPage';
 import { FuncionariosPage } from '../features/funcionarios/pages/FuncionariosPage';
@@ -43,27 +42,23 @@ export const router = createBrowserRouter([
     path: '/app',
     element: (
       <ProtectedRoute>
-        <RoleRoute allowedRoles={['funcionario', 'secretario']}>
+        <RoleRoute allowedRoles={['funcionario']}>
           <AppLayout variant="app" />
         </RoleRoute>
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate replace to="/app/dashboard" /> },
-      { path: 'dashboard', element: <FuncionarioDashboardPage /> },
+      { index: true, element: <Navigate replace to="/app/solicitudes" /> },
       { path: 'solicitudes', element: <SolicitudesPage /> },
-      { path: 'solicitudes/nueva', element: <RoleRoute allowedRoles={['funcionario']}><SolicitudCertificadoPage /></RoleRoute> },
+      { path: 'solicitudes/nueva', element: <SolicitudCertificadoPage /> },
       { path: 'solicitudes/:id', element: <SolicitudDetailPage /> },
-      { path: 'pagos', element: <RoleRoute allowedRoles={['secretario']}><PagosPage /></RoleRoute> },
-      { path: 'certificados', element: <CertificadosPage /> },
-      { path: 'certificados/:id', element: <CertificadoDetailPage /> },
     ],
   },
   {
     path: '/admin',
     element: (
       <ProtectedRoute>
-        <RoleRoute allowedRoles={['admin']}>
+        <RoleRoute allowedRoles={['admin', 'secretario']}>
           <AppLayout variant="admin" />
         </RoleRoute>
       </ProtectedRoute>
@@ -71,19 +66,21 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate replace to="/admin/dashboard" /> },
       { path: 'dashboard', element: <AdminDashboardPage /> },
-      { path: 'funcionarios', element: <FuncionariosPage /> },
-      { path: 'funcionarios/nuevo', element: <FuncionarioFormPage /> },
-      { path: 'funcionarios/:id', element: <FuncionarioDetailPage /> },
-      { path: 'funcionarios/:id/editar', element: <FuncionarioFormPage /> },
-      { path: 'cargos', element: <CargosPage /> },
-      { path: 'rangos-salariales', element: <RangosSalarialesPage /> },
+      // Rutas de solo-admin
+      { path: 'funcionarios', element: <RoleRoute allowedRoles={['admin']}><FuncionariosPage /></RoleRoute> },
+      { path: 'funcionarios/nuevo', element: <RoleRoute allowedRoles={['admin']}><FuncionarioFormPage /></RoleRoute> },
+      { path: 'funcionarios/:id', element: <RoleRoute allowedRoles={['admin']}><FuncionarioDetailPage /></RoleRoute> },
+      { path: 'funcionarios/:id/editar', element: <RoleRoute allowedRoles={['admin']}><FuncionarioFormPage /></RoleRoute> },
+      { path: 'cargos', element: <RoleRoute allowedRoles={['admin']}><CargosPage /></RoleRoute> },
+      { path: 'rangos-salariales', element: <RoleRoute allowedRoles={['admin']}><RangosSalarialesPage /></RoleRoute> },
+      { path: 'auditoria', element: <RoleRoute allowedRoles={['admin']}><AuditoriaPage /></RoleRoute> },
+      { path: 'reportes', element: <RoleRoute allowedRoles={['admin']}><ReportesPage /></RoleRoute> },
+      // Rutas compartidas admin + secretario
       { path: 'solicitudes', element: <SolicitudesPage /> },
       { path: 'solicitudes/:id', element: <SolicitudDetailPage /> },
       { path: 'pagos', element: <PagosPage /> },
       { path: 'certificados', element: <CertificadosPage /> },
       { path: 'certificados/:id', element: <CertificadoDetailPage /> },
-      { path: 'auditoria', element: <AuditoriaPage /> },
-      { path: 'reportes', element: <ReportesPage /> },
     ],
   },
   {

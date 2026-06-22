@@ -25,8 +25,8 @@ export function FuncionariosPage() {
         <h1 className="text-2xl font-semibold text-text">Funcionarios</h1>
         <p className="mt-1 text-sm text-muted">Administracion de funcionarios vinculados a certificaciones laborales.</p>
       </div>
-      <Card title="Funcionarios registrados" description="Datos mock listos para integracion con Laravel.">
-        <FuncionariosTable funcionarios={data.data.data} />
+      <Card title="Funcionarios registrados" description="Personal vinculado a la entidad.">
+        <FuncionariosTable funcionarios={data.data} />
       </Card>
     </div>
   );

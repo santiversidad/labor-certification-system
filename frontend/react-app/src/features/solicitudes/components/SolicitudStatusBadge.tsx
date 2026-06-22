@@ -3,17 +3,25 @@ import type { SolicitudEstado } from '../types/solicitud.types';
 
 const labels: Record<SolicitudEstado, string> = {
   pendiente: 'Pendiente',
-  en_revision: 'En revision',
-  pendiente_pago: 'Pendiente pago',
-  pago_en_revision: 'Pago en revision',
-  aprobada: 'Aprobada',
-  rechazada: 'Rechazada',
-  certificado_generado: 'Certificado generado',
-  cerrada: 'Cerrada',
+  en_revision: 'En revisión',
+  requiere_pago: 'Requiere pago',
+  pago_pendiente: 'Pago pendiente',
+  pago_validado: 'Pago validado',
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  generado: 'Generado',
+  cancelado: 'Cancelado',
 };
 
 export function SolicitudStatusBadge({ estado }: { estado: SolicitudEstado }) {
-  const tone = estado === 'rechazada' ? 'red' : estado === 'certificado_generado' || estado === 'aprobada' ? 'green' : 'gold';
+  const tone: 'red' | 'green' | 'gold' | 'blue' =
+    estado === 'rechazado' || estado === 'cancelado'
+      ? 'red'
+      : estado === 'generado' || estado === 'aprobado' || estado === 'pago_validado'
+      ? 'green'
+      : estado === 'en_revision'
+      ? 'blue'
+      : 'gold';
 
   return <Badge tone={tone}>{labels[estado]}</Badge>;
 }

@@ -26,7 +26,7 @@ export function AuditoriaPage() {
         <p className="mt-1 text-sm text-muted">Registro inicial de acciones del sistema.</p>
       </div>
       <Card title="Eventos recientes" description="Modulo preparado para trazabilidad de operaciones Laravel.">
-        <AuditoriaTable logs={data.data.data} />
+        <AuditoriaTable logs={data.data} />
       </Card>
     </div>
   );

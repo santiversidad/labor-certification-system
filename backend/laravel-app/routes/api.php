@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\RangoSalarialController;
+use App\Http\Controllers\Api\V1\AuditLogController;
+use App\Http\Controllers\Api\V1\CertificadoController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
             // Carga de soporte de pago por parte del funcionario
             Route::post('/{solicitud}/soporte-pago', [PagoSoporteController::class, 'cargar'])->name('soporte-pago.cargar');
         });
+
+        // Certificados
+        Route::prefix('certificados')->name('certificados.')->group(function () {
+            Route::get('/',                    [CertificadoController::class, 'index'])->name('index');
+            Route::get('/{certificado}',       [CertificadoController::class, 'show'])->name('show');
+        });
+
+        // Auditoría (solo admin)
+        Route::get('auditoria', [AuditLogController::class, 'index'])->name('auditoria.index');
 
         // Pagos y soportes (validación por secretario/admin)
         Route::prefix('pagos')->name('pagos.')->group(function () {

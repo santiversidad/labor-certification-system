@@ -1,63 +1,68 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../../components/ui/Card';
-import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { isAdmin } from '../../../lib/auth/permissions';
 import { auditoriaService } from '../../auditoria/services/auditoria.service';
 import { certificadosService } from '../../certificados/services/certificados.service';
 import { funcionariosService } from '../../funcionarios/services/funcionarios.service';
 import { pagosService } from '../../pagos/services/pagos.service';
+import { solicitudesService } from '../../solicitudes/services/solicitudes.service';
 import { AdminAuditSummary } from '../components/AdminAuditSummary';
 import { AdminPendingRequestsTable } from '../components/AdminPendingRequestsTable';
 import { AdminQuickActions } from '../components/AdminQuickActions';
 import { AdminStatsGrid } from '../components/AdminStatsGrid';
-import { dashboardService } from '../services/dashboard.service';
 
 export function AdminDashboardPage() {
-  const dashboardQuery = useQuery({
-    queryKey: ['admin-dashboard-summary'],
-    queryFn: dashboardService.getSummary,
-  });
-  const funcionariosQuery = useQuery({ queryKey: ['admin-funcionarios-summary'], queryFn: funcionariosService.list });
-  const pagosQuery = useQuery({ queryKey: ['admin-pagos-summary'], queryFn: pagosService.list });
-  const certificadosQuery = useQuery({ queryKey: ['admin-certificados-summary'], queryFn: certificadosService.list });
-  const auditoriaQuery = useQuery({ queryKey: ['admin-auditoria-summary'], queryFn: auditoriaService.list });
+  const { user } = useAuth();
+  const esAdmin = isAdmin(user);
 
-  if (dashboardQuery.isLoading || funcionariosQuery.isLoading || pagosQuery.isLoading || certificadosQuery.isLoading || auditoriaQuery.isLoading) {
+  const solicitudesQuery = useQuery({ queryKey: ['admin-solicitudes'], queryFn: solicitudesService.list });
+  const pagosQuery       = useQuery({ queryKey: ['admin-pagos'],       queryFn: pagosService.list });
+  const certificadosQuery = useQuery({ queryKey: ['admin-certificados'], queryFn: certificadosService.list });
+
+  // Solo admin consulta funcionarios y auditoría
+  const funcionariosQuery = useQuery({
+    queryKey: ['admin-funcionarios'],
+    queryFn: funcionariosService.list,
+    enabled: esAdmin,
+  });
+  const auditoriaQuery = useQuery({
+    queryKey: ['admin-auditoria'],
+    queryFn: auditoriaService.list,
+    enabled: esAdmin,
+  });
+
+  const cargandoBase =
+    solicitudesQuery.isLoading || pagosQuery.isLoading || certificadosQuery.isLoading;
+
+  if (cargandoBase) {
     return <LoadingState />;
   }
 
-  if (
-    dashboardQuery.isError ||
-    funcionariosQuery.isError ||
-    pagosQuery.isError ||
-    certificadosQuery.isError ||
-    auditoriaQuery.isError ||
-    !dashboardQuery.data ||
-    !funcionariosQuery.data ||
-    !pagosQuery.data ||
-    !certificadosQuery.data ||
-    !auditoriaQuery.data
-  ) {
-    return <ErrorState />;
-  }
+  const solicitudes       = solicitudesQuery.data?.data ?? [];
+  const pagosPorValidar   = (pagosQuery.data?.data ?? []).filter((p) => p.estado === 'pendiente').length;
+  const certificadosTotal = certificadosQuery.data?.meta?.total ?? certificadosQuery.data?.data?.length ?? 0;
+  const funcionariosTotal = funcionariosQuery.data?.meta?.total ?? funcionariosQuery.data?.data?.length ?? 0;
+  const auditoriaLogs     = auditoriaQuery.data?.data ?? [];
 
-  const solicitudes = dashboardQuery.data.data.recentRequests;
-  const solicitudesPendientes = solicitudes.filter((solicitud) => ['pendiente', 'en_revision', 'pendiente_pago', 'pago_en_revision'].includes(solicitud.estado)).length;
-  const pagosPorValidar = pagosQuery.data.data.data.filter((pago) => pago.estado === 'cargado' || pago.estado === 'pendiente').length;
+  const solicitudesPendientes = solicitudes.filter((s) =>
+    ['pendiente', 'en_revision', 'requiere_pago', 'pago_pendiente'].includes(s.estado),
+  ).length;
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-govBlue/15 bg-surface p-6">
-        <p className="text-sm font-semibold text-govBlue">Panel Administrativo V2</p>
+        <p className="text-sm font-semibold text-govBlue">Panel Administrativo</p>
         <h1 className="mt-2 text-2xl font-semibold text-text">Control institucional de certificaciones</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Supervise solicitudes, pagos, certificados y catalogos maestros desde una vista sobria preparada para la API Laravel.
+          Supervise solicitudes, pagos y certificados desde una vista consolidada.
         </p>
       </div>
 
       <AdminStatsGrid
-        certificadosGenerados={certificadosQuery.data.data.data.length}
-        funcionariosRegistrados={funcionariosQuery.data.data.meta.total}
+        certificadosGenerados={certificadosTotal}
+        funcionariosRegistrados={esAdmin ? funcionariosTotal : undefined}
         pagosPorValidar={pagosPorValidar}
         solicitudesPendientes={solicitudesPendientes}
       />
@@ -65,11 +70,11 @@ export function AdminDashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <AdminQuickActions />
-          <Card title="Solicitudes recientes" description="Listado operativo para priorizar revision administrativa.">
-            <AdminPendingRequestsTable solicitudes={solicitudes} />
+          <Card title="Solicitudes recientes" description="Listado operativo para priorizar revisión administrativa.">
+            <AdminPendingRequestsTable solicitudes={solicitudes.slice(0, 10)} />
           </Card>
         </div>
-        <AdminAuditSummary logs={auditoriaQuery.data.data.data} />
+        {esAdmin && <AdminAuditSummary logs={auditoriaLogs} />}
       </div>
     </div>
   );

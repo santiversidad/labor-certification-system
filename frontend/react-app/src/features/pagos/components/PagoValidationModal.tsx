@@ -12,7 +12,7 @@ export function PagoValidationModal({ open, onClose }: PagoValidationModalProps)
       <p className="text-sm text-muted">Modal placeholder listo para conectar con el endpoint de validacion de pagos.</p>
       <div className="mt-4 flex justify-end gap-2">
         <Button onClick={onClose} type="button" variant="secondary">Cancelar</Button>
-        <Button onClick={onClose} type="button">Aprobar mock</Button>
+        <Button onClick={onClose} type="button">Aprobar</Button>
       </div>
     </Modal>
   );

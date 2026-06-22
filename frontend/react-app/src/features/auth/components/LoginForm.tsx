@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
-import { isAdmin } from '../../../lib/auth/permissions';
+import { isGestorRole } from '../../../lib/auth/permissions';
 import { authStorage } from '../../../lib/auth/authStorage';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { authService } from '../services/auth.service';
@@ -26,7 +26,7 @@ export function LoginForm() {
     mutationFn: authService.login,
     onSuccess: (response) => {
       authStorage.setSession(response.data);
-      const target = isAdmin(response.data.user) ? '/admin/dashboard' : '/app/dashboard';
+      const target = isGestorRole(response.data.user) ? '/admin/dashboard' : '/app/dashboard';
       navigate(target, { replace: true });
     },
   });
@@ -41,10 +41,10 @@ export function LoginForm() {
           {loginMutation.isPending ? 'Ingresando...' : 'Ingresar'}
         </Button>
       </form>
-      <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted">
-        <p>000000003 / password</p>
-        <p>000000002 / password</p>
-        <p>000000001 / password</p>
+      <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted space-y-1">
+        <p><span className="font-semibold text-text">000000003</span> / password — Funcionario</p>
+        <p><span className="font-semibold text-text">000000002</span> / password — Secretario</p>
+        <p><span className="font-semibold text-text">000000001</span> / password — Administrador</p>
       </div>
     </Card>
   );

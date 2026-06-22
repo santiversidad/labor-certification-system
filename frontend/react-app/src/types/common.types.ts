@@ -1,6 +1,7 @@
 import type { Role } from './roles.types';
+import type { Funcionario } from '../features/funcionarios/types/funcionario.types';
 
-export type ID = string;
+export type ID = number;
 
 export type User = {
   id: ID;
@@ -10,11 +11,7 @@ export type User = {
   estado: boolean;
   roles: Role[];
   permisos: string[];
-  funcionario?: {
-    id: ID;
-    correo_institucional?: string | null;
-    dependencia?: string | null;
-  };
+  funcionario?: Funcionario;
   created_at?: string;
 };
 
@@ -22,5 +19,3 @@ export type Session = {
   token: string;
   user: User;
 };
-
-export type AuditAction = 'crear' | 'actualizar' | 'validar' | 'descargar' | 'rechazar' | 'login';

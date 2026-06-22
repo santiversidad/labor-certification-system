@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { ErrorState } from '../../../components/feedback/ErrorState';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { getErrorMessage } from '../../../lib/utils/errors';
 import { solicitudSchema, type SolicitudFormValues } from '../schemas/solicitud.schema';
 import { solicitudesService } from '../services/solicitudes.service';
 
@@ -14,23 +14,23 @@ export function SolicitudForm() {
   const { user } = useAuth();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SolicitudFormValues>({
     resolver: zodResolver(solicitudSchema),
-    defaultValues: { tipo: 'laboral', incluyeSalario: false, observaciones: '' },
+    defaultValues: { tipo_certificado: 'laboral', requiere_salario: false, observaciones: '' },
   });
 
   const createMutation = useMutation({
     mutationFn: solicitudesService.create,
     onSuccess: () => {
-      reset({ tipo: 'laboral', incluyeSalario: false, observaciones: '' });
+      reset({ tipo_certificado: 'laboral', requiere_salario: false, observaciones: '' });
     },
   });
 
   return (
-    <Card title="Datos de la solicitud" description="Formulario validado con React Hook Form y Zod; el envio usa el servicio mock de solicitudes.">
+    <Card title="Datos de la solicitud" description="Formulario validado con React Hook Form y Zod.">
       <form className="space-y-6" onSubmit={handleSubmit((values) => createMutation.mutate(values))}>
         <section className="grid gap-4 rounded-md border border-border bg-background p-4 md:grid-cols-3">
           <div>
             <p className="text-xs font-semibold uppercase text-muted">Funcionario</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.name ?? 'Funcionario mock'}</p>
+            <p className="mt-1 text-sm font-medium text-text">{user?.name ?? 'Sin información'}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-muted">Correo institucional</p>
@@ -44,20 +44,21 @@ export function SolicitudForm() {
 
         <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
           <label className="block space-y-1 text-sm">
-            <span className="font-medium text-text">Tipo de certificacion</span>
-            <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-govBlue focus:ring-2 focus:ring-govBlue/20" {...register('tipo')}>
-              <option value="laboral">Certificacion laboral</option>
-              <option value="salarial">Certificacion salarial</option>
-              <option value="funciones">Certificacion de funciones</option>
+            <span className="font-medium text-text">Tipo de certificación</span>
+            <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-govBlue focus:ring-2 focus:ring-govBlue/20" {...register('tipo_certificado')}>
+              <option value="laboral">Certificación laboral</option>
+              <option value="funciones">Certificación de funciones</option>
+              <option value="salario">Certificación de salario</option>
+              <option value="laboral_salario">Laboral con salario</option>
             </select>
-            <span className="text-xs text-muted">Seleccione el documento requerido para su tramite.</span>
+            <span className="text-xs text-muted">Seleccione el documento requerido para su trámite.</span>
           </label>
 
           <label className="flex min-h-10 items-start gap-3 rounded-md border border-border bg-surface p-3 text-sm">
-            <input className="mt-1 h-4 w-4 rounded border-border text-govBlue focus:ring-govBlue" type="checkbox" {...register('incluyeSalario')} />
+            <input className="mt-1 h-4 w-4 rounded border-border text-govBlue focus:ring-govBlue" type="checkbox" {...register('requiere_salario')} />
             <span>
               <span className="block font-medium text-text">Incluir salario</span>
-              <span className="text-xs text-muted">Agrega informacion salarial cuando el certificado lo requiera.</span>
+              <span className="text-xs text-muted">Agrega información salarial cuando el certificado lo requiera.</span>
             </span>
           </label>
         </div>
@@ -66,16 +67,20 @@ export function SolicitudForm() {
           <span className="font-medium text-text">Observaciones</span>
           <textarea
             className="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition placeholder:text-muted focus:border-govBlue focus:ring-2 focus:ring-govBlue/20"
-            placeholder="Indique detalles del tramite, entidad destino o informacion adicional."
+            placeholder="Indique detalles del trámite, entidad destino o información adicional."
             {...register('observaciones')}
           />
           {errors.observaciones?.message ? <span className="text-xs text-villavoRed">{errors.observaciones.message}</span> : null}
         </label>
 
-        {createMutation.isError ? <ErrorState message="No fue posible crear la solicitud mock." /> : null}
+        {createMutation.isError ? (
+          <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-villavoRed">
+            <span>{getErrorMessage(createMutation.error)}</span>
+          </div>
+        ) : null}
         {createMutation.isSuccess ? (
           <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-villavoGreen">
-            Solicitud enviada correctamente. El radicado mock quedo en estado pendiente.
+            Solicitud enviada correctamente. Quedó en estado pendiente.
           </div>
         ) : null}
 

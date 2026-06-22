@@ -29,8 +29,8 @@ export function PagosPage() {
         <h1 className="text-2xl font-semibold text-text">Pagos</h1>
         <p className="mt-1 text-sm text-muted">Revision de soportes de pago asociados a solicitudes.</p>
       </div>
-      <Card actions={<Button onClick={() => setIsModalOpen(true)} type="button" variant="secondary">Validar pago</Button>} title="Soportes de pago" description="Tabla mock lista para integracion.">
-        <PagosTable pagos={data.data.data} />
+      <Card actions={<Button onClick={() => setIsModalOpen(true)} type="button" variant="secondary">Validar pago</Button>} title="Soportes de pago" description="Soportes cargados por los funcionarios.">
+        <PagosTable pagos={data.data} />
       </Card>
       <PagoValidationModal onClose={() => setIsModalOpen(false)} open={isModalOpen} />
     </div>

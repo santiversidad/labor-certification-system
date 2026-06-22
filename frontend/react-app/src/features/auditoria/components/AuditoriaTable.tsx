@@ -3,10 +3,11 @@ import { formatDate } from '../../../lib/formatters/dates';
 import type { AuditLog } from '../types/auditoria.types';
 
 const columns: TableColumn<AuditLog>[] = [
-  { header: 'Usuario', accessor: 'userName' },
-  { header: 'Accion', accessor: 'action' },
-  { header: 'Modulo', accessor: 'module' },
-  { header: 'Fecha', accessor: (row) => formatDate(row.createdAt) },
+  { header: 'Usuario', accessor: (row) => row.user?.name ?? '—' },
+  { header: 'Acción', accessor: 'accion' },
+  { header: 'Módulo', accessor: 'modelo' },
+  { header: 'Descripción', accessor: (row) => row.descripcion ?? '' },
+  { header: 'Fecha', accessor: (row) => formatDate(row.created_at) },
 ];
 
 export function AuditoriaTable({ logs }: { logs: AuditLog[] }) {

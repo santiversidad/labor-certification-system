@@ -1,8 +1,8 @@
 import type { Cargo } from '../../cargos/types/cargo.types';
 
 export type Funcionario = {
-  id: string;
-  user_id?: string | null;
+  id: number;
+  user_id?: number | null;
   tipo_documento: 'CC' | 'CE' | 'PA' | 'TI';
   numero_documento: string;
   nombres: string;

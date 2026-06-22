@@ -24,7 +24,7 @@ export function FuncionarioForm() {
         <Input error={errors.fecha_ingreso?.message} label="Fecha ingreso" type="date" {...register('fecha_ingreso')} />
         <Input error={errors.fecha_retiro?.message} label="Fecha retiro" type="date" {...register('fecha_retiro')} />
         <div className="md:col-span-2">
-          <Button type="submit">Guardar funcionario mock</Button>
+          <Button type="submit">Guardar funcionario</Button>
         </div>
       </form>
     </Card>

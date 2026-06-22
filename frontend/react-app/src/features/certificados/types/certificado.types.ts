@@ -1,11 +1,11 @@
-export type CertificadoEstado = 'generado' | 'descargado' | 'vencido' | 'anulado';
+export type CertificadoEstado = 'vigente' | 'anulado';
 
 export type Certificado = {
-  id: string;
-  solicitudId: string;
-  codigoValidacion: string;
+  id: number;
+  codigo_unico: string;
   estado: CertificadoEstado;
-  fechaGeneracion: string;
-  fechaVencimiento: string;
-  descargaUrl?: string;
+  fecha_generacion?: string | null;
+  created_at?: string;
+
+  generado_por?: { id: number; name: string };
 };

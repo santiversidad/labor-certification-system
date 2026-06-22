@@ -1,5 +1,5 @@
 export type RangoSalarial = {
-  id: string;
+  id: number;
   codigo: string;
   grado: string;
   vigencia_anio: number;

@@ -4,24 +4,38 @@ import type { ValidacionCertificado } from '../types/validacionPublica.types';
 
 export function ValidationResultCard({ result }: { result: ValidacionCertificado }) {
   return (
-    <Card title="Resultado de validacion" description="Consulta publica preparada para consumir el endpoint de Laravel.">
+    <Card title="Resultado de validación" description="Verificación pública del certificado.">
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-muted">Estado</dt>
-          <dd><Badge tone={result.valido ? 'green' : 'red'}>{result.valido ? 'Valido' : 'No valido'}</Badge></dd>
+          <dd>
+            <Badge tone={result.valido ? 'green' : 'red'}>
+              {result.valido ? 'Válido' : 'No válido'}
+            </Badge>
+          </dd>
         </div>
         <div>
-          <dt className="text-muted">Codigo</dt>
-          <dd className="font-medium text-text">{result.codigoValidacion}</dd>
+          <dt className="text-muted">Código único</dt>
+          <dd className="font-medium text-text">{result.codigo_unico}</dd>
         </div>
-        <div>
-          <dt className="text-muted">Funcionario</dt>
-          <dd className="font-medium text-text">{result.funcionario}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Cargo</dt>
-          <dd className="font-medium text-text">{result.cargo}</dd>
-        </div>
+        {result.funcionario_titular ? (
+          <div>
+            <dt className="text-muted">Funcionario titular</dt>
+            <dd className="font-medium text-text">{result.funcionario_titular.nombre_completo}</dd>
+          </div>
+        ) : null}
+        {result.tipo_certificado ? (
+          <div>
+            <dt className="text-muted">Tipo</dt>
+            <dd className="font-medium text-text">{result.tipo_certificado}</dd>
+          </div>
+        ) : null}
+        {result.fecha_expedicion ? (
+          <div>
+            <dt className="text-muted">Fecha expedición</dt>
+            <dd className="font-medium text-text">{result.fecha_expedicion}</dd>
+          </div>
+        ) : null}
       </dl>
     </Card>
   );

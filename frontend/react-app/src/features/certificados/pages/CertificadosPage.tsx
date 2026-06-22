@@ -25,8 +25,8 @@ export function CertificadosPage() {
         <h1 className="text-2xl font-semibold text-text">Certificados</h1>
         <p className="mt-1 text-sm text-muted">Consulta, descarga y seguimiento de certificados generados.</p>
       </div>
-      <Card title="Certificados disponibles" description="Listado mock centralizado en servicios.">
-        <CertificadosTable certificados={data.data.data} />
+      <Card title="Certificados disponibles" description="Listado de certificados generados.">
+        <CertificadosTable certificados={data.data} />
       </Card>
     </div>
   );
