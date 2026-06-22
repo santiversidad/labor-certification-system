@@ -15,4 +15,12 @@ export const certificadosService = {
     );
     return response.data;
   },
+
+  async annul(id: string | number, motivo: string): Promise<ApiResponse<Certificado>> {
+    const response = await apiClient.post<ApiResponse<Certificado>>(
+      `${endpoints.certificados}/${id}/anular`,
+      { motivo },
+    );
+    return response.data;
+  },
 };

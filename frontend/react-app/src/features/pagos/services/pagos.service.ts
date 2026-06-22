@@ -43,4 +43,20 @@ export const pagosService = {
     );
     return response.data;
   },
+
+  async approve(id: string | number): Promise<ApiResponse<PagoSoporte>> {
+    const response = await apiClient.patch<ApiResponse<PagoSoporte>>(
+      `${endpoints.pagos}/${id}/validar`,
+      {},
+    );
+    return response.data;
+  },
+
+  async reject(id: string | number, observacion: string): Promise<ApiResponse<PagoSoporte>> {
+    const response = await apiClient.patch<ApiResponse<PagoSoporte>>(
+      `${endpoints.pagos}/${id}/rechazar`,
+      { observaciones: observacion },
+    );
+    return response.data;
+  },
 };

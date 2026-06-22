@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../../components/ui/Card';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { PageHeader } from '../../../components/ui/PageHeader';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { isAdmin } from '../../../lib/auth/permissions';
 import { auditoriaService } from '../../auditoria/services/auditoria.service';
@@ -50,21 +51,28 @@ export function AdminDashboardPage() {
     ['pendiente', 'en_revision', 'requiere_pago', 'pago_pendiente'].includes(s.estado),
   ).length;
 
+  const solicitudesAprobadas = solicitudes.filter((s) =>
+    ['aprobado', 'generado', 'pago_validado'].includes(s.estado),
+  ).length;
+
+  const solicitudesRechazadas = solicitudes.filter((s) => s.estado === 'rechazado').length;
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-govBlue/15 bg-surface p-6">
-        <p className="text-sm font-semibold text-govBlue">Panel Administrativo</p>
-        <h1 className="mt-2 text-2xl font-semibold text-text">Control institucional de certificaciones</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Supervise solicitudes, pagos y certificados desde una vista consolidada.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Administrador"
+        title="Control institucional de certificaciones"
+        description="Supervise funcionarios, solicitudes, pagos, certificados y actividad reciente."
+      />
 
       <AdminStatsGrid
         certificadosGenerados={certificadosTotal}
         funcionariosRegistrados={esAdmin ? funcionariosTotal : undefined}
         pagosPorValidar={pagosPorValidar}
+        solicitudesAprobadas={solicitudesAprobadas}
         solicitudesPendientes={solicitudesPendientes}
+        solicitudesRechazadas={solicitudesRechazadas}
+        solicitudesTotales={solicitudes.length}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">

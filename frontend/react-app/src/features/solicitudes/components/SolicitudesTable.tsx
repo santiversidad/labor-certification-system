@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Button } from '../../../components/ui/Button';
 import { Table, type TableColumn } from '../../../components/ui/Table';
 import { formatDate } from '../../../lib/formatters/dates';
 import { SolicitudStatusBadge } from './SolicitudStatusBadge';
@@ -17,6 +18,7 @@ const columns: TableColumn<SolicitudCertificacion>[] = [
   { header: 'Solicitante', accessor: (row) => row.funcionario ? `${row.funcionario.nombres} ${row.funcionario.apellidos}` : '—' },
   { header: 'Estado', accessor: (row) => <SolicitudStatusBadge estado={row.estado} /> },
   { header: 'Fecha solicitud', accessor: (row) => row.created_at ? formatDate(row.created_at) : '—' },
+  { header: 'Accion', accessor: (row) => <Link to={`${row.id}`}><Button type="button" variant="secondary">Revisar</Button></Link> },
 ];
 
 export function SolicitudesTable({ solicitudes }: { solicitudes: SolicitudCertificacion[] }) {

@@ -18,6 +18,30 @@ export function isGestorRole(user: User | null): boolean {
   return Boolean(user?.roles.some((r) => r === 'admin' || r === 'secretario'));
 }
 
+export function isSecretary(user: User | null): boolean {
+  return Boolean(user?.roles.includes('secretario'));
+}
+
+export function isFuncionario(user: User | null): boolean {
+  return Boolean(user?.roles.includes('funcionario'));
+}
+
+export function getHomePath(user: User | null): string {
+  if (isAdmin(user)) {
+    return '/admin/dashboard';
+  }
+
+  if (isSecretary(user)) {
+    return '/admin/dashboard';
+  }
+
+  if (isFuncionario(user)) {
+    return '/app/inicio';
+  }
+
+  return '/login';
+}
+
 export function getPrimaryRole(user: User | null): Role | null {
   return user?.roles[0] ?? null;
 }

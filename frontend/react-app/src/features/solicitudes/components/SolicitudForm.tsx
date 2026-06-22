@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -12,6 +12,7 @@ import { solicitudesService } from '../services/solicitudes.service';
 
 export function SolicitudForm() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SolicitudFormValues>({
     resolver: zodResolver(solicitudSchema),
     defaultValues: { tipo_certificado: 'laboral', requiere_salario: false, observaciones: '' },
@@ -21,11 +22,12 @@ export function SolicitudForm() {
     mutationFn: solicitudesService.create,
     onSuccess: () => {
       reset({ tipo_certificado: 'laboral', requiere_salario: false, observaciones: '' });
+      navigate('/app/solicitudes/confirmacion', { replace: true });
     },
   });
 
   return (
-    <Card title="Datos de la solicitud" description="Formulario validado con React Hook Form y Zod.">
+    <Card title="Datos de la solicitud" description="Formulario validado antes de registrar la solicitud.">
       <form className="space-y-6" onSubmit={handleSubmit((values) => createMutation.mutate(values))}>
         <section className="grid gap-4 rounded-md border border-border bg-background p-4 md:grid-cols-3">
           <div>
@@ -78,14 +80,9 @@ export function SolicitudForm() {
             <span>{getErrorMessage(createMutation.error)}</span>
           </div>
         ) : null}
-        {createMutation.isSuccess ? (
-          <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-villavoGreen">
-            Solicitud enviada correctamente. Quedó en estado pendiente.
-          </div>
-        ) : null}
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Link to="/app/solicitudes">
+          <Link to="/app/inicio">
             <Button className="w-full sm:w-auto" icon={<ArrowLeft size={16} />} type="button" variant="secondary">Volver</Button>
           </Link>
           <Button className="w-full sm:w-auto" disabled={createMutation.isPending} icon={<Send size={16} />} type="submit">

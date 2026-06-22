@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
-import { isGestorRole } from '../../../lib/auth/permissions';
+import { getHomePath } from '../../../lib/auth/permissions';
 import { authStorage } from '../../../lib/auth/authStorage';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { authService } from '../services/auth.service';
@@ -26,8 +26,7 @@ export function LoginForm() {
     mutationFn: authService.login,
     onSuccess: (response) => {
       authStorage.setSession(response.data);
-      const target = isGestorRole(response.data.user) ? '/admin/dashboard' : '/app/dashboard';
-      navigate(target, { replace: true });
+      navigate(getHomePath(response.data.user), { replace: true });
     },
   });
 

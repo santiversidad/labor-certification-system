@@ -16,7 +16,7 @@ export function ValidationResultCard({ result }: { result: ValidacionCertificado
         </div>
         <div>
           <dt className="text-muted">Código único</dt>
-          <dd className="font-medium text-text">{result.codigo_unico}</dd>
+          <dd className="font-medium text-text">{result.codigo_unico ?? 'No encontrado'}</dd>
         </div>
         {result.funcionario_titular ? (
           <div>
@@ -37,6 +37,7 @@ export function ValidationResultCard({ result }: { result: ValidacionCertificado
           </div>
         ) : null}
       </dl>
+      {result.mensaje ? <p className="mt-4 rounded-md bg-background px-4 py-3 text-sm text-muted">{result.mensaje}</p> : null}
     </Card>
   );
 }

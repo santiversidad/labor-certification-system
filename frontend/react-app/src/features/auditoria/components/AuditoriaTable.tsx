@@ -6,6 +6,7 @@ const columns: TableColumn<AuditLog>[] = [
   { header: 'Usuario', accessor: (row) => row.user?.name ?? '—' },
   { header: 'Acción', accessor: 'accion' },
   { header: 'Módulo', accessor: 'modelo' },
+  { header: 'IP', accessor: (row) => row.ip_address ?? 'No disponible' },
   { header: 'Descripción', accessor: (row) => row.descripcion ?? '' },
   { header: 'Fecha', accessor: (row) => formatDate(row.created_at) },
 ];

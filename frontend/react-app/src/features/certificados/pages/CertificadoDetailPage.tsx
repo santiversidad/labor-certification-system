@@ -4,9 +4,11 @@ import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { PageHeader } from '../../../components/ui/PageHeader';
 import { formatDate } from '../../../lib/formatters/dates';
 import { DownloadCertificateButton } from '../components/DownloadCertificateButton';
 import { certificadosService } from '../services/certificados.service';
+import { canDownloadCertificado } from '../utils/certificadoRules';
 
 export function CertificadoDetailPage() {
   const { id = '' } = useParams();
@@ -25,15 +27,13 @@ export function CertificadoDetailPage() {
   }
 
   const certificado = data.data;
+  const canDownload = canDownloadCertificado(certificado);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Detalle de certificado</h1>
-        <p className="mt-1 text-sm text-muted">Información del certificado generado.</p>
-      </div>
+      <PageHeader title="Detalle de certificado" description="Información del certificado generado." />
       <Card
-        actions={<DownloadCertificateButton />}
+        actions={<DownloadCertificateButton disabled={!canDownload} />}
         title={certificado.codigo_unico}
         description="Información del certificado laboral."
       >

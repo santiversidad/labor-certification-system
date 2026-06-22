@@ -5,7 +5,7 @@
 export type ValidacionCertificado = {
   valido: boolean;
   estado: 'vigente' | 'anulado';
-  codigo_unico: string;
+  codigo_unico?: string;
   fecha_expedicion?: string;
   expedido_por?: string;
   tipo_certificado?: string;
@@ -13,4 +13,5 @@ export type ValidacionCertificado = {
     nombre_completo: string;
     documento: string;
   };
+  mensaje?: string;
 };

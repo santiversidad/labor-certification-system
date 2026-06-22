@@ -13,6 +13,13 @@ export type SolicitudEstado =
   | 'generado'
   | 'cancelado';
 
+export type SolicitudEvento = {
+  id: string;
+  titulo: string;
+  fecha: string;
+  descripcion?: string;
+};
+
 export type SolicitudCertificacion = {
   id: number;
   tipo_certificado: TipoCertificado;

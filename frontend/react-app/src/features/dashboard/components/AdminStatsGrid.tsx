@@ -1,4 +1,4 @@
-import { BadgeCheck, Clock3, CreditCard, Users } from 'lucide-react';
+import { BadgeCheck, CheckCircle, ClipboardList, Clock3, CreditCard, Users, XCircle } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 
 type AdminStat = {
@@ -10,17 +10,26 @@ type AdminStat = {
 
 export function AdminStatsGrid({
   solicitudesPendientes,
+  solicitudesTotales,
+  solicitudesAprobadas,
+  solicitudesRechazadas,
   certificadosGenerados,
   pagosPorValidar,
   funcionariosRegistrados,
 }: {
   solicitudesPendientes: number;
+  solicitudesTotales: number;
+  solicitudesAprobadas: number;
+  solicitudesRechazadas: number;
   certificadosGenerados: number;
   pagosPorValidar: number;
   funcionariosRegistrados?: number;
 }) {
   const stats: AdminStat[] = [
+    { label: 'Solicitudes totales', value: solicitudesTotales, helper: 'Tramites radicados', icon: ClipboardList },
     { label: 'Solicitudes pendientes', value: solicitudesPendientes, helper: 'Requieren revision', icon: Clock3 },
+    { label: 'Solicitudes aprobadas', value: solicitudesAprobadas, helper: 'Aprobadas o certificadas', icon: CheckCircle },
+    { label: 'Solicitudes rechazadas', value: solicitudesRechazadas, helper: 'No continuan proceso', icon: XCircle },
     { label: 'Certificados generados', value: certificadosGenerados, helper: 'Disponibles para descarga', icon: BadgeCheck },
     { label: 'Pagos por validar', value: pagosPorValidar, helper: 'Soportes cargados', icon: CreditCard },
     ...(funcionariosRegistrados !== undefined
