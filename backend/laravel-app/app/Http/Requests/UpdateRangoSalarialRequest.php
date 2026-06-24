@@ -19,6 +19,7 @@ class UpdateRangoSalarialRequest extends FormRequest
         return [
             'codigo'         => ['sometimes', 'string', 'max:10'],
             'grado'          => ['sometimes', 'string', 'max:5'],
+            'denominacion'   => ['nullable', 'string', 'max:200'],
             'vigencia_anio'  => [
                 'sometimes',
                 'integer',

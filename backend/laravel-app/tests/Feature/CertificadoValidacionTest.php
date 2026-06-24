@@ -136,6 +136,9 @@ class CertificadoValidacionTest extends TestCase
         $this->generarCertificadoYToken();
         $certificado = Certificado::firstOrFail();
 
+        // Limpiar la sesión activa que dejó actingAs() dentro de generarCertificadoYToken()
+        $this->app['auth']->forgetGuards();
+
         $this->getJson("/api/v1/certificados/{$certificado->id}/descargar")
             ->assertUnauthorized();
 

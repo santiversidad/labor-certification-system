@@ -9,7 +9,8 @@
       "Bash(laravel --version)",
       "Bash(mkdir -p backend frontend docs database)",
       "Bash(laravel new *)",
-      "Bash(composer require *)"
+      "Bash(composer require *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\NITRO V15\\\\proyectos\\\\SCL\\\\frontend\\\\react-app\\\\src\" -Recurse -Name | Where-Object { $_ -match \"rango|Rango|solicitud|Solicitud\" } | Select-Object -First 40)"
     ]
   }
 }

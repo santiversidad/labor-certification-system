@@ -17,6 +17,7 @@ class StoreRangoSalarialRequest extends FormRequest
         return [
             'codigo'         => ['required', 'string', 'max:10'],
             'grado'          => ['required', 'string', 'max:5'],
+            'denominacion'   => ['nullable', 'string', 'max:200'],
             'vigencia_anio'  => [
                 'required',
                 'integer',

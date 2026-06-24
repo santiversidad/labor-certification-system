@@ -1,21 +1,15 @@
 import type { SolicitudCertificacion } from '../types/solicitud.types';
 
+const ESTADOS_TERMINALES = ['aprobada', 'rechazada', 'certificado_generado', 'cerrada'] as const;
+
 export function canApproveSolicitud(solicitud: SolicitudCertificacion): boolean {
-  return !['aprobado', 'rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
+  return !ESTADOS_TERMINALES.includes(solicitud.estado as typeof ESTADOS_TERMINALES[number]);
 }
 
 export function canRejectSolicitud(solicitud: SolicitudCertificacion): boolean {
-  return !['rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
+  return !ESTADOS_TERMINALES.includes(solicitud.estado as typeof ESTADOS_TERMINALES[number]);
 }
 
 export function canGenerateCertificate(solicitud: SolicitudCertificacion): boolean {
-  if (['rechazado', 'cancelado', 'generado'].includes(solicitud.estado)) {
-    return false;
-  }
-
-  if (solicitud.requiere_pago) {
-    return solicitud.estado === 'pago_validado';
-  }
-
-  return solicitud.estado === 'aprobado';
+  return solicitud.estado === 'aprobada';
 }

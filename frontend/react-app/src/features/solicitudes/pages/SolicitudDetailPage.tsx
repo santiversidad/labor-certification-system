@@ -60,10 +60,11 @@ export function SolicitudDetailPage() {
 
   const solicitud = data.data;
 
-  const canApprove = !['aprobado', 'rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
-  const canReject = !['rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
-  const canMarkPayment = solicitud.requiere_pago && solicitud.estado === 'aprobado';
-  const canGenerate = solicitud.estado === 'pago_validado' || (solicitud.estado === 'aprobado' && !solicitud.requiere_pago);
+  const estadosTerminales = ['aprobada', 'rechazada', 'certificado_generado', 'cerrada'];
+  const canApprove = !estadosTerminales.includes(solicitud.estado);
+  const canReject = !estadosTerminales.includes(solicitud.estado);
+  const canMarkPayment = solicitud.requiere_pago && solicitud.estado === 'aprobada';
+  const canGenerate = solicitud.estado === 'aprobada';
 
   function handleReject() {
     if (!observacion.trim()) {

@@ -13,6 +13,7 @@ class RangoSalarialResource extends JsonResource
             'id'             => $this->id,
             'codigo'         => $this->codigo,
             'grado'          => $this->grado,
+            'denominacion'   => $this->denominacion,
             'vigencia_anio'  => $this->vigencia_anio,
             'salario_basico' => $this->salario_basico,
             'moneda'         => $this->moneda,

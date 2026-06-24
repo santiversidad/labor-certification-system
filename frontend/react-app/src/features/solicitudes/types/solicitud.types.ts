@@ -5,13 +5,12 @@ export type TipoCertificado = 'laboral' | 'funciones' | 'salario' | 'laboral_sal
 export type SolicitudEstado =
   | 'pendiente'
   | 'en_revision'
-  | 'requiere_pago'
-  | 'pago_pendiente'
-  | 'pago_validado'
-  | 'aprobado'
-  | 'rechazado'
-  | 'generado'
-  | 'cancelado';
+  | 'pendiente_pago'
+  | 'pago_en_revision'
+  | 'aprobada'
+  | 'rechazada'
+  | 'certificado_generado'
+  | 'cerrada';
 
 export type SolicitudEvento = {
   id: string;

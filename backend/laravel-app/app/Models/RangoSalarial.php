@@ -15,6 +15,7 @@ class RangoSalarial extends Model
     protected $fillable = [
         'codigo',
         'grado',
+        'denominacion',
         'vigencia_anio',
         'salario_basico',
         'moneda',

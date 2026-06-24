@@ -6,6 +6,7 @@ import type { RangoSalarial } from '../types/rangoSalarial.types';
 const columns: TableColumn<RangoSalarial>[] = [
   { header: 'Codigo', accessor: 'codigo' },
   { header: 'Grado', accessor: 'grado' },
+  { header: 'Denominación', accessor: (row) => row.denominacion ?? '—' },
   { header: 'Vigencia', accessor: 'vigencia_anio' },
   { header: 'Salario basico', accessor: (row) => formatCurrency(Number(row.salario_basico)) },
   { header: 'Estado', accessor: (row) => <Badge tone={row.estado ? 'green' : 'gray'}>{row.estado ? 'Activo' : 'Inactivo'}</Badge> },

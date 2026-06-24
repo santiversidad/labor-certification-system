@@ -2,6 +2,7 @@ export type RangoSalarial = {
   id: number;
   codigo: string;
   grado: string;
+  denominacion?: string | null;
   vigencia_anio: number;
   salario_basico: number | string;
   moneda: string;
