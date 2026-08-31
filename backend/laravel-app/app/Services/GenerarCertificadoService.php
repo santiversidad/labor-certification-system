@@ -6,9 +6,9 @@ use App\Enums\EstadoCertificadoEnum;
 use App\Enums\EstadoPagoEnum;
 use App\Enums\EstadoSolicitudEnum;
 use App\Models\Certificado;
-use App\Models\RangoSalarial;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -17,11 +17,12 @@ class GenerarCertificadoService
     public function __construct(
         private readonly PdfBasicoService $pdfBasicoService,
         private readonly TokenValidacionService $tokenValidacionService,
+        private readonly ConstruirSnapshotCertificadoService $construirSnapshot,
     ) {}
 
     public function generar(SolicitudCertificacion $solicitud, User $generadoPor): array
     {
-        $solicitud->loadMissing('funcionario.cargo', 'pagoSoporte', 'certificado');
+        $solicitud->loadMissing('funcionario.cargo', 'funcionario.historialCargos.cargo', 'pagoSoporte', 'certificado');
 
         if ($solicitud->estado !== EstadoSolicitudEnum::Aprobada) {
             throw ValidationException::withMessages([
@@ -42,17 +43,15 @@ class GenerarCertificadoService
         }
 
         $codigo = $this->codigoUnico();
-        $token = bin2hex(random_bytes(8));
+        $token = bin2hex(random_bytes(32));
         $urlValidacion = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/')
             . "/validar-certificado/{$token}";
 
+        $snapshot = $this->construirSnapshot->construir($solicitud, $generadoPor);
+
         $html = view('certificados.laboral', [
-            'solicitud'     => $solicitud,
-            'funcionario'   => $solicitud->funcionario,
-            'cargo'         => $solicitud->funcionario?->cargo,
-            'salario'       => $this->salarioPara($solicitud),
+            'snapshot'      => $snapshot,
             'codigo'        => $codigo,
-            'fecha'         => now(),
             'urlValidacion' => $urlValidacion,
         ])->render();
 
@@ -60,26 +59,53 @@ class GenerarCertificadoService
         $pdf = $this->pdfBasicoService->generarDesdeTexto($texto);
         $ruta = 'certificados/' . now()->format('Y') . "/{$codigo}.pdf";
 
-        Storage::disk('local')->put($ruta, $pdf);
+        try {
+            ['certificado' => $certificado, 'token' => $tokenValidacion] = DB::transaction(
+                function () use ($solicitud, $generadoPor, $codigo, $ruta, $pdf, $snapshot, $token) {
+                    $bloqueada = SolicitudCertificacion::query()
+                        ->whereKey($solicitud->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
-        $certificado = Certificado::create([
-            'solicitud_certificacion_id' => $solicitud->id,
-            'funcionario_id'             => $solicitud->funcionario_id,
-            'codigo_unico'               => $codigo,
-            'archivo_pdf_path'           => $ruta,
-            'hash_pdf'                   => hash('sha256', $pdf),
-            'fecha_generacion'           => now(),
-            'generado_por'               => $generadoPor->id,
-            'estado'                     => EstadoCertificadoEnum::Vigente,
-        ]);
+                    if ($bloqueada->certificado()->exists()) {
+                        throw ValidationException::withMessages([
+                            'certificado' => ['La solicitud ya tiene un certificado generado.'],
+                        ]);
+                    }
 
-        $tokenValidacion = $this->tokenValidacionService->crearParaCertificado($certificado, $generadoPor, $token);
+                    Storage::disk('local')->put($ruta, $pdf);
+                    $certificado = Certificado::create([
+                        'solicitud_certificacion_id' => $bloqueada->id,
+                        'funcionario_id'             => $bloqueada->funcionario_id,
+                        'codigo_unico'               => $codigo,
+                        'archivo_pdf_path'           => $ruta,
+                        'hash_pdf'                   => hash('sha256', $pdf),
+                        'snapshot_schema_version'    => ConstruirSnapshotCertificadoService::SCHEMA_VERSION,
+                        'snapshot_datos'             => $snapshot,
+                        'fecha_generacion'           => now(),
+                        'generado_por'               => $generadoPor->id,
+                        'estado'                     => EstadoCertificadoEnum::Vigente,
+                    ]);
 
-        $solicitud->update([
-            'estado'      => EstadoSolicitudEnum::CertificadoGenerado,
-            'reviewed_by' => $generadoPor->id,
-            'reviewed_at' => now(),
-        ]);
+                    $tokenValidacion = $this->tokenValidacionService->crearParaCertificado(
+                        $certificado,
+                        $generadoPor,
+                        $token,
+                    );
+
+                    $bloqueada->update([
+                        'estado'      => EstadoSolicitudEnum::CertificadoGenerado,
+                        'reviewed_by' => $generadoPor->id,
+                        'reviewed_at' => now(),
+                    ]);
+
+                    return ['certificado' => $certificado, 'token' => $tokenValidacion];
+                }
+            );
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($ruta);
+            throw $exception;
+        }
 
         return [
             'certificado'    => $certificado->fresh(['funcionario', 'solicitud', 'generadoPor']),
@@ -98,19 +124,4 @@ class GenerarCertificadoService
         return $codigo;
     }
 
-    private function salarioPara(SolicitudCertificacion $solicitud): ?string
-    {
-        if (! $solicitud->requiere_salario || ! $solicitud->funcionario?->cargo) {
-            return null;
-        }
-
-        $cargo = $solicitud->funcionario->cargo;
-        $rango = RangoSalarial::where('codigo', $cargo->codigo)
-            ->where('grado', $cargo->grado)
-            ->where('vigencia_anio', now()->year)
-            ->where('estado', true)
-            ->first();
-
-        return $rango?->salario_basico;
-    }
 }

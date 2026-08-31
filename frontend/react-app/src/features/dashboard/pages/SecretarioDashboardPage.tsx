@@ -24,9 +24,9 @@ export function SecretarioDashboardPage() {
     return <ErrorState />;
   }
 
-  const solicitudes = solicitudesQuery.data.data.data;
-  const pagos = pagosQuery.data.data.data;
-  const certificados = certificadosQuery.data.data.data;
+  const solicitudes = solicitudesQuery.data.data;
+  const pagos = pagosQuery.data.data;
+  const certificados = certificadosQuery.data.data;
   const pendientes = solicitudes.filter((item) => item.estado === 'pendiente' || item.estado === 'en_revision').length;
   const aprobadas = solicitudes.filter((item) => item.estado === 'aprobada' || item.estado === 'certificado_generado').length;
   const rechazadas = solicitudes.filter((item) => item.estado === 'rechazada').length;

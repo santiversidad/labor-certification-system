@@ -3,18 +3,29 @@ CERTIFICADO LABORAL TEMPORAL
 
 La Alcaldia certifica que:
 
-Nombre: {{ $funcionario?->nombres }} {{ $funcionario?->apellidos }}
-Documento: {{ $funcionario?->tipo_documento }} {{ $funcionario?->numero_documento }}
-Cargo: {{ $cargo?->denominacion ?? 'No registrado' }}
-Dependencia: {{ $funcionario?->dependencia ?? 'No registrada' }}
-Fecha de ingreso: {{ $funcionario?->fecha_ingreso?->toDateString() ?? 'No registrada' }}
+Nombre: {{ $snapshot['funcionario']['nombres'] }} {{ $snapshot['funcionario']['apellidos'] }}
+Documento: {{ $snapshot['funcionario']['tipo_documento'] }} {{ $snapshot['funcionario']['numero_documento'] }}
+Cargo: {{ $snapshot['cargo']['denominacion'] ?? 'No registrado' }}
+Codigo y grado: {{ $snapshot['cargo']['codigo'] ?? 'No registrado' }} / {{ $snapshot['cargo']['grado'] ?? 'No registrado' }}
+Dependencia: {{ $snapshot['cargo']['dependencia'] ?? 'No registrada' }}
+Fecha de ingreso: {{ $snapshot['funcionario']['fecha_ingreso'] ?? 'No registrada' }}
+Modalidad: {{ $snapshot['modalidad']['descripcion'] }}
 
-@if($solicitud->requiere_salario)
-Salario basico: {{ $salario ?? 'No disponible en rangos salariales' }}
+@if($snapshot['modalidad']['requiere_salario'])
+Salario basico: {{ $snapshot['salario']['valor'] ?? 'No disponible en la fuente salarial institucional' }} {{ $snapshot['salario']['moneda'] ?? '' }}
+@endif
+
+@if(!empty($snapshot['manual_funciones']))
+Manual de funciones: {{ $snapshot['manual_funciones']['manual_nombre'] }} — version {{ $snapshot['manual_funciones']['version'] }}
+Proposito principal: {{ $snapshot['manual_funciones']['proposito_principal'] }}
+Funciones esenciales:
+@foreach($snapshot['manual_funciones']['funciones'] as $funcion)
+{{ $funcion['orden'] }}. {{ $funcion['descripcion'] }}
+@endforeach
 @endif
 
 Codigo unico: {{ $codigo }}
-Fecha de generacion: {{ $fecha->toDateString() }}
+Fecha de generacion: {{ substr($snapshot['fecha_generacion'], 0, 10) }}
 
 Validacion temporal:
 {{ $urlValidacion }}

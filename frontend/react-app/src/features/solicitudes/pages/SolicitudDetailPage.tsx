@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, CreditCard, FileCheck, X } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
 import { Button } from '../../../components/ui/Button';
@@ -32,6 +32,7 @@ export function SolicitudDetailPage() {
   const [confirmAction, setConfirmAction] = useState<'aprobar' | 'pendiente_pago' | 'generar' | null>(null);
   const [observacion, setObservacion] = useState('');
   const [rejectError, setRejectError] = useState('');
+  const [certificadoGenerado, setCertificadoGenerado] = useState<{ id: number; codigo: string } | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['solicitud', id],
@@ -47,7 +48,17 @@ export function SolicitudDetailPage() {
   const approveMutation = useMutation({ mutationFn: () => solicitudesService.approve(id), onSuccess: invalidateSolicitud });
   const rejectMutation = useMutation({ mutationFn: () => solicitudesService.reject(id, observacion), onSuccess: invalidateSolicitud });
   const paymentMutation = useMutation({ mutationFn: () => solicitudesService.markPaymentPending(id), onSuccess: invalidateSolicitud });
-  const generateMutation = useMutation({ mutationFn: () => solicitudesService.generateCertificate(id), onSuccess: invalidateSolicitud });
+  const generateMutation = useMutation({
+    mutationFn: () => solicitudesService.generateCertificate(id),
+    onSuccess: (response) => {
+      setCertificadoGenerado({
+        id: response.data.certificado.id,
+        codigo: response.data.certificado.codigo_unico,
+      });
+      invalidateSolicitud();
+      void queryClient.invalidateQueries({ queryKey: ['certificados'] });
+    },
+  });
   const activeMutation = approveMutation.isPending || rejectMutation.isPending || paymentMutation.isPending || generateMutation.isPending;
 
   if (isLoading) {
@@ -60,10 +71,10 @@ export function SolicitudDetailPage() {
 
   const solicitud = data.data;
 
-  const canApprove = !['aprobado', 'rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
-  const canReject = !['rechazado', 'generado', 'cancelado'].includes(solicitud.estado);
-  const canMarkPayment = solicitud.requiere_pago && solicitud.estado === 'aprobado';
-  const canGenerate = solicitud.estado === 'pago_validado' || (solicitud.estado === 'aprobado' && !solicitud.requiere_pago);
+  const canApprove = !['aprobada', 'rechazada', 'certificado_generado', 'cerrada'].includes(solicitud.estado);
+  const canReject = !['rechazada', 'certificado_generado', 'cerrada'].includes(solicitud.estado);
+  const canMarkPayment = solicitud.requiere_pago && solicitud.estado === 'aprobada';
+  const canGenerate = solicitud.estado === 'aprobada';
 
   function handleReject() {
     if (!observacion.trim()) {
@@ -144,6 +155,14 @@ export function SolicitudDetailPage() {
                 <p className="text-sm text-villavoRed">
                   {getErrorMessage(approveMutation.error ?? rejectMutation.error ?? paymentMutation.error ?? generateMutation.error)}
                 </p>
+              ) : null}
+              {certificadoGenerado ? (
+                <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-villavoGreen">
+                  <p>Certificado {certificadoGenerado.codigo} generado correctamente.</p>
+                  <Link className="mt-2 inline-block font-semibold underline" to={`/admin/certificados/${certificadoGenerado.id}`}>
+                    Ir al detalle
+                  </Link>
+                </div>
               ) : null}
             </div>
           </Card>

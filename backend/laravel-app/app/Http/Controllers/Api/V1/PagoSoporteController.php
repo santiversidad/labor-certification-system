@@ -7,6 +7,7 @@ use App\Actions\ValidarPagoAction;
 use App\Enums\EstadoPagoEnum;
 use App\Enums\EstadoSolicitudEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\StorePagoSoporteRequest;
 use App\Http\Requests\ValidarPagoRequest;
 use App\Http\Resources\PagoSoporteResource;
@@ -17,6 +18,8 @@ use App\Services\PagoSoporteService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class PagoSoporteController extends Controller
 {
@@ -28,14 +31,14 @@ class PagoSoporteController extends Controller
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         $this->authorize('viewAny', PagoSoporte::class);
 
         $pagos = PagoSoporte::with(['solicitud', 'funcionario', 'validadoPor'])
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->estado))
             ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->funcionario_id))
-            ->latest()
+            ->orderBy($request->validated('orden', 'created_at'), $request->validated('direccion', 'desc'))
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
@@ -52,6 +55,41 @@ class PagoSoporteController extends Controller
         return $this->successResponse(
             new PagoSoporteResource($pagoModel),
             'Soporte de pago consultado correctamente.'
+        );
+    }
+
+    public function descargar(Request $request, int $pago)
+    {
+        $pagoModel = PagoSoporte::findOrFail($pago);
+        $this->authorize('descargar', $pagoModel);
+
+        if (! Storage::disk('local')->exists($pagoModel->archivo_path)) {
+            return $this->notFoundResponse('No se encontró el archivo del soporte de pago.');
+        }
+
+        $nombre = basename($pagoModel->archivo_original_nombre ?: 'soporte-pago');
+        $mime = Storage::disk('local')->mimeType($pagoModel->archivo_path)
+            ?: 'application/octet-stream';
+        $disposition = (new ResponseHeaderBag)->makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $nombre,
+            'soporte-pago',
+        );
+
+        $this->registrarAuditoria->execute(
+            accion: 'visualizar_soporte_pago',
+            modelo: 'PagoSoporte',
+            modeloId: $pagoModel->id,
+            descripcion: "Acceso autorizado al soporte de pago ID {$pagoModel->id}.",
+        );
+
+        return response()->file(
+            Storage::disk('local')->path($pagoModel->archivo_path),
+            [
+                'Content-Type' => $mime,
+                'Content-Disposition' => $disposition,
+                'X-Content-Type-Options' => 'nosniff',
+            ],
         );
     }
 

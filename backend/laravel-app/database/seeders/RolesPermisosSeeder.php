@@ -65,6 +65,12 @@ class RolesPermisosSeeder extends Seeder
         'actuaciones.ver',
         'actuaciones.crear',
         'actuaciones.editar',
+
+        // Manual Especifico de Funciones
+        'manual_funciones.ver',
+        'manual_funciones.crear',
+        'manual_funciones.editar',
+        'manual_funciones.publicar',
     ];
 
     public function run(): void
@@ -103,11 +109,10 @@ class RolesPermisosSeeder extends Seeder
             'reportes.ver',
         ]);
 
-        // Funcionario: crea solicitudes y carga soporte propio solo si el pago opcional aplica.
+        // Funcionario: alcance deliberadamente limitado a radicar su solicitud.
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
             'solicitudes.crear',
-            'pagos.cargar',
         ]);
 
         $this->command->info('Roles y permisos creados correctamente.');

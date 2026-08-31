@@ -44,6 +44,7 @@ trait ApiResponse
         string $message = 'No se pudo realizar la operación.',
         mixed $errors = null,
         int $status = 400,
+        ?string $code = null,
     ): JsonResponse {
         $response = [
             'success' => false,
@@ -52,6 +53,10 @@ trait ApiResponse
 
         if ($errors !== null) {
             $response['errors'] = $errors;
+        }
+
+        if ($code !== null) {
+            $response['code'] = $code;
         }
 
         return response()->json($response, $status);

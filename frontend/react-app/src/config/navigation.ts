@@ -11,8 +11,7 @@ export type NavigationItem = {
 
 // Rutas del funcionario (portal personal)
 export const appNavigation: NavigationItem[] = [
-  { label: 'Mis solicitudes',  path: '/app/solicitudes',         icon: ClipboardList, roles: ['funcionario'] },
-  { label: 'Nueva solicitud',  path: '/app/solicitudes/nueva',   icon: FileCheck,     roles: ['funcionario'] },
+  { label: 'Solicitar certificación', path: '/app/inicio', icon: FileCheck, roles: ['funcionario'] },
 ];
 
 // Rutas del panel de gestión (secretario + admin)

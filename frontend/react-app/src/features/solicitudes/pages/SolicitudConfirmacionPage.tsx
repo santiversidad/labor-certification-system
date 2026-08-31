@@ -1,4 +1,4 @@
-import { CheckCircle, FilePlus, Home } from 'lucide-react';
+import { CheckCircle, Home } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -6,6 +6,8 @@ import { PageHeader } from '../../../components/ui/PageHeader';
 
 type ConfirmationState = {
   radicado?: string;
+  requiereSalario?: boolean;
+  fechaRadicacion?: string;
 };
 
 export function SolicitudConfirmacionPage() {
@@ -29,15 +31,22 @@ export function SolicitudConfirmacionPage() {
               <p className="text-sm text-muted">Radicado</p>
               <p className="text-lg font-semibold text-text">{radicado ?? 'Pendiente de confirmacion del backend'}</p>
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-sm text-muted">Modalidad</p>
+                <p className="font-medium text-text">{state?.requiereSalario ? 'CON salario' : 'SIN salario'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted">Fecha de radicación</p>
+                <p className="font-medium text-text">{state?.fechaRadicacion ? new Date(state.fechaRadicacion).toLocaleString('es-CO') : 'Registrada'}</p>
+              </div>
+            </div>
             <p className="text-sm leading-6 text-muted">
               Guarde el numero de radicado para futuras consultas institucionales. La revision sera realizada por la dependencia correspondiente.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link to="/app/inicio">
                 <Button icon={<Home size={16} />} type="button" variant="secondary">Volver al inicio</Button>
-              </Link>
-              <Link to="/app/solicitudes/nueva">
-                <Button icon={<FilePlus size={16} />} type="button">Crear otra solicitud</Button>
               </Link>
             </div>
           </div>

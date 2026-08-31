@@ -27,6 +27,11 @@ class PagoSoportePolicy
         return $user->can('pagos.validar') && ! $user->hasRole('funcionario');
     }
 
+    public function descargar(User $user, PagoSoporte $pago): bool
+    {
+        return $user->can('pagos.ver') && ! $user->hasRole('funcionario');
+    }
+
     public function rechazar(User $user, PagoSoporte $pago): bool
     {
         return $user->can('pagos.rechazar') && ! $user->hasRole('funcionario');

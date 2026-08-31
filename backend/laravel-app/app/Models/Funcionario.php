@@ -30,9 +30,9 @@ class Funcionario extends Model
     protected function casts(): array
     {
         return [
-            'estado'        => EstadoFuncionarioEnum::class,
+            'estado' => EstadoFuncionarioEnum::class,
             'fecha_ingreso' => 'date',
-            'fecha_retiro'  => 'date',
+            'fecha_retiro' => 'date',
         ];
     }
 
@@ -71,6 +71,11 @@ class Funcionario extends Model
     public function certificados(): HasMany
     {
         return $this->hasMany(Certificado::class);
+    }
+
+    public function pagosSoportes(): HasMany
+    {
+        return $this->hasMany(PagoSoporte::class);
     }
 
     // ─── Scopes ──────────────────────────────────────────────────────────────

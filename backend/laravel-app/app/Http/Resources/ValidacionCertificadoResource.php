@@ -12,12 +12,14 @@ class ValidacionCertificadoResource extends JsonResource
         $data = $this->resource;
 
         return [
-            'valido'           => $data['valido'],
-            'codigo_unico'     => $data['codigo_unico'] ?? null,
+            'valido' => $data['valido'],
+            'resultado' => $data['resultado'] ?? null,
+            'codigo_unico' => $data['codigo_unico'] ?? null,
             'fecha_generacion' => $data['fecha_generacion'] ?? null,
-            'estado'           => $data['estado'] ?? null,
-            'mensaje'          => $data['mensaje'] ?? null,
-            'funcionario'      => $data['funcionario'] ?? null,
+            'estado' => $data['estado'] ?? null,
+            'mensaje' => $data['mensaje'] ?? null,
+            'funcionario' => $data['funcionario'] ?? null,
+            'cargo' => $data['cargo'] ?? null,
         ];
     }
 }

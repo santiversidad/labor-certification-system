@@ -7,6 +7,7 @@ use App\Enums\EstadoCertificadoEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ValidacionCertificadoResource;
 use App\Services\TokenValidacionService;
+use App\Services\VerificarIntegridadCertificadoService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -17,6 +18,7 @@ class ValidacionPublicaController extends Controller
     public function __construct(
         private readonly TokenValidacionService $tokenValidacionService,
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
+        private readonly VerificarIntegridadCertificadoService $verificarIntegridad,
     ) {}
 
     public function show(string $token): JsonResponse
@@ -25,13 +27,13 @@ class ValidacionPublicaController extends Controller
 
         if (! $tokenModel || ! $tokenModel->estaVigente() || ! $tokenModel->certificado) {
             return $this->errorResponse(
-                'No se encontro un certificado valido para el token suministrado.',
+                'Certificado no encontrado o código de validación inválido.',
                 null,
                 404
             )->setData([
                 'success' => false,
-                'message' => 'No se encontro un certificado valido para el token suministrado.',
-                'data' => ['valido' => false],
+                'message' => 'Certificado no encontrado o código de validación inválido.',
+                'data' => ['valido' => false, 'resultado' => 'no_encontrado'],
             ]);
         }
 
@@ -40,28 +42,42 @@ class ValidacionPublicaController extends Controller
             ? $certificado->estado
             : EstadoCertificadoEnum::from($certificado->estado);
 
-        $vigente = $estado->esVigenteParaValidacion();
-        $mensaje = $vigente
-            ? 'Certificado valido.'
-            : 'El certificado existe, pero no se encuentra vigente.';
+        $integridad = $this->verificarIntegridad->verificar($certificado);
+        $integro = $integridad === VerificarIntegridadCertificadoService::OK;
+        $vigente = $estado->esVigenteParaValidacion() && $integro;
+
+        if (! $integro) {
+            $resultado = 'integridad_comprometida';
+            $mensaje = 'El documento no pudo validarse.';
+        } elseif ($estado === EstadoCertificadoEnum::Anulado) {
+            $resultado = 'anulado';
+            $mensaje = 'CERTIFICADO ANULADO';
+        } else {
+            $resultado = $vigente ? 'valido' : 'no_vigente';
+            $mensaje = $vigente ? 'Certificado válido.' : 'El certificado existe, pero no se encuentra vigente.';
+        }
 
         $this->registrarAuditoria->execute(
             accion: 'validar_certificado_publico',
             modelo: 'Certificado',
             modeloId: $certificado->id,
             descripcion: "Validacion publica del certificado {$certificado->codigo_unico}.",
-            metadata: ['valido' => $vigente],
+            metadata: ['valido' => $vigente, 'resultado' => $resultado],
         );
 
+        $snapshot = $certificado->snapshot_datos ?? [];
+
         $data = [
-            'valido'           => $vigente,
-            'codigo_unico'    => $certificado->codigo_unico,
-            'fecha_generacion'=> $certificado->fecha_generacion?->toDateString(),
-            'estado'          => $estado->value,
-            'mensaje'         => $mensaje,
-            'funcionario'     => $certificado->funcionario ? [
-                'nombre' => trim($certificado->funcionario->nombres . ' ' . $certificado->funcionario->apellidos),
+            'valido' => $vigente,
+            'resultado' => $resultado,
+            'codigo_unico' => $certificado->codigo_unico,
+            'fecha_generacion' => $certificado->fecha_generacion?->toDateString(),
+            'estado' => $estado->value,
+            'mensaje' => $mensaje,
+            'funcionario' => isset($snapshot['funcionario']) ? [
+                'nombre' => trim(($snapshot['funcionario']['nombres'] ?? '').' '.($snapshot['funcionario']['apellidos'] ?? '')),
             ] : null,
+            'cargo' => $snapshot['cargo']['denominacion'] ?? null,
         ];
 
         return $this->successResponse(new ValidacionCertificadoResource($data), $mensaje);

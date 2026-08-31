@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\StoreFuncionarioRequest;
 use App\Http\Requests\UpdateFuncionarioRequest;
 use App\Http\Resources\FuncionarioResource;
@@ -23,7 +24,7 @@ class FuncionarioController extends Controller
     /**
      * GET /api/v1/funcionarios
      */
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         $this->authorize('funcionarios.ver');
 
@@ -38,7 +39,7 @@ class FuncionarioController extends Controller
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->estado))
             ->when($request->filled('dependencia'), fn ($q) => $q->where('dependencia', 'ilike', "%{$request->dependencia}%"))
             ->when($request->filled('cargo_id'), fn ($q) => $q->where('cargo_id', $request->cargo_id))
-            ->orderBy('apellidos')
+            ->orderBy($request->validated('orden', 'apellidos'), $request->validated('direccion', 'asc'))
             ->orderBy('nombres')
             ->paginate($request->integer('per_page', 15));
 
@@ -86,6 +87,7 @@ class FuncionarioController extends Controller
     public function update(UpdateFuncionarioRequest $request, int $funcionario): JsonResponse
     {
         $funcionarioModel = Funcionario::findOrFail($funcionario);
+        $anterior = $funcionarioModel->getAttributes();
         $funcionarioModel->update($request->validated());
 
         $this->registrarAuditoria->execute(
@@ -93,6 +95,7 @@ class FuncionarioController extends Controller
             modelo: 'Funcionario',
             modeloId: $funcionarioModel->id,
             descripcion: "Funcionario actualizado: {$funcionarioModel->nombres} {$funcionarioModel->apellidos}",
+            metadata: ['anterior' => $anterior, 'nuevo' => $funcionarioModel->fresh()->getAttributes()],
         );
 
         return $this->successResponse(
@@ -111,10 +114,36 @@ class FuncionarioController extends Controller
         $funcionarioModel = Funcionario::findOrFail($funcionario);
         $nombre = "{$funcionarioModel->nombres} {$funcionarioModel->apellidos}";
 
+        $relaciones = [
+            'solicitudes' => $funcionarioModel->solicitudes()->count(),
+            'certificados' => $funcionarioModel->certificados()->count(),
+            'actuaciones' => $funcionarioModel->actuaciones()->count(),
+            'historial_cargos' => $funcionarioModel->historialCargos()->count(),
+            'pagos' => $funcionarioModel->pagosSoportes()->count(),
+        ];
+        $relacionesExistentes = array_filter($relaciones, fn (int $cantidad) => $cantidad > 0);
+
+        if ($relacionesExistentes !== []) {
+            $this->registrarAuditoria->execute(
+                accion: 'eliminar_funcionario_bloqueado',
+                modelo: 'Funcionario',
+                modeloId: $funcionarioModel->id,
+                descripcion: "Se bloqueó la eliminación de {$nombre} porque conserva información administrativa relacionada.",
+                metadata: ['relaciones' => $relacionesExistentes],
+            );
+
+            return $this->errorResponse(
+                'El funcionario no puede eliminarse porque tiene información administrativa relacionada.',
+                ['relaciones' => array_keys($relacionesExistentes)],
+                409,
+                'EMPLOYEE_HAS_HISTORY',
+            );
+        }
+
         $funcionarioModel->delete();
 
         $this->registrarAuditoria->execute(
-            accion: 'eliminar',
+            accion: 'eliminar_funcionario_sin_historial',
             modelo: 'Funcionario',
             modeloId: $funcionario,
             descripcion: "Funcionario eliminado: {$nombre}",

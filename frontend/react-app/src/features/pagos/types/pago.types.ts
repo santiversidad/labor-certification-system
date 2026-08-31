@@ -1,4 +1,4 @@
-export type PagoEstado = 'pendiente' | 'aprobado' | 'rechazado';
+export type PagoEstado = 'no_requerido' | 'pendiente' | 'cargado' | 'aprobado' | 'rechazado';
 
 export type PagoSoporte = {
   id: number;

@@ -130,6 +130,7 @@ class SolicitudCertificacionTest extends TestCase
         $response = $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson('/api/v1/solicitudes', [
                 'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
+                'requiere_salario' => false,
             ]);
 
         $response->assertCreated();

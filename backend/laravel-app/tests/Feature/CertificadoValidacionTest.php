@@ -13,6 +13,7 @@ use App\Models\Certificado;
 use App\Models\Funcionario;
 use App\Models\PagoSoporte;
 use App\Models\SolicitudCertificacion;
+use App\Models\TokenValidacion;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,8 +25,11 @@ class CertificadoValidacionTest extends TestCase
     use RefreshDatabase;
 
     private User $secretario;
+
     private User $admin;
+
     private User $funcionarioUser;
+
     private Funcionario $funcionario;
 
     protected function setUp(): void
@@ -136,6 +140,10 @@ class CertificadoValidacionTest extends TestCase
         $this->generarCertificadoYToken();
         $certificado = Certificado::firstOrFail();
 
+        // El helper se autentica para generar el certificado. Reiniciamos los
+        // guards para que la primera descarga pruebe realmente un cliente anónimo.
+        $this->app['auth']->forgetGuards();
+
         $this->getJson("/api/v1/certificados/{$certificado->id}/descargar")
             ->assertUnauthorized();
 
@@ -144,6 +152,72 @@ class CertificadoValidacionTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseHas('audit_logs', ['accion' => 'descargar_certificado']);
+    }
+
+    public function test_token_nuevo_tiene_256_bits_y_campos_temporales_inactivos(): void
+    {
+        $token = $this->generarCertificadoYToken();
+        $tokenModel = TokenValidacion::firstOrFail();
+
+        $this->assertSame(64, strlen($token));
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $token);
+        $this->assertTrue(hash_equals(hash('sha256', $token), $tokenModel->token_hash));
+        $this->assertNull($tokenModel->expires_at);
+        $this->assertNull($tokenModel->used_at);
+    }
+
+    public function test_archivo_pdf_alterado_no_se_descarga_ni_valida_como_valido(): void
+    {
+        $token = $this->generarCertificadoYToken();
+        $certificado = Certificado::firstOrFail();
+        Storage::disk('local')->put($certificado->archivo_pdf_path, 'contenido alterado');
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->getJson("/api/v1/certificados/{$certificado->id}/descargar")
+            ->assertConflict()
+            ->assertJsonPath('code', 'CERTIFICATE_INTEGRITY_FAILURE');
+
+        $this->getJson("/api/v1/validar-certificado/{$token}")
+            ->assertOk()
+            ->assertJsonPath('data.valido', false)
+            ->assertJsonPath('data.resultado', 'integridad_comprometida')
+            ->assertJsonPath('data.mensaje', 'El documento no pudo validarse.');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'accion' => 'integridad_certificado_comprometida',
+            'modelo_id' => $certificado->id,
+        ]);
+    }
+
+    public function test_certificado_anulado_no_puede_descargarse_y_se_identifica_expresamente(): void
+    {
+        $token = $this->generarCertificadoYToken();
+        $certificado = Certificado::firstOrFail();
+        $certificado->update(['estado' => EstadoCertificadoEnum::Anulado]);
+
+        $this->actingAs($this->secretario, 'sanctum')
+            ->getJson("/api/v1/certificados/{$certificado->id}/descargar")
+            ->assertConflict()
+            ->assertJsonPath('code', 'CERTIFICATE_ANNULLED');
+
+        $this->getJson("/api/v1/validar-certificado/{$token}")
+            ->assertOk()
+            ->assertJsonPath('data.valido', false)
+            ->assertJsonPath('data.resultado', 'anulado')
+            ->assertJsonPath('data.mensaje', 'CERTIFICADO ANULADO');
+    }
+
+    public function test_archivo_ausente_retorna_respuesta_controlada_sin_ruta_fisica(): void
+    {
+        $this->generarCertificadoYToken();
+        $certificado = Certificado::firstOrFail();
+        Storage::disk('local')->delete($certificado->archivo_pdf_path);
+
+        $response = $this->actingAs($this->secretario, 'sanctum')
+            ->getJson("/api/v1/certificados/{$certificado->id}/descargar")
+            ->assertNotFound();
+
+        $this->assertStringNotContainsString($certificado->archivo_pdf_path, (string) $response->getContent());
     }
 
     private function generarCertificadoYToken(): string

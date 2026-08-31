@@ -5,15 +5,19 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\RegistrarAuditoriaAction;
 use App\Enums\EstadoSolicitudEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\RechazarSolicitudRequest;
 use App\Http\Requests\StoreSolicitudCertificacionRequest;
 use App\Http\Requests\UpdateEstadoSolicitudRequest;
 use App\Http\Resources\SolicitudCertificacionResource;
 use App\Models\ParametroSistema;
 use App\Models\SolicitudCertificacion;
+use App\Services\DisponibilidadCertificacionService;
 use App\Traits\ApiResponse;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SolicitudCertificacionController extends Controller
 {
@@ -21,26 +25,22 @@ class SolicitudCertificacionController extends Controller
 
     public function __construct(
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
+        private readonly DisponibilidadCertificacionService $disponibilidad,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         $this->authorize('viewAny', SolicitudCertificacion::class);
 
-        $estado = null;
-        if ($request->filled('estado')) {
-            try {
-                $estado = EstadoSolicitudEnum::fromInput((string) $request->estado)->value;
-            } catch (\ValueError) {
-                return $this->errorResponse('El estado indicado no es valido.', ['estado' => ['Estado no valido.']], 422);
-            }
-        }
+        $estado = $request->filled('estado') ? (string) $request->validated('estado') : null;
 
         $query = SolicitudCertificacion::with(['funcionario.cargo', 'creadoPor', 'revisadoPor'])
             ->when($estado !== null, fn ($q) => $q->where('estado', $estado))
             ->when($request->filled('tipo_certificado'), fn ($q) => $q->where('tipo_certificado', $request->tipo_certificado))
             ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->funcionario_id))
-            ->latest();
+            ->when($request->filled('fecha_desde'), fn ($q) => $q->whereDate('created_at', '>=', $request->fecha_desde))
+            ->when($request->filled('fecha_hasta'), fn ($q) => $q->whereDate('created_at', '<=', $request->fecha_hasta))
+            ->orderBy($request->validated('orden', 'created_at'), $request->validated('direccion', 'desc'));
 
         $solicitudes = $query->paginate($request->integer('per_page', 15));
 
@@ -64,35 +64,78 @@ class SolicitudCertificacionController extends Controller
             );
         }
 
-        if (SolicitudCertificacion::tieneActivaPara($funcionario->id)) {
-            return $this->errorResponse(
-                'Ya tiene una solicitud en proceso. Debe esperar a que sea resuelta antes de crear una nueva.',
-                null,
-                422
-            );
+        $requiereSalario = $request->boolean('requiere_salario');
+        $periodo = $this->disponibilidad->periodo();
+        $modalidad = $requiereSalario ? 'con salario' : 'sin salario';
+
+        $yaExiste = SolicitudCertificacion::query()
+            ->where('funcionario_id', $funcionario->id)
+            ->whereDate('periodo_mes', $periodo->toDateString())
+            ->where('requiere_salario', $requiereSalario)
+            ->exists();
+
+        if ($yaExiste) {
+            return $this->limiteMensualResponse($modalidad);
         }
 
-        $solicitud = SolicitudCertificacion::create([
-            'funcionario_id'   => $funcionario->id,
-            'tipo_certificado' => $request->tipo_certificado,
-            'estado'           => EstadoSolicitudEnum::Pendiente,
-            'requiere_pago'    => false,
-            'requiere_salario' => $request->boolean('requiere_salario', false),
-            'observaciones'    => $request->observaciones,
-            'created_by'       => $request->user()->id,
-        ]);
+        try {
+            $solicitud = DB::transaction(function () use ($request, $funcionario, $requiereSalario, $periodo) {
+                // Serializa el consecutivo anual del radicado. La cuota mensual se
+                // protege definitivamente mediante el UNIQUE de PostgreSQL.
+                DB::select('SELECT pg_advisory_xact_lock(?)', [$periodo->year]);
 
-        $this->registrarAuditoria->execute(
-            accion: 'crear_solicitud',
-            modelo: 'SolicitudCertificacion',
-            modeloId: $solicitud->id,
-            descripcion: "Solicitud {$solicitud->radicado} creada por funcionario ID {$funcionario->id}.",
-        );
+                $solicitud = SolicitudCertificacion::create([
+                    'funcionario_id' => $funcionario->id,
+                    'tipo_certificado' => $request->validated('tipo_certificado'),
+                    'estado' => EstadoSolicitudEnum::Pendiente,
+                    'requiere_pago' => false,
+                    'requiere_salario' => $requiereSalario,
+                    'periodo_mes' => $periodo->toDateString(),
+                    'observaciones' => $request->validated('observaciones'),
+                    'created_by' => $request->user()->id,
+                ]);
+
+                $this->registrarAuditoria->execute(
+                    accion: 'crear_solicitud',
+                    modelo: 'SolicitudCertificacion',
+                    modeloId: $solicitud->id,
+                    descripcion: "Solicitud {$solicitud->radicado} creada por funcionario ID {$funcionario->id}.",
+                    metadata: [
+                        'periodo_mes' => $periodo->toDateString(),
+                        'requiere_salario' => $requiereSalario,
+                    ],
+                );
+
+                return $solicitud;
+            });
+        } catch (QueryException $exception) {
+            if ($this->esColisionMensual($exception)) {
+                return $this->limiteMensualResponse($modalidad);
+            }
+
+            throw $exception;
+        }
 
         return $this->createdResponse(
             new SolicitudCertificacionResource($solicitud->load('funcionario.cargo')),
             'Solicitud creada correctamente.'
         );
+    }
+
+    private function limiteMensualResponse(string $modalidad): JsonResponse
+    {
+        return $this->errorResponse(
+            "Ya existe una solicitud de certificación {$modalidad} para el mes actual.",
+            null,
+            409,
+            'MONTHLY_CERTIFICATE_LIMIT',
+        );
+    }
+
+    private function esColisionMensual(QueryException $exception): bool
+    {
+        return (string) $exception->getCode() === '23505'
+            && str_contains((string) ($exception->errorInfo[2] ?? ''), 'solicitudes_funcionario_periodo_modalidad_unique');
     }
 
     public function show(Request $request, int $solicitud): JsonResponse
@@ -212,12 +255,12 @@ class SolicitudCertificacionController extends Controller
         $estadoAnterior = $solicitudModel->estado->value;
 
         $solicitudModel->update([
-            'estado'         => $nuevoEstado,
+            'estado' => $nuevoEstado,
             'motivo_rechazo' => $motivoRechazo,
-            'observaciones'  => $observaciones ?? $solicitudModel->observaciones,
-            'requiere_pago'  => $requierePago ?? $solicitudModel->requiere_pago,
-            'reviewed_by'    => $request->user()->id,
-            'reviewed_at'    => now(),
+            'observaciones' => $observaciones ?? $solicitudModel->observaciones,
+            'requiere_pago' => $requierePago ?? $solicitudModel->requiere_pago,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
         ]);
 
         $this->registrarAuditoria->execute(
@@ -227,8 +270,8 @@ class SolicitudCertificacionController extends Controller
             descripcion: "Solicitud {$solicitudModel->radicado} cambio de '{$estadoAnterior}' a '{$nuevoEstado->value}'.",
             metadata: [
                 'estado_anterior' => $estadoAnterior,
-                'estado_nuevo'    => $nuevoEstado->value,
-                'motivo_rechazo'  => $motivoRechazo,
+                'estado_nuevo' => $nuevoEstado->value,
+                'motivo_rechazo' => $motivoRechazo,
             ],
         );
 

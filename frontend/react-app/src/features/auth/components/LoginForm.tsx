@@ -16,10 +16,9 @@ export function LoginForm() {
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      cedula: '000000003',
-      password: 'password',
-    },
+    defaultValues: import.meta.env.DEV
+      ? { cedula: '000000003', password: 'password' }
+      : { cedula: '', password: '' },
   });
 
   const loginMutation = useMutation({
@@ -40,11 +39,11 @@ export function LoginForm() {
           {loginMutation.isPending ? 'Ingresando...' : 'Ingresar'}
         </Button>
       </form>
-      <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted space-y-1">
+      {import.meta.env.DEV ? <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted space-y-1" data-testid="demo-credentials">
         <p><span className="font-semibold text-text">000000003</span> / password — Funcionario</p>
         <p><span className="font-semibold text-text">000000002</span> / password — Secretario</p>
         <p><span className="font-semibold text-text">000000001</span> / password — Administrador</p>
-      </div>
+      </div> : null}
     </Card>
   );
 }

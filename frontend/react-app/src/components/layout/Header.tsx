@@ -4,15 +4,23 @@ import { Button } from '../ui/Button';
 import { roleLabels } from '../../config/roles';
 import { getPrimaryRole } from '../../lib/auth/permissions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { authService } from '../../features/auth/services/auth.service';
+import { useState } from 'react';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const primaryRole = getPrimaryRole(user);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  function handleLogout() {
-    logout();
-    navigate('/login', { replace: true });
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      navigate('/login', { replace: true });
+    }
   }
 
   return (
@@ -24,8 +32,8 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           <p className="truncate text-xs text-muted">{primaryRole ? roleLabels[primaryRole] : 'Sin rol'}</p>
         </div>
       </div>
-      <Button icon={<LogOut size={16} />} onClick={handleLogout} type="button" variant="secondary">
-        Salir
+      <Button disabled={isLoggingOut} icon={<LogOut size={16} />} onClick={handleLogout} type="button" variant="secondary">
+        {isLoggingOut ? 'Saliendo...' : 'Salir'}
       </Button>
     </header>
   );

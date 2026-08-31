@@ -33,7 +33,7 @@ export function CertificadoDetailPage() {
     <div className="space-y-6">
       <PageHeader title="Detalle de certificado" description="Información del certificado generado." />
       <Card
-        actions={<DownloadCertificateButton disabled={!canDownload} />}
+        actions={<DownloadCertificateButton certificadoId={certificado.id} disabled={!canDownload} />}
         title={certificado.codigo_unico}
         description="Información del certificado laboral."
       >

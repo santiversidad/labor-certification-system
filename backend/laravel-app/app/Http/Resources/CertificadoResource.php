@@ -17,6 +17,8 @@ class CertificadoResource extends JsonResource
             'created_at'       => $this->created_at?->toISOString(),
             'motivo_anulacion' => $this->motivo_anulacion,
             'anulado_at'       => $this->anulado_at?->toISOString(),
+            'snapshot_schema_version' => $this->snapshot_schema_version,
+            'snapshot_datos'   => $this->snapshot_datos,
             'generado_por'     => $this->whenLoaded('generadoPor', function () {
                 return [
                     'id'   => $this->generadoPor->id,

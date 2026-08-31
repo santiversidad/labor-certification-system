@@ -1,17 +1,10 @@
-/**
- * El endpoint público de validación aún no está implementado en el backend.
- * Estructura propuesta basada en el plan del Sprint 2 módulo 4.
- */
 export type ValidacionCertificado = {
   valido: boolean;
-  estado: 'vigente' | 'anulado';
+  resultado: 'valido' | 'anulado' | 'integridad_comprometida' | 'no_vigente' | 'no_encontrado';
+  estado?: 'vigente' | 'descargado' | 'anulado' | 'vencido' | null;
   codigo_unico?: string;
-  fecha_expedicion?: string;
-  expedido_por?: string;
-  tipo_certificado?: string;
-  funcionario_titular?: {
-    nombre_completo: string;
-    documento: string;
-  };
+  fecha_generacion?: string;
+  funcionario?: { nombre: string } | null;
+  cargo?: string | null;
   mensaje?: string;
 };

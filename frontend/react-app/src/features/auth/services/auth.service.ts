@@ -18,6 +18,6 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await apiClient.post('/auth/logout');
+    await apiClient.post(endpoints.auth.logout);
   },
 };

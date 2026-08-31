@@ -3,10 +3,10 @@ import type { ReporteResumen } from '../types/reporte.types';
 
 export function ReportsSummary({ resumen }: { resumen: ReporteResumen }) {
   const items = [
-    ['Total solicitudes', resumen.totalSolicitudes],
-    ['Aprobadas', resumen.solicitudesAprobadas],
-    ['Certificados generados', resumen.certificadosGenerados],
-    ['Pagos pendientes', resumen.pagosPendientes],
+    ['Total solicitudes', resumen.total_solicitudes],
+    ['Aprobadas', resumen.solicitudes_aprobadas],
+    ['Certificados generados', resumen.certificados_generados],
+    ['Pagos pendientes', resumen.pagos_pendientes],
   ] as const;
 
   return (

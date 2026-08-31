@@ -11,7 +11,7 @@ type TableProps<T> = {
   emptyMessage?: string;
 };
 
-export function Table<T extends { id: string }>({ columns, data, emptyMessage = 'Sin registros.' }: TableProps<T>) {
+export function Table<T extends { id: string | number }>({ columns, data, emptyMessage = 'Sin registros.' }: TableProps<T>) {
   return (
     <div className="overflow-hidden rounded-md border border-border">
       <div className="overflow-x-auto">

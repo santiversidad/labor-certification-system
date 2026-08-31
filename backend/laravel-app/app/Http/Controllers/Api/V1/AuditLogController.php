@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AuditLogResource;
+use App\Http\Requests\IndexQueryRequest;
 use App\Models\AuditLog;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +14,7 @@ class AuditLogController extends Controller
 {
     use ApiResponse;
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         if (! $request->user()->can('auditoria.ver')) {
             return $this->forbiddenResponse('No tiene permisos para consultar la auditoria.');
@@ -27,7 +28,7 @@ class AuditLogController extends Controller
             ->when($request->filled('modelo'), fn ($q) => $q->where('modelo', $request->modelo))
             ->when($request->filled('fecha_desde'), fn ($q) => $q->whereDate('created_at', '>=', $request->fecha_desde))
             ->when($request->filled('fecha_hasta'), fn ($q) => $q->whereDate('created_at', '<=', $request->fecha_hasta))
-            ->latest('created_at')
+            ->orderBy($request->validated('orden', 'created_at'), $request->validated('direccion', 'desc'))
             ->paginate($request->integer('per_page', 20));
 
         return $this->successResponse(

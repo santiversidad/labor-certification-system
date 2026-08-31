@@ -1,4 +1,5 @@
 import type { ApiError } from '../api/api.types';
+import axios from 'axios';
 
 export function getErrorMessage(error: unknown): string {
   if (typeof error !== 'object' || error === null) {
@@ -17,4 +18,9 @@ export function getErrorMessage(error: unknown): string {
   }
 
   return 'Ocurrió un error inesperado.';
+}
+
+export function getValidationErrors(error: unknown): Record<string, string[]> {
+  if (!axios.isAxiosError<{ errors?: Record<string, string[]> }>(error)) return {};
+  return error.response?.data.errors ?? {};
 }

@@ -7,6 +7,7 @@ use App\Enums\TipoCertificadoEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class SolicitudCertificacion extends Model
 {
@@ -19,6 +20,7 @@ class SolicitudCertificacion extends Model
         'estado',
         'requiere_pago',
         'requiere_salario',
+        'periodo_mes',
         'observaciones',
         'motivo_rechazo',
         'created_by',
@@ -33,33 +35,16 @@ class SolicitudCertificacion extends Model
         parent::boot();
 
         static::creating(function (self $solicitud): void {
+            if (empty($solicitud->periodo_mes)) {
+                $solicitud->periodo_mes = Carbon::now(config('app.timezone'))->startOfMonth()->toDateString();
+            }
+
             if (empty($solicitud->radicado)) {
                 $anio        = now()->year;
                 $consecutivo = static::whereYear('created_at', $anio)->count() + 1;
                 $solicitud->radicado = sprintf('CL-%d-%06d', $anio, $consecutivo);
             }
         });
-    }
-
-    // ─── Consultas de negocio ────────────────────────────────────────────────
-
-    /** Estados que bloquean una nueva solicitud del mismo funcionario. */
-    public static function estadosActivos(): array
-    {
-        return [
-            EstadoSolicitudEnum::Pendiente->value,
-            EstadoSolicitudEnum::EnRevision->value,
-            EstadoSolicitudEnum::PendientePago->value,
-            EstadoSolicitudEnum::PagoEnRevision->value,
-            EstadoSolicitudEnum::Aprobada->value,
-        ];
-    }
-
-    public static function tieneActivaPara(int $funcionarioId): bool
-    {
-        return static::where('funcionario_id', $funcionarioId)
-            ->whereIn('estado', static::estadosActivos())
-            ->exists();
     }
 
     protected function casts(): array
@@ -69,6 +54,7 @@ class SolicitudCertificacion extends Model
             'estado'           => EstadoSolicitudEnum::class,
             'requiere_pago'    => 'boolean',
             'requiere_salario' => 'boolean',
+            'periodo_mes'      => 'date:Y-m-d',
             'reviewed_at'      => 'datetime',
         ];
     }

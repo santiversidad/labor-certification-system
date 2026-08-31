@@ -52,10 +52,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate replace to="/app/inicio" /> },
       { path: 'inicio', element: <FuncionarioDashboardPage /> },
-      { path: 'solicitudes', element: <SolicitudesPage /> },
       { path: 'solicitudes/nueva', element: <SolicitudCertificadoPage /> },
       { path: 'solicitudes/confirmacion', element: <SolicitudConfirmacionPage /> },
-      { path: 'solicitudes/:id', element: <SolicitudDetailPage /> },
     ],
   },
   {

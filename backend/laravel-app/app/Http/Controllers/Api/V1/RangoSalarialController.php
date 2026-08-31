@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\StoreRangoSalarialRequest;
 use App\Http\Requests\UpdateRangoSalarialRequest;
 use App\Http\Resources\RangoSalarialResource;
@@ -23,7 +24,7 @@ class RangoSalarialController extends Controller
     /**
      * GET /api/v1/rangos-salariales
      */
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         $this->authorize('rangos_salariales.ver');
 
@@ -31,7 +32,7 @@ class RangoSalarialController extends Controller
             ->when($request->filled('vigencia'), fn ($q) => $q->where('vigencia_anio', $request->integer('vigencia')))
             ->when($request->filled('codigo'), fn ($q) => $q->where('codigo', $request->codigo))
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->boolean('estado')))
-            ->orderByDesc('vigencia_anio')
+            ->orderBy($request->validated('orden', 'vigencia_anio'), $request->validated('direccion', 'desc'))
             ->orderBy('codigo')
             ->paginate($request->integer('per_page', 15));
 
@@ -56,6 +57,7 @@ class RangoSalarialController extends Controller
             modelo: 'RangoSalarial',
             modeloId: $rango->id,
             descripcion: "Rango salarial creado: código {$rango->codigo} grado {$rango->grado} vigencia {$rango->vigencia_anio}",
+            metadata: ['nuevo' => $rango->getAttributes()],
         );
 
         return $this->createdResponse(new RangoSalarialResource($rango), 'Rango salarial creado correctamente.');
@@ -69,6 +71,7 @@ class RangoSalarialController extends Controller
         $this->authorize('rangos_salariales.ver');
 
         $rango = RangoSalarial::findOrFail($rango_salarial);
+        $anterior = $rango->getAttributes();
 
         return $this->successResponse(new RangoSalarialResource($rango));
     }
@@ -90,6 +93,7 @@ class RangoSalarialController extends Controller
             modelo: 'RangoSalarial',
             modeloId: $rango->id,
             descripcion: "Rango salarial actualizado: código {$rango->codigo} grado {$rango->grado} vigencia {$rango->vigencia_anio}",
+            metadata: ['anterior' => $anterior, 'nuevo' => $rango->fresh()->getAttributes()],
         );
 
         return $this->successResponse(new RangoSalarialResource($rango), 'Rango salarial actualizado correctamente.');
@@ -101,8 +105,8 @@ class RangoSalarialController extends Controller
     public function consultar(Request $request): JsonResponse
     {
         $request->validate([
-            'codigo'   => ['required', 'string'],
-            'grado'    => ['required', 'string'],
+            'codigo' => ['required', 'string'],
+            'grado' => ['required', 'string'],
             'vigencia' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 

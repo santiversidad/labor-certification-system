@@ -31,4 +31,9 @@ class Cargo extends Model
     {
         return $this->hasMany(Funcionario::class);
     }
+
+    public function versionesManual(): HasMany
+    {
+        return $this->hasMany(ManualCargoVersion::class);
+    }
 }

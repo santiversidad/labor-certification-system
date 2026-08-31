@@ -25,7 +25,7 @@ export function ValidarCertificadoPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text">Validacion publica de certificado</h1>
-        <p className="mt-1 text-sm text-muted">Ruta publica preparada para validar certificados por token.</p>
+        <p className="mt-1 text-sm text-muted">Consulta pública de integridad y estado del documento temporal.</p>
       </div>
       <ValidationResultCard result={data.data} />
     </div>

@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\RangoSalarialController;
 use App\Http\Controllers\Api\V1\ReporteController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use App\Http\Controllers\Api\V1\ValidacionPublicaController;
+use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
+use App\Http\Controllers\Api\V1\ManualFuncionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -20,7 +22,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         ->name('certificados.validar.show');
 
     Route::prefix('auth')->name('auth.')->group(function () {
-        Route::post('login', [AuthController::class, 'login'])->name('login');
+        Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -29,6 +31,18 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)
+            ->name('mi-certificacion.disponibilidad');
+
+        Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
+            Route::get('/', [ManualFuncionController::class, 'index'])->name('index');
+            Route::post('/', [ManualFuncionController::class, 'store'])->name('store');
+            Route::post('/{manual}/versiones', [ManualFuncionController::class, 'storeVersion'])->name('versiones.store');
+            Route::put('/versiones/{version}', [ManualFuncionController::class, 'updateVersion'])->name('versiones.update');
+            Route::put('/versiones/{version}/cargos/{cargo}', [ManualFuncionController::class, 'upsertCargo'])->name('versiones.cargos.upsert');
+            Route::post('/versiones/{version}/publicar', [ManualFuncionController::class, 'publicar'])->name('versiones.publicar');
+        });
+
         Route::prefix('cargos')->name('cargos.')->group(function () {
             Route::get('/', [CargoController::class, 'index'])->name('index');
             Route::post('/', [CargoController::class, 'store'])->name('store');
@@ -67,6 +81,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('pagos')->name('pagos.')->group(function () {
             Route::get('/', [PagoSoporteController::class, 'index'])->name('index');
             Route::get('/{pago}', [PagoSoporteController::class, 'show'])->name('show');
+            Route::get('/{pago}/archivo', [PagoSoporteController::class, 'descargar'])->name('archivo');
             Route::patch('/{pago}/validar', [PagoSoporteController::class, 'validar'])->name('validar');
             Route::patch('/{pago}/rechazar', [PagoSoporteController::class, 'rechazar'])->name('rechazar');
         });

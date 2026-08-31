@@ -7,7 +7,7 @@ export function SolicitudCertificadoPage() {
       <PageHeader
         eyebrow="Nueva solicitud"
         title="Solicitar certificacion laboral"
-        description="Complete la informacion del tramite. La solicitud sera registrada en estado pendiente y quedara disponible para revision por la Direccion de Personal."
+        description="Seleccione si necesita la certificación con salario o sin salario y radique la solicitud."
       />
       <SolicitudForm />
     </div>

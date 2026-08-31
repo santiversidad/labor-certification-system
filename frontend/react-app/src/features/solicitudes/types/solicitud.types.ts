@@ -5,13 +5,12 @@ export type TipoCertificado = 'laboral' | 'funciones' | 'salario' | 'laboral_sal
 export type SolicitudEstado =
   | 'pendiente'
   | 'en_revision'
-  | 'requiere_pago'
-  | 'pago_pendiente'
-  | 'pago_validado'
-  | 'aprobado'
-  | 'rechazado'
-  | 'generado'
-  | 'cancelado';
+  | 'pendiente_pago'
+  | 'pago_en_revision'
+  | 'aprobada'
+  | 'rechazada'
+  | 'certificado_generado'
+  | 'cerrada';
 
 export type SolicitudEvento = {
   id: string;
@@ -22,10 +21,12 @@ export type SolicitudEvento = {
 
 export type SolicitudCertificacion = {
   id: number;
+  radicado: string;
   tipo_certificado: TipoCertificado;
   estado: SolicitudEstado;
   requiere_pago: boolean;
   requiere_salario: boolean;
+  periodo_mes: string;
   observaciones?: string | null;
   motivo_rechazo?: string | null;
   reviewed_at?: string | null;
@@ -36,4 +37,15 @@ export type SolicitudCertificacion = {
   funcionario?: Funcionario;
   creado_por?: { id: number; name: string; documento: string };
   revisado_por?: { id: number; name: string; documento: string };
+};
+
+export type DisponibilidadModalidad = {
+  puede_solicitar: boolean;
+  proxima_fecha_disponible: string | null;
+};
+
+export type DisponibilidadCertificacion = {
+  periodo: string;
+  con_salario: DisponibilidadModalidad;
+  sin_salario: DisponibilidadModalidad;
 };

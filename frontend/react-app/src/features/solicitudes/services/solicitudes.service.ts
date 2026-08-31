@@ -2,9 +2,16 @@ import { apiClient } from '../../../lib/api/apiClient';
 import { endpoints } from '../../../lib/api/endpoints';
 import type { ApiResponse } from '../../../lib/api/api.types';
 import type { SolicitudFormValues } from '../schemas/solicitud.schema';
-import type { SolicitudCertificacion } from '../types/solicitud.types';
+import type { DisponibilidadCertificacion, SolicitudCertificacion } from '../types/solicitud.types';
+import type { GenerarCertificadoData } from '../../certificados/types/certificado.types';
 
 export const solicitudesService = {
+  async disponibilidad(): Promise<ApiResponse<DisponibilidadCertificacion>> {
+    const response = await apiClient.get<ApiResponse<DisponibilidadCertificacion>>(
+      endpoints.disponibilidadCertificacion,
+    );
+    return response.data;
+  },
   async list(): Promise<ApiResponse<SolicitudCertificacion[]>> {
     const response = await apiClient.get<ApiResponse<SolicitudCertificacion[]>>(endpoints.solicitudes);
     return response.data;
@@ -37,18 +44,21 @@ export const solicitudesService = {
   },
 
   async approve(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    return solicitudesService.cambiarEstado(id, { estado: 'aprobado' });
+    return solicitudesService.cambiarEstado(id, { estado: 'aprobada' });
   },
 
   async reject(id: string | number, observacion: string): Promise<ApiResponse<SolicitudCertificacion>> {
-    return solicitudesService.cambiarEstado(id, { estado: 'rechazado', motivo_rechazo: observacion });
+    return solicitudesService.cambiarEstado(id, { estado: 'rechazada', motivo_rechazo: observacion });
   },
 
   async markPaymentPending(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    return solicitudesService.cambiarEstado(id, { estado: 'requiere_pago' });
+    return solicitudesService.cambiarEstado(id, { estado: 'pendiente_pago' });
   },
 
-  async generateCertificate(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
-    return solicitudesService.cambiarEstado(id, { estado: 'generado' });
+  async generateCertificate(id: string | number): Promise<ApiResponse<GenerarCertificadoData>> {
+    const response = await apiClient.post<ApiResponse<GenerarCertificadoData>>(
+      `/solicitudes/${id}/generar-certificado`,
+    );
+    return response.data;
   },
 };

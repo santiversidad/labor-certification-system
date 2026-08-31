@@ -48,14 +48,14 @@ export function AdminDashboardPage() {
   const auditoriaLogs     = auditoriaQuery.data?.data ?? [];
 
   const solicitudesPendientes = solicitudes.filter((s) =>
-    ['pendiente', 'en_revision', 'requiere_pago', 'pago_pendiente'].includes(s.estado),
+    ['pendiente', 'en_revision', 'pendiente_pago', 'pago_en_revision'].includes(s.estado),
   ).length;
 
   const solicitudesAprobadas = solicitudes.filter((s) =>
-    ['aprobado', 'generado', 'pago_validado'].includes(s.estado),
+    ['aprobada', 'certificado_generado'].includes(s.estado),
   ).length;
 
-  const solicitudesRechazadas = solicitudes.filter((s) => s.estado === 'rechazado').length;
+  const solicitudesRechazadas = solicitudes.filter((s) => s.estado === 'rechazada').length;
 
   return (
     <div className="space-y-6">

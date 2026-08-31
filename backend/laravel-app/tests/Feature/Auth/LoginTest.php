@@ -125,4 +125,26 @@ class LoginTest extends TestCase
         $this->getJson('/api/v1/auth/me')
             ->assertUnauthorized();
     }
+
+    public function test_ruta_protegida_sin_accept_json_no_redirige_a_login(): void
+    {
+        $this->get('/api/v1/auth/me')
+            ->assertUnauthorized()
+            ->assertHeader('content-type', 'application/json');
+    }
+
+    public function test_login_aplica_limite_de_cinco_intentos_por_minuto(): void
+    {
+        for ($intento = 1; $intento <= 5; $intento++) {
+            $this->postJson('/api/v1/auth/login', [
+                'cedula' => '11111111',
+                'password' => 'incorrecta',
+            ])->assertStatus(422);
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'cedula' => '11111111',
+            'password' => 'incorrecta',
+        ])->assertStatus(429)->assertJsonPath('code', 'LOGIN_RATE_LIMIT');
+    }
 }

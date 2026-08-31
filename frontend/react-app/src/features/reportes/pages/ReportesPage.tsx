@@ -24,8 +24,8 @@ export function ReportesPage() {
     <div className="space-y-6">
       <PageHeader title="Reportes" description="Resumen institucional inicial para analitica y exportaciones futuras." />
       <ReportsSummary resumen={data.data} />
-      <Card title="Integración pendiente" description="El endpoint /reportes aún no está disponible en el backend. Pantalla preparada para conectar filtros, gráficas y exportaciones.">
-        <p className="text-sm text-muted">Esta vista quedará operativa al implementar el módulo de reportes en el backend.</p>
+      <Card title="Alcance actual" description="Resumen operativo provisto por el backend.">
+        <p className="text-sm text-muted">Esta fase alinea el contrato existente sin ampliar todavía la funcionalidad de reportes.</p>
       </Card>
     </div>
   );

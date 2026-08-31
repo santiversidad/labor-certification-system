@@ -24,6 +24,8 @@ class Certificado extends Model
         'motivo_anulacion',
         'anulado_por',
         'anulado_at',
+        'snapshot_schema_version',
+        'snapshot_datos',
     ];
 
     protected $hidden = [
@@ -31,12 +33,29 @@ class Certificado extends Model
         'hash_pdf',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $certificado): void {
+            if ($certificado->snapshot_schema_version === null || $certificado->snapshot_datos === null) {
+                throw new \DomainException('No se puede generar un certificado nuevo sin snapshot versionado.');
+            }
+        });
+
+        static::updating(function (self $certificado): void {
+            if ($certificado->isDirty(['snapshot_schema_version', 'snapshot_datos'])) {
+                throw new \DomainException('El snapshot de un certificado emitido es inmutable.');
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
-            'estado'           => EstadoCertificadoEnum::class,
+            'estado' => EstadoCertificadoEnum::class,
             'fecha_generacion' => 'datetime',
-            'anulado_at'       => 'datetime',
+            'anulado_at' => 'datetime',
+            'snapshot_schema_version' => 'integer',
+            'snapshot_datos' => 'array',
         ];
     }
 

@@ -9,6 +9,10 @@ use App\Policies\PagoSoportePolicy;
 use App\Policies\CertificadoPolicy;
 use App\Policies\SolicitudCertificacionPolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,5 +28,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(SolicitudCertificacion::class, SolicitudCertificacionPolicy::class);
         Gate::policy(PagoSoporte::class, PagoSoportePolicy::class);
         Gate::policy(Certificado::class, CertificadoPolicy::class);
+
+        RateLimiter::for('login', function (Request $request) {
+            $documento = Str::lower((string) $request->input('cedula', ''));
+
+            return Limit::perMinute(5)
+                ->by($documento.'|'.$request->ip())
+                ->response(fn () => response()->json([
+                    'success' => false,
+                    'message' => 'Demasiados intentos de inicio de sesión. Intente nuevamente en un minuto.',
+                    'code' => 'LOGIN_RATE_LIMIT',
+                ], 429));
+        });
     }
 }

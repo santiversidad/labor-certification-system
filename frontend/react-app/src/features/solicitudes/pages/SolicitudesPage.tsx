@@ -48,13 +48,12 @@ export function SolicitudesPage() {
               <option value="">Todos</option>
               <option value="pendiente">Pendiente</option>
               <option value="en_revision">En revision</option>
-              <option value="requiere_pago">Requiere pago</option>
-              <option value="pago_pendiente">Pago pendiente</option>
-              <option value="pago_validado">Pago validado</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
-              <option value="generado">Generado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="pendiente_pago">Pendiente de pago</option>
+              <option value="pago_en_revision">Pago en revisión</option>
+              <option value="aprobada">Aprobada</option>
+              <option value="rechazada">Rechazada</option>
+              <option value="certificado_generado">Certificado generado</option>
+              <option value="cerrada">Cerrada</option>
             </select>
           </label>
           <label className="space-y-1 text-sm">

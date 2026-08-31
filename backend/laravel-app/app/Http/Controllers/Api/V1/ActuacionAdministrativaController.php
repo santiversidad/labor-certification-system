@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreActuacionAdministrativaRequest;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\UpdateActuacionAdministrativaRequest;
 use App\Http\Resources\ActuacionAdministrativaResource;
 use App\Models\ActuacionAdministrativa;
@@ -20,7 +21,7 @@ class ActuacionAdministrativaController extends Controller
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         if (! $request->user()->can('actuaciones.ver')) {
             return $this->forbiddenResponse();
@@ -29,7 +30,7 @@ class ActuacionAdministrativaController extends Controller
         $actuaciones = ActuacionAdministrativa::with(['funcionario.cargo', 'creadoPor'])
             ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->funcionario_id))
             ->when($request->filled('tipo_actuacion'), fn ($q) => $q->where('tipo_actuacion', $request->tipo_actuacion))
-            ->latest()
+            ->orderBy($request->validated('orden', 'created_at'), $request->validated('direccion', 'desc'))
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(

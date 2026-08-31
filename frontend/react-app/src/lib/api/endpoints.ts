@@ -2,12 +2,14 @@ export const endpoints = {
   auth: {
     login: '/auth/login',
     me: '/auth/me',
+    logout: '/auth/logout',
   },
   dashboard: '/dashboard',
   funcionarios: '/funcionarios',
   cargos: '/cargos',
   rangosSalariales: '/rangos-salariales',
   solicitudes: '/solicitudes',
+  disponibilidadCertificacion: '/mi-certificacion/disponibilidad',
   solicitudesActions: {
     aprobar: (id: string) => `/solicitudes/${id}/aprobar`,
     rechazar: (id: string) => `/solicitudes/${id}/rechazar`,
