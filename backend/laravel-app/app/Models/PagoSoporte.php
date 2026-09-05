@@ -28,8 +28,8 @@ class PagoSoporte extends Model
     protected function casts(): array
     {
         return [
-            'estado'       => EstadoPagoEnum::class,
-            'validado_at'  => 'datetime',
+            'estado' => EstadoPagoEnum::class,
+            'validado_at' => 'datetime',
         ];
     }
 

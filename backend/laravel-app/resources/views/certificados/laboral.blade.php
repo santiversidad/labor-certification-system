@@ -1,6 +1,10 @@
 {{-- Plantilla temporal. Reemplazar por el formato oficial de la Alcaldia cuando sea entregado. --}}
 CERTIFICADO LABORAL TEMPORAL
 
+@if(!empty($snapshot['manual']['prueba_desarrollo']))
+PRUEBA DE DESARROLLO - MANUAL BORRADOR, VIGENCIA PENDIENTE. SIN VALIDEZ OFICIAL.
+@endif
+
 La Alcaldia certifica que:
 
 Nombre: {{ $snapshot['funcionario']['nombres'] }} {{ $snapshot['funcionario']['apellidos'] }}
@@ -17,6 +21,8 @@ Salario basico: {{ $snapshot['salario']['valor'] ?? 'No disponible en la fuente 
 
 @if(!empty($snapshot['manual_funciones']))
 Manual de funciones: {{ $snapshot['manual_funciones']['manual_nombre'] }} — version {{ $snapshot['manual_funciones']['version'] }}
+Ficha: {{ $snapshot['manual_funciones']['source_id'] ?? $snapshot['manual_funciones']['ficha_id'] }}
+Area funcional: {{ $snapshot['manual_funciones']['area_funcional'] }}
 Proposito principal: {{ $snapshot['manual_funciones']['proposito_principal'] }}
 Funciones esenciales:
 @foreach($snapshot['manual_funciones']['funciones'] as $funcion)

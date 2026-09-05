@@ -22,17 +22,19 @@ class FuncionarioCargo extends Model
         'fecha_fin',
         'acto_administrativo_id',
         'salario_override',
+        'manual_cargo_version_id', 'es_prueba_manual',
     ];
 
     protected function casts(): array
     {
         return [
+            'es_prueba_manual' => 'boolean',
             'tipo_vinculacion' => TipoVinculacionEnum::class,
             'naturaleza_cargo' => NaturalezaCargoEnum::class,
-            'es_cargo_base'    => 'boolean',
-            'es_encargo'       => 'boolean',
-            'fecha_inicio'     => 'date',
-            'fecha_fin'        => 'date',
+            'es_cargo_base' => 'boolean',
+            'es_encargo' => 'boolean',
+            'fecha_inicio' => 'date',
+            'fecha_fin' => 'date',
             'salario_override' => 'decimal:2',
         ];
     }
@@ -40,6 +42,11 @@ class FuncionarioCargo extends Model
     public function funcionario(): BelongsTo
     {
         return $this->belongsTo(Funcionario::class);
+    }
+
+    public function fichaManual(): BelongsTo
+    {
+        return $this->belongsTo(ManualCargoVersion::class, 'manual_cargo_version_id');
     }
 
     public function cargo(): BelongsTo

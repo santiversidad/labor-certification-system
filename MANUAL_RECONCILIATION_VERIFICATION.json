@@ -1,0 +1,46 @@
+{
+  "estado_persistente_igual_al_preflight": true,
+  "fichas_iguales_al_json_original": 344,
+  "funciones_iguales_al_json_original": 3115,
+  "cargos": 50,
+  "asignaciones_historicas_intactas": 3,
+  "snapshots_intactos": 3,
+  "importaciones_antes_despues": [
+    2,
+    2
+  ],
+  "versiones": [
+    {
+      "id": 10,
+      "estado": "borrador",
+      "acto_fecha": null,
+      "vigencia_desde": null,
+      "vigencia_hasta": null
+    }
+  ],
+  "funciones_comunes": 0,
+  "pdfs_existentes_intactos": [
+    {
+      "certificado_id": 31,
+      "source_id": "MF-0001",
+      "sha256": "6413e2278dc2a65c6aefa4691a8040ae625c5020223cf30679ef6877ae80e404",
+      "paginas": 6,
+      "funciones_correctas": 58
+    },
+    {
+      "certificado_id": 32,
+      "source_id": "MF-0228",
+      "sha256": "3768d7e1de1a8cd5b57ba3ba7ec7e444bf08d0db7b5f7552cc81ea0559e0ea6a",
+      "paginas": 2,
+      "funciones_correctas": 10
+    },
+    {
+      "certificado_id": 33,
+      "source_id": "MF-0229",
+      "sha256": "037dc0d4381d8b4750c91933a8d3a9cecba67c513916b1fc0f0c57b47b877412",
+      "paginas": 2,
+      "funciones_correctas": 6
+    }
+  ],
+  "fuentes_originales_intactas": true
+}

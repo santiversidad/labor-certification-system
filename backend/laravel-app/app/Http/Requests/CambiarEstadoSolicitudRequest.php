@@ -2,6 +2,4 @@
 
 namespace App\Http\Requests;
 
-class CambiarEstadoSolicitudRequest extends UpdateEstadoSolicitudRequest
-{
-}
+class CambiarEstadoSolicitudRequest extends UpdateEstadoSolicitudRequest {}

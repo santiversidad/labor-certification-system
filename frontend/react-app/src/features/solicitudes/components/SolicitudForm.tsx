@@ -1,10 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Check, Send } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { solicitudSchema, type SolicitudFormValues } from '../schemas/solicitud.schema';
 import { solicitudesService } from '../services/solicitudes.service';
@@ -19,100 +18,53 @@ export function SolicitudForm() {
     defaultValues: { tipo_certificado: 'laboral', requiere_salario: modalidadInicial, observaciones: '' },
   });
   const requiereSalario = useWatch({ control, name: 'requiere_salario' });
-
-  const disponibilidadQuery = useQuery({
-    queryKey: ['disponibilidad-certificacion'],
-    queryFn: solicitudesService.disponibilidad,
-  });
+  const disponibilidadQuery = useQuery({ queryKey: ['disponibilidad-certificacion'], queryFn: solicitudesService.disponibilidad });
   const disponibilidad = disponibilidadQuery.data?.data;
-  const modalidadDisponible = requiereSalario
-    ? disponibilidad?.con_salario.puede_solicitar
-    : disponibilidad?.sin_salario.puede_solicitar;
-
-  const createMutation = useMutation({
+  const puedeSolicitar = requiereSalario ? disponibilidad?.con_salario.puede_solicitar : disponibilidad?.sin_salario.puede_solicitar;
+  const mutation = useMutation({
     mutationFn: solicitudesService.create,
     onSuccess: async (response) => {
-      sessionStorage.setItem('ultima_solicitud_radicado', response.data.radicado);
       await queryClient.invalidateQueries({ queryKey: ['disponibilidad-certificacion'] });
-      navigate('/app/solicitudes/confirmacion', {
-        replace: true,
-        state: {
-          radicado: response.data.radicado,
-          requiereSalario: response.data.requiere_salario,
-          fechaRadicacion: response.data.created_at,
-        },
-      });
+      navigate('/app/solicitudes/confirmacion', { replace: true, state: response.data });
     },
   });
 
   return (
-    <Card title="Modalidad de la certificación" description="La modalidad seleccionada queda registrada expresamente en la solicitud.">
-      <form className="space-y-6" onSubmit={handleSubmit((values) => createMutation.mutate(values))}>
-        <input type="hidden" {...register('tipo_certificado')} />
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <button
-            className={`rounded-md border p-4 text-left transition ${!requiereSalario ? 'border-govBlue bg-blue-50 ring-2 ring-govBlue/20' : 'border-border bg-surface'}`}
-            onClick={() => setValue('requiere_salario', false, { shouldValidate: true })}
-            type="button"
-          >
-            <span className="block font-semibold text-text">SIN salario</span>
-            <span className="mt-1 block text-sm text-muted">No incluirá información salarial.</span>
-            {disponibilidad && !disponibilidad.sin_salario.puede_solicitar ? (
-              <span className="mt-3 block text-xs font-medium text-villavoRed">
-                Cupo consumido. Disponible el {disponibilidad.sin_salario.proxima_fecha_disponible}.
-              </span>
-            ) : null}
-          </button>
-          <button
-            className={`rounded-md border p-4 text-left transition ${requiereSalario ? 'border-govBlue bg-blue-50 ring-2 ring-govBlue/20' : 'border-border bg-surface'}`}
-            onClick={() => setValue('requiere_salario', true, { shouldValidate: true })}
-            type="button"
-          >
-            <span className="block font-semibold text-text">CON salario</span>
-            <span className="mt-1 block text-sm text-muted">Usará la información salarial institucional vigente.</span>
-            {disponibilidad && !disponibilidad.con_salario.puede_solicitar ? (
-              <span className="mt-3 block text-xs font-medium text-villavoRed">
-                Cupo consumido. Disponible el {disponibilidad.con_salario.proxima_fecha_disponible}.
-              </span>
-            ) : null}
-          </button>
+    <form className="space-y-7 rounded-xl border border-border bg-white p-6 sm:p-8" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="contenido-certificacion" className="font-medium text-text">Contenido de la certificación</label>
+        <select id="contenido-certificacion" aria-describedby="contenido-certificacion-ayuda" className="w-full rounded-lg border border-border px-3 py-2" {...register('tipo_certificado')}>
+          <option value="laboral">Información laboral</option>
+          <option value="funciones">Información laboral y funciones del Manual</option>
+        </select>
+        <p id="contenido-certificacion-ayuda" className="text-muted">Las funciones corresponden a la ficha del Manual asociada a su vinculación. El cupo mensual depende de la modalidad salarial.</p>
+      </div>
+      <fieldset>
+        <legend className="text-sm font-semibold text-text">Modalidad seleccionada</legend>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {[false, true].map((valor) => (
+            <button className={`flex items-center justify-between rounded-lg border p-4 text-left transition ${requiereSalario === valor ? 'border-govBlue bg-blue-50' : 'border-border'}`} key={String(valor)} onClick={() => setValue('requiere_salario', valor)} type="button">
+              <span><strong className="block text-text">{valor ? 'CON salario' : 'SIN salario'}</strong><small className="text-muted">{valor ? 'Incluye valor institucional' : 'Sin valores salariales'}</small></span>
+              {requiereSalario === valor ? <Check className="text-govBlue" size={20} /> : null}
+            </button>
+          ))}
         </div>
-
-        <p className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-govBlue">
-          Puede solicitar máximo una certificación con salario y una sin salario por mes.
-        </p>
-
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-text">Observaciones (opcional)</span>
-          <textarea
-            className="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition placeholder:text-muted focus:border-govBlue focus:ring-2 focus:ring-govBlue/20"
-            placeholder="Indique la entidad destino u otra información necesaria para el trámite."
-            {...register('observaciones')}
-          />
-          {errors.observaciones?.message ? <span className="text-xs text-villavoRed">{errors.observaciones.message}</span> : null}
-        </label>
-
-        {createMutation.isError ? (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-villavoRed">
-            {getErrorMessage(createMutation.error)}
-          </div>
-        ) : null}
-
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Link to="/app/inicio">
-            <Button className="w-full sm:w-auto" icon={<ArrowLeft size={16} />} type="button" variant="secondary">Volver</Button>
-          </Link>
-          <Button
-            className="w-full sm:w-auto"
-            disabled={createMutation.isPending || disponibilidadQuery.isLoading || modalidadDisponible === false}
-            icon={<Send size={16} />}
-            type="submit"
-          >
-            {createMutation.isPending ? 'Radicando...' : 'Radicar solicitud'}
-          </Button>
-        </div>
-      </form>
-    </Card>
+      </fieldset>
+      <label className="block space-y-2 text-sm">
+        <span className="font-medium text-text">Observaciones (opcional)</span>
+        <textarea className="min-h-24 w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-govBlue focus:ring-2 focus:ring-govBlue/15" {...register('observaciones')} />
+        {errors.observaciones ? <span className="text-villavoRed">{errors.observaciones.message}</span> : null}
+      </label>
+      <div className="rounded-lg bg-slate-50 p-4 text-sm leading-6 text-muted">
+        Al confirmar, el sistema validará su cupo, cargo y fuentes institucionales. Si el pago está desactivado, generará el PDF inmediatamente.
+      </div>
+      {mutation.isError ? <p className="text-sm text-villavoRed">{getErrorMessage(mutation.error)}</p> : null}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Link to="/app/inicio"><Button icon={<ArrowLeft size={16} />} type="button" variant="secondary">Volver</Button></Link>
+        <Button disabled={mutation.isPending || puedeSolicitar === false} icon={<Send size={16} />} type="submit">
+          {mutation.isPending ? 'Generando…' : 'Confirmar y solicitar'}
+        </Button>
+      </div>
+    </form>
   );
 }

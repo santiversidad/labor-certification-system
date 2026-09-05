@@ -71,7 +71,6 @@ class RangoSalarialController extends Controller
         $this->authorize('rangos_salariales.ver');
 
         $rango = RangoSalarial::findOrFail($rango_salarial);
-        $anterior = $rango->getAttributes();
 
         return $this->successResponse(new RangoSalarialResource($rango));
     }
@@ -82,6 +81,7 @@ class RangoSalarialController extends Controller
     public function update(UpdateRangoSalarialRequest $request, int $rango_salarial): JsonResponse
     {
         $rango = RangoSalarial::findOrFail($rango_salarial);
+        $anterior = $rango->getAttributes();
 
         $data = $request->validated();
         $data['updated_by'] = $request->user()->id;

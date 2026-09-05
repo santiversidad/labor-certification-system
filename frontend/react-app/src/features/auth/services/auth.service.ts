@@ -1,7 +1,7 @@
 import { apiClient } from '../../../lib/api/apiClient';
 import { endpoints } from '../../../lib/api/endpoints';
 import type { ApiResponse } from '../../../lib/api/api.types';
-import type { LoginCredentials, LoginResponse } from '../types/auth.types';
+import type { ChangePasswordPayload, LoginCredentials, LoginResponse } from '../types/auth.types';
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> {
@@ -19,5 +19,10 @@ export const authService = {
 
   async logout(): Promise<void> {
     await apiClient.post(endpoints.auth.logout);
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<ApiResponse<LoginResponse['user']>> {
+    const response = await apiClient.put<ApiResponse<LoginResponse['user']>>(endpoints.auth.changePassword, payload);
+    return response.data;
   },
 };

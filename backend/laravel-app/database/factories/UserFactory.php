@@ -25,12 +25,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'           => fake('es_CO')->name(),
+            'name' => fake('es_CO')->name(),
             // La cédula es el identificador único de autenticación
-            'documento'      => fake()->unique()->numerify('##########'),
-            'password'       => static::$password ??= Hash::make('password'),
-            'telefono'       => fake()->numerify('3##-###-####'),
-            'estado'         => true,
+            'documento' => fake()->unique()->numerify('##########'),
+            'password' => static::$password ??= Hash::make('password'),
+            'telefono' => fake()->numerify('3##-###-####'),
+            'estado' => true,
             'remember_token' => Str::random(10),
             // email es opcional; se omite por defecto en tests
         ];

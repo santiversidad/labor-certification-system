@@ -16,11 +16,11 @@ class StoreActuacionAdministrativaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'funcionario_id'  => ['required', 'exists:funcionarios,id'],
+            'funcionario_id' => ['required', 'exists:funcionarios,id'],
             'tipo_actuacion' => ['required', Rule::enum(TipoActuacionAdministrativaEnum::class)],
-            'numero_acto'    => ['nullable', 'string', 'max:60'],
-            'fecha_acto'     => ['nullable', 'date'],
-            'descripcion'    => ['required', 'string', 'max:2000'],
+            'numero_acto' => ['nullable', 'string', 'max:60'],
+            'fecha_acto' => ['nullable', 'date'],
+            'descripcion' => ['required', 'string', 'max:2000'],
         ];
     }
 }

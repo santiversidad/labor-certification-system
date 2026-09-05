@@ -9,7 +9,9 @@ use App\Models\Cargo;
 use App\Models\ManualCargoVersion;
 use App\Models\ManualFuncion;
 use App\Models\ManualFuncionVersion;
+use App\Services\ResolverFuncionesFuncionarioService;
 use App\Traits\ApiResponse;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +35,23 @@ class ManualFuncionController extends Controller
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse($manuales);
+    }
+
+    public function fichas(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('funcionarios.crear') || $request->user()->can('funcionarios.editar'), 403);
+        $datos = $request->validate(['cargo_id' => 'required|integer|exists:cargos,id']);
+        $fichas = ManualCargoVersion::with('cargo', 'version')->where('cargo_id', $datos['cargo_id'])
+            ->orderBy('area_funcional')->orderBy('source_id')->get();
+        $vigentes = app(ResolverFuncionesFuncionarioService::class)
+            ->compatibles((int) $datos['cargo_id'], CarbonImmutable::now())->pluck('id');
+
+        return $this->successResponse($fichas->map(fn ($f) => [
+            'id' => $f->id, 'source_id' => $f->source_id, 'denominacion' => $f->denominacion_fuente ?? $f->cargo->denominacion,
+            'codigo' => $f->cargo->codigo, 'grado' => $f->cargo->grado, 'dependencia' => $f->dependencia,
+            'area_funcional' => $f->area_funcional, 'proposito_principal' => $f->proposito_principal,
+            'version' => $f->version->version, 'estado' => $f->version->estado, 'vigente' => $vigentes->contains($f->id),
+        ]));
     }
 
     public function store(Request $request): JsonResponse
@@ -80,6 +99,12 @@ class ManualFuncionController extends Controller
 
     public function updateVersion(Request $request, ManualFuncionVersion $version): JsonResponse
     {
+        return DB::transaction(fn () => $this->updateVersionBloqueada($request,
+            ManualFuncionVersion::whereKey($version->id)->lockForUpdate()->firstOrFail()));
+    }
+
+    private function updateVersionBloqueada(Request $request, ManualFuncionVersion $version): JsonResponse
+    {
         abort_unless($request->user()->can('manual_funciones.editar'), 403);
         if ($version->estado !== 'borrador') {
             return $this->errorResponse(
@@ -111,6 +136,15 @@ class ManualFuncionController extends Controller
         ManualFuncionVersion $version,
         Cargo $cargo,
     ): JsonResponse {
+        return DB::transaction(fn () => $this->upsertCargoBloqueado($request,
+            ManualFuncionVersion::whereKey($version->id)->lockForUpdate()->firstOrFail(), $cargo));
+    }
+
+    private function upsertCargoBloqueado(
+        Request $request,
+        ManualFuncionVersion $version,
+        Cargo $cargo,
+    ): JsonResponse {
         abort_unless($request->user()->can('manual_funciones.editar'), 403);
         if ($version->estado !== 'borrador') {
             return $this->errorResponse(
@@ -119,6 +153,15 @@ class ManualFuncionController extends Controller
                 409,
                 'MANUAL_VERSION_IMMUTABLE',
             );
+        }
+
+        // Legacy endpoint must never update an arbitrary profile for a generic position.
+        $existentes = $version->cargos()->where('cargo_id', $cargo->id)->get();
+        if ($existentes->count() > 1) {
+            return $this->errorResponse('Seleccione una ficha específica; este cargo tiene varias.', null, 409, 'MANUAL_FICHA_AMBIGUA');
+        }
+        if ($existentes->first()?->source_id) {
+            return $this->errorResponse('La ficha importada se modifica mediante una fuente revisada y el importador.', null, 409, 'MANUAL_FICHA_IMPORTADA');
         }
 
         $datos = $request->validate([
@@ -165,9 +208,21 @@ class ManualFuncionController extends Controller
 
     public function publicar(Request $request, ManualFuncionVersion $version): JsonResponse
     {
+        return DB::transaction(fn () => $this->publicarBloqueada($request,
+            ManualFuncionVersion::whereKey($version->id)->lockForUpdate()->firstOrFail()));
+    }
+
+    private function publicarBloqueada(Request $request, ManualFuncionVersion $version): JsonResponse
+    {
         abort_unless($request->user()->can('manual_funciones.publicar'), 403);
         if ($version->estado !== 'borrador') {
             return $this->errorResponse('Solo una versión borrador puede publicarse.', null, 409);
+        }
+        if (! $version->vigencia_desde || ! $version->acto_fecha) {
+            return $this->errorResponse('Confirme fechas documentales antes de publicar.', null, 409, 'MANUAL_FECHAS_PENDIENTES');
+        }
+        if (! empty($version->metadata_manual['pendientes'])) {
+            return $this->errorResponse('La conciliación documental del origen sigue pendiente.', null, 409, 'MANUAL_CONCILIACION_PENDIENTE');
         }
 
         $cargoIds = $version->cargos()->pluck('cargo_id');

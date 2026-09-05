@@ -5,9 +5,9 @@ export function SolicitudCertificadoPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Nueva solicitud"
-        title="Solicitar certificacion laboral"
-        description="Seleccione si necesita la certificación con salario o sin salario y radique la solicitud."
+        eyebrow="Autoservicio"
+        title="Confirmar certificación laboral"
+        description="Revise la modalidad. No existe un paso de aprobación humana."
       />
       <SolicitudForm />
     </div>

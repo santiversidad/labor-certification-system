@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreActuacionAdministrativaRequest;
 use App\Http\Requests\IndexQueryRequest;
+use App\Http\Requests\StoreActuacionAdministrativaRequest;
 use App\Http\Requests\UpdateActuacionAdministrativaRequest;
 use App\Http\Resources\ActuacionAdministrativaResource;
 use App\Models\ActuacionAdministrativa;

@@ -10,43 +10,47 @@ class SolicitudCertificacionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'               => $this->id,
-            'radicado'         => $this->radicado,
+            'id' => $this->id,
+            'radicado' => $this->radicado,
             'tipo_certificado' => $this->tipo_certificado?->value ?? $this->tipo_certificado,
-            'estado'           => $this->estado?->value ?? $this->estado,
-            'requiere_pago'    => $this->requiere_pago,
+            'estado' => $this->estado?->value ?? $this->estado,
+            'requiere_pago' => $this->requiere_pago,
             'requiere_salario' => $this->requiere_salario,
-            'periodo_mes'      => $this->periodo_mes?->format('Y-m-d'),
-            'observaciones'    => $this->observaciones,
-            'motivo_rechazo'   => $this->motivo_rechazo,
-            'reviewed_at'      => $this->reviewed_at?->toISOString(),
-            'created_at'       => $this->created_at?->toISOString(),
-            'updated_at'       => $this->updated_at?->toISOString(),
+            'periodo_mes' => $this->periodo_mes?->format('Y-m-d'),
+            'observaciones' => $this->observaciones,
+            'motivo_rechazo' => $this->motivo_rechazo,
+            'reviewed_at' => $this->reviewed_at?->toISOString(),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
 
             // Relaciones opcionales (se incluyen solo si fueron cargadas)
-            'funcionario'  => $this->whenLoaded('funcionario',
+            'funcionario' => $this->whenLoaded('funcionario',
                 fn () => new FuncionarioResource($this->funcionario)
             ),
-            'creado_por'   => $this->whenLoaded('creadoPor', function () {
+            'creado_por' => $this->whenLoaded('creadoPor', function () {
                 return [
-                    'id'       => $this->creadoPor->id,
-                    'name'     => $this->creadoPor->name,
+                    'id' => $this->creadoPor->id,
+                    'name' => $this->creadoPor->name,
                     'documento' => $this->creadoPor->documento,
                 ];
             }),
             'revisado_por' => $this->whenLoaded('revisadoPor', function () {
                 return [
-                    'id'       => $this->revisadoPor->id,
-                    'name'     => $this->revisadoPor->name,
+                    'id' => $this->revisadoPor->id,
+                    'name' => $this->revisadoPor->name,
                     'documento' => $this->revisadoPor->documento,
                 ];
             }),
             'pago_soporte' => $this->whenLoaded('pagoSoporte',
                 fn () => $this->pagoSoporte ? new PagoSoporteResource($this->pagoSoporte) : null
             ),
-            'certificado'  => $this->whenLoaded('certificado',
+            'certificado' => $this->whenLoaded('certificado',
                 fn () => $this->certificado ? new CertificadoResource($this->certificado) : null
             ),
+            'orden_pago' => $this->whenLoaded('ordenPago', fn () => $this->ordenPago ? [
+                'referencia' => $this->ordenPago->referencia,
+                'estado' => $this->ordenPago->estado->value,
+            ] : null),
         ];
     }
 }

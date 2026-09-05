@@ -27,11 +27,11 @@ class RangoSalarialTest extends TestCase
     public function test_consultar_rango_salarial_existente(): void
     {
         RangoSalarial::factory()->create([
-            'codigo'        => '219',
-            'grado'         => '02',
+            'codigo' => '219',
+            'grado' => '02',
             'vigencia_anio' => 2026,
             'salario_basico' => 3450000,
-            'estado'        => true,
+            'estado' => true,
         ]);
 
         $response = $this->actingAs($this->admin, 'sanctum')
@@ -57,11 +57,11 @@ class RangoSalarialTest extends TestCase
     {
         $response = $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/v1/rangos-salariales', [
-                'codigo'         => '220',
-                'grado'          => '03',
-                'vigencia_anio'  => 2026,
+                'codigo' => '220',
+                'grado' => '03',
+                'vigencia_anio' => 2026,
                 'salario_basico' => 2800000,
-                'moneda'         => 'COP',
+                'moneda' => 'COP',
             ]);
 
         $response->assertCreated()
@@ -69,8 +69,8 @@ class RangoSalarialTest extends TestCase
             ->assertJsonPath('data.codigo', '220');
 
         $this->assertDatabaseHas('rangos_salariales', [
-            'codigo'        => '220',
-            'grado'         => '03',
+            'codigo' => '220',
+            'grado' => '03',
             'vigencia_anio' => 2026,
         ]);
     }
@@ -78,16 +78,16 @@ class RangoSalarialTest extends TestCase
     public function test_no_se_puede_duplicar_rango_salarial(): void
     {
         RangoSalarial::factory()->create([
-            'codigo'        => '219',
-            'grado'         => '02',
+            'codigo' => '219',
+            'grado' => '02',
             'vigencia_anio' => 2026,
         ]);
 
         $response = $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/v1/rangos-salariales', [
-                'codigo'         => '219',
-                'grado'          => '02',
-                'vigencia_anio'  => 2026,
+                'codigo' => '219',
+                'grado' => '02',
+                'vigencia_anio' => 2026,
                 'salario_basico' => 3500000,
             ]);
 

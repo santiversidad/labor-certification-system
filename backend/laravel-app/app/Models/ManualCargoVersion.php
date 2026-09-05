@@ -12,7 +12,14 @@ class ManualCargoVersion extends Model
 
     protected $fillable = [
         'manual_funciones_version_id', 'cargo_id', 'proposito_principal', 'requisitos',
+        'source_id', 'import_key', 'content_hash', 'natural_key', 'denominacion_fuente',
+        'dependencia', 'area_funcional', 'numero_cargos', 'jefe_inmediato', 'metadata_manual',
     ];
+
+    protected function casts(): array
+    {
+        return ['metadata_manual' => 'array'];
+    }
 
     public function version(): BelongsTo
     {

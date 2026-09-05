@@ -29,23 +29,23 @@ class UpdateEstadoSolicitudRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'estado'         => ['required', Rule::enum(EstadoSolicitudEnum::class)],
+            'estado' => ['required', Rule::enum(EstadoSolicitudEnum::class)],
             'motivo_rechazo' => [
                 'nullable',
                 'string',
                 'max:500',
                 Rule::requiredIf(fn () => $this->estado === EstadoSolicitudEnum::Rechazada->value),
             ],
-            'observaciones'  => ['nullable', 'string', 'max:500'],
-            'requiere_pago'  => ['boolean'],
+            'observaciones' => ['nullable', 'string', 'max:500'],
+            'requiere_pago' => ['boolean'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'estado.required'         => 'Debe indicar el nuevo estado.',
-            'estado.enum'             => 'El estado indicado no es valido.',
+            'estado.required' => 'Debe indicar el nuevo estado.',
+            'estado.enum' => 'El estado indicado no es valido.',
             'motivo_rechazo.required' => 'Debe indicar el motivo del rechazo.',
         ];
     }

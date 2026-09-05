@@ -19,8 +19,11 @@ class SolicitudCertificacionTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $secretario;
+
     private User $userFuncionario;
+
     private Funcionario $funcionario;
 
     protected function setUp(): void
@@ -53,6 +56,7 @@ class SolicitudCertificacionTest extends TestCase
             'estado' => EstadoFuncionarioEnum::Activo,
             'cargo_id' => $cargo->id,
         ]);
+        \Tests\Support\ManualFixture::vincular($this->funcionario);
     }
 
     public function test_funcionario_puede_crear_solicitud(): void
@@ -60,16 +64,17 @@ class SolicitudCertificacionTest extends TestCase
         $response = $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson('/api/v1/solicitudes', [
                 'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
-                'requiere_salario' => true,
+                'requiere_salario' => false,
             ]);
 
         $response->assertCreated()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.estado', EstadoSolicitudEnum::Pendiente->value)
-            ->assertJsonPath('data.tipo_certificado', TipoCertificadoEnum::Laboral->value)
-            ->assertJsonPath('data.requiere_pago', false);
+            ->assertJsonPath('data.resultado', 'generada')
+            ->assertJsonPath('data.solicitud.estado', EstadoSolicitudEnum::Generada->value)
+            ->assertJsonPath('data.solicitud.tipo_certificado', TipoCertificadoEnum::Laboral->value)
+            ->assertJsonPath('data.solicitud.requiere_pago', false);
 
-        $this->assertDatabaseHas('audit_logs', ['accion' => 'crear_solicitud']);
+        $this->assertDatabaseHas('audit_logs', ['accion' => 'solicitar_certificacion_autoservicio']);
     }
 
     public function test_funcionario_no_puede_listar_solicitudes(): void
@@ -94,26 +99,26 @@ class SolicitudCertificacionTest extends TestCase
             ->assertJsonPath('meta.total', 1);
     }
 
-    public function test_rechazar_solicitud_exige_observacion(): void
+    public function test_flujo_manual_de_rechazo_esta_retirado(): void
     {
         $solicitud = $this->crearSolicitud();
 
         $this->actingAs($this->secretario, 'sanctum')
             ->patchJson("/api/v1/solicitudes/{$solicitud->id}/rechazar")
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['motivo_rechazo']);
+            ->assertStatus(410)
+            ->assertJsonPath('code', 'LEGACY_MANUAL_APPROVAL_DISABLED');
     }
 
-    public function test_secretario_puede_aprobar_y_registra_auditoria(): void
+    public function test_secretario_no_puede_aprobar_en_el_flujo_automatico(): void
     {
         $solicitud = $this->crearSolicitud(['estado' => EstadoSolicitudEnum::EnRevision]);
 
         $this->actingAs($this->secretario, 'sanctum')
             ->patchJson("/api/v1/solicitudes/{$solicitud->id}/aprobar")
-            ->assertOk()
-            ->assertJsonPath('data.estado', EstadoSolicitudEnum::Aprobada->value);
+            ->assertStatus(410)
+            ->assertJsonPath('code', 'LEGACY_MANUAL_APPROVAL_DISABLED');
 
-        $this->assertDatabaseHas('audit_logs', ['accion' => 'aprobar_solicitud']);
+        $this->assertDatabaseMissing('audit_logs', ['accion' => 'aprobar_solicitud']);
     }
 
     public function test_no_se_puede_generar_certificado_de_solicitud_rechazada(): void
@@ -134,7 +139,7 @@ class SolicitudCertificacionTest extends TestCase
             ]);
 
         $response->assertCreated();
-        $this->assertMatchesRegularExpression('/^CL-\d{4}-\d{6}$/', $response->json('data.radicado'));
+        $this->assertMatchesRegularExpression('/^CL-\d{4}-\d{6}$/', $response->json('data.solicitud.radicado'));
     }
 
     private function crearSolicitud(array $overrides = []): SolicitudCertificacion

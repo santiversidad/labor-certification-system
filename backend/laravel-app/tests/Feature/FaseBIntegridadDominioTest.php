@@ -131,7 +131,7 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
             ->assertConflict()
-            ->assertJsonPath('code', 'CERTIFICATE_SOURCE_CONFLICT');
+            ->assertJsonPath('code', 'ASIGNACION_NO_VIGENTE');
 
         $this->assertDatabaseCount('certificados', 0);
         $this->assertDatabaseHas('audit_logs', ['accion' => 'generar_certificado_fallido']);
@@ -167,11 +167,12 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$sinSalario->id}/generar-certificado")
             ->assertCreated()
-            ->assertJsonPath('data.certificado.snapshot_schema_version', 1);
+            ->assertJsonPath('data.certificado.snapshot_schema_version', 2);
     }
 
     public function test_snapshot_emitido_no_puede_modificarse(): void
     {
+        \Tests\Support\ManualFixture::vincular($this->funcionario);
         $solicitud = $this->solicitudAprobada(false);
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
@@ -202,6 +203,7 @@ class FaseBIntegridadDominioTest extends TestCase
             'naturaleza_cargo' => NaturalezaCargoEnum::CarreraAdministrativa,
             'es_cargo_base' => true,
             'fecha_inicio' => $fechaInicio,
+            'manual_cargo_version_id' => \Tests\Support\ManualFixture::ficha($this->cargo)->id,
         ]);
     }
 }

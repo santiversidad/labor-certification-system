@@ -27,3 +27,8 @@ frontend/react-app/build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local verification artifacts and database backups
+/tmp/
+/output/
+backend/laravel-app/storage/app/manuales/

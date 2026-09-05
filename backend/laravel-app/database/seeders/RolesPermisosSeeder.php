@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesPermisosSeeder extends Seeder
 {
@@ -15,6 +16,10 @@ class RolesPermisosSeeder extends Seeder
         'usuarios.ver',
         'usuarios.crear',
         'usuarios.editar',
+
+        // Parámetros institucionales (solo admin por la matriz inferior)
+        'parametros.ver',
+        'parametros.editar',
 
         // Funcionarios
         'funcionarios.ver',
@@ -66,7 +71,7 @@ class RolesPermisosSeeder extends Seeder
         'actuaciones.crear',
         'actuaciones.editar',
 
-        // Manual Especifico de Funciones
+        // Manual Específico de Funciones
         'manual_funciones.ver',
         'manual_funciones.crear',
         'manual_funciones.editar',
@@ -76,7 +81,7 @@ class RolesPermisosSeeder extends Seeder
     public function run(): void
     {
         // Limpiar caché de Spatie para evitar datos obsoletos tras migrate:fresh
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Crear todos los permisos
         foreach ($this->permisos as $permiso) {
@@ -109,7 +114,7 @@ class RolesPermisosSeeder extends Seeder
             'reportes.ver',
         ]);
 
-        // Funcionario: alcance deliberadamente limitado a radicar su solicitud.
+        // Funcionario: únicamente inicia su propia expedición de autoservicio.
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
             'solicitudes.crear',

@@ -57,11 +57,13 @@ class CertificadoController extends Controller
                 accion: 'generar_certificado_fallido',
                 modelo: 'SolicitudCertificacion',
                 modeloId: $solicitudModel->id,
-                descripcion: 'La generación se detuvo por una inconsistencia en las fuentes institucionales.',
+                descripcion: 'La generación legada se detuvo por una inconsistencia de fuentes.',
                 metadata: ['motivo' => $exception->getMessage()],
             );
 
-            return $this->errorResponse($exception->getMessage(), null, 409, 'CERTIFICATE_SOURCE_CONFLICT');
+            $code = preg_match('/^[A-Z_]+$/', $exception->getMessage()) ? $exception->getMessage() : 'CERTIFICATE_SOURCE_CONFLICT';
+
+            return $this->errorResponse($exception->getMessage(), null, 409, $code);
         }
         /** @var Certificado $certificado */
         $certificado = $resultado['certificado'];
@@ -104,12 +106,7 @@ class CertificadoController extends Controller
         $this->authorize('descargar', $model);
 
         if ($model->estado === EstadoCertificadoEnum::Anulado) {
-            return $this->errorResponse(
-                'El certificado está anulado y no puede descargarse.',
-                null,
-                409,
-                'CERTIFICATE_ANNULLED',
-            );
+            return $this->errorResponse('El certificado está anulado y no puede descargarse.', null, 409, 'CERTIFICATE_ANNULLED');
         }
 
         $integridad = $this->verificarIntegridad->verificar($model);
@@ -117,12 +114,7 @@ class CertificadoController extends Controller
             return $this->notFoundResponse('No se encontro el archivo PDF del certificado.');
         }
         if ($integridad !== VerificarIntegridadCertificadoService::OK) {
-            return $this->errorResponse(
-                'El documento no pudo validarse y no será entregado.',
-                null,
-                409,
-                'CERTIFICATE_INTEGRITY_FAILURE',
-            );
+            return $this->errorResponse('El documento no pudo validarse y no será entregado.', null, 409, 'CERTIFICATE_INTEGRITY_FAILURE');
         }
 
         if ($model->estado === EstadoCertificadoEnum::Vigente) {
@@ -139,10 +131,7 @@ class CertificadoController extends Controller
         return response()->download(
             Storage::disk('local')->path($model->archivo_pdf_path),
             "{$model->codigo_unico}.pdf",
-            [
-                'Content-Type' => 'application/pdf',
-                'X-Content-Type-Options' => 'nosniff',
-            ]
+            ['Content-Type' => 'application/pdf', 'X-Content-Type-Options' => 'nosniff']
         );
     }
 
@@ -168,11 +157,7 @@ class CertificadoController extends Controller
             modelo: 'Certificado',
             modeloId: $model->id,
             descripcion: "Certificado {$model->codigo_unico} anulado.",
-            metadata: [
-                'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => EstadoCertificadoEnum::Anulado->value,
-                'motivo' => $request->motivo,
-            ],
+            metadata: ['estado_anterior' => $estadoAnterior, 'estado_nuevo' => EstadoCertificadoEnum::Anulado->value, 'motivo' => $request->motivo],
         );
 
         return $this->successResponse(

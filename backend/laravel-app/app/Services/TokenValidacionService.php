@@ -14,9 +14,9 @@ class TokenValidacionService
 
         TokenValidacion::create([
             'certificado_id' => $certificado->id,
-            'token_hash'     => $this->hash($token),
-            'tipo'           => 'validacion',
-            'created_by'     => $creadoPor?->id,
+            'token_hash' => $this->hash($token),
+            'tipo' => 'validacion',
+            'created_by' => $creadoPor?->id,
         ]);
 
         return $token;

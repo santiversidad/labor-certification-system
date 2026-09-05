@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
+use App\Enums\EstadoFuncionarioEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Traits\ApiResponse;
@@ -29,7 +31,7 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'cedula'   => ['required', 'string', 'max:20'],
+            'cedula' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string'],
         ]);
 
@@ -50,6 +52,14 @@ class AuthController extends Controller
             );
         }
 
+        if ($user->hasRole('funcionario') && $user->funcionario?->estado !== EstadoFuncionarioEnum::Activo) {
+            return $this->errorResponse(
+                'Su vinculación de funcionario no está activa. Contacte al administrador.',
+                null,
+                403
+            );
+        }
+
         // Revocar tokens previos para evitar sesiones simultáneas huérfanas
         $user->tokens()->delete();
 
@@ -64,7 +74,7 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'token' => $token,
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
         ], 'Sesión iniciada correctamente.');
     }
 
@@ -98,6 +108,36 @@ class AuthController extends Controller
         return $this->successResponse(
             new UserResource($request->user()->load('funcionario')),
             'Usuario autenticado.'
+        );
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! Hash::check($request->validated('current_password'), $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['La contraseña actual no es correcta.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'password' => $request->validated('password'),
+            'must_change_password' => false,
+            'password_changed_at' => now(),
+        ])->save();
+
+        $this->registrarAuditoria->execute(
+            accion: 'cambio_password_obligatorio',
+            modelo: 'User',
+            modeloId: $user->id,
+            descripcion: 'El usuario completó el cambio de su contraseña temporal.',
+            metadata: ['must_change_password' => ['anterior' => true, 'nuevo' => false]],
+        );
+
+        return $this->successResponse(
+            new UserResource($user->fresh()->load('funcionario')),
+            'Contraseña actualizada correctamente.'
         );
     }
 }

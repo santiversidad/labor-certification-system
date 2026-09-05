@@ -34,10 +34,7 @@ export const certificadosService = {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
         const payload = JSON.parse(await error.response.data.text()) as { message?: string };
-        throw new Error(
-          payload.message ?? `No fue posible descargar el certificado (${error.response.status}).`,
-          { cause: error },
-        );
+        throw new Error(payload.message ?? `No fue posible descargar el certificado (${error.response.status}).`, { cause: error });
       }
       throw error;
     }
@@ -46,7 +43,6 @@ export const certificadosService = {
     const quoted = disposition?.match(/filename="([^"]+)"/i)?.[1];
     const filename = encoded ? decodeURIComponent(encoded) : quoted ?? `certificado-${id}.pdf`;
     const objectUrl = URL.createObjectURL(response.data);
-
     try {
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
@@ -57,7 +53,6 @@ export const certificadosService = {
     } finally {
       URL.revokeObjectURL(objectUrl);
     }
-
     return filename;
   },
 };

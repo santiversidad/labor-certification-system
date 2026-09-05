@@ -63,6 +63,7 @@ class CertificadoValidacionTest extends TestCase
             'estado' => EstadoFuncionarioEnum::Activo,
             'cargo_id' => $cargo->id,
         ]);
+        \Tests\Support\ManualFixture::vincular($this->funcionario);
     }
 
     public function test_secretario_puede_generar_certificado_de_solicitud_aprobada(): void
@@ -99,7 +100,7 @@ class CertificadoValidacionTest extends TestCase
 
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertStatus(422);
+            ->assertStatus(409)->assertJsonPath('code', 'PAGO_NO_CONFIRMADO');
     }
 
     public function test_token_valido_retorna_certificado_valido_y_no_expone_salario(): void
@@ -143,7 +144,6 @@ class CertificadoValidacionTest extends TestCase
         // El helper se autentica para generar el certificado. Reiniciamos los
         // guards para que la primera descarga pruebe realmente un cliente anónimo.
         $this->app['auth']->forgetGuards();
-
         $this->getJson("/api/v1/certificados/{$certificado->id}/descargar")
             ->assertUnauthorized();
 

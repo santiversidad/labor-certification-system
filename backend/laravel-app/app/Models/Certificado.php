@@ -26,11 +26,14 @@ class Certificado extends Model
         'anulado_at',
         'snapshot_schema_version',
         'snapshot_datos',
+        'download_token_hash',
+        'download_token_expires_at',
     ];
 
     protected $hidden = [
         'archivo_pdf_path',
         'hash_pdf',
+        'download_token_hash',
     ];
 
     protected static function booted(): void
@@ -56,6 +59,7 @@ class Certificado extends Model
             'anulado_at' => 'datetime',
             'snapshot_schema_version' => 'integer',
             'snapshot_datos' => 'array',
+            'download_token_expires_at' => 'datetime',
         ];
     }
 

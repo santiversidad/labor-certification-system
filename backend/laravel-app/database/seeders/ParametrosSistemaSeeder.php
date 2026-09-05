@@ -11,11 +11,11 @@ class ParametrosSistemaSeeder extends Seeder
     {
         $parametros = [
             [
-                'clave'       => 'requiere_pago_certificado',
-                'valor'       => 'false',
-                'tipo'        => 'boolean',
+                'clave' => 'requiere_pago_certificado',
+                'valor' => 'false',
+                'tipo' => 'boolean',
                 'descripcion' => 'Activa el flujo de pago obligatorio para certificados. '
-                               . 'Mientras la Alcaldía no defina la estructura tarifaria, debe permanecer en false.',
+                               .'Mientras la Alcaldía no defina la estructura tarifaria, debe permanecer en false.',
             ],
         ];
 

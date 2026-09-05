@@ -13,25 +13,25 @@ class UsuariosInicialesSeeder extends Seeder
     {
         $usuarios = [
             [
-                'name'      => 'Administrador SCL',
+                'name' => 'Administrador SCL',
                 'documento' => '000000001',
-                'password'  => Hash::make('password'),
-                'estado'    => true,
-                'rol'       => RoleEnum::Admin->value,
+                'password' => Hash::make('password'),
+                'estado' => true,
+                'rol' => RoleEnum::Admin->value,
             ],
             [
-                'name'      => 'Secretario SCL',
+                'name' => 'Secretario SCL',
                 'documento' => '000000002',
-                'password'  => Hash::make('password'),
-                'estado'    => true,
-                'rol'       => RoleEnum::Secretario->value,
+                'password' => Hash::make('password'),
+                'estado' => true,
+                'rol' => RoleEnum::Secretario->value,
             ],
             [
-                'name'      => 'Funcionario Prueba',
+                'name' => 'Funcionario Prueba',
                 'documento' => '000000003',
-                'password'  => Hash::make('password'),
-                'estado'    => true,
-                'rol'       => RoleEnum::Funcionario->value,
+                'password' => Hash::make('password'),
+                'estado' => true,
+                'rol' => RoleEnum::Funcionario->value,
             ],
         ];
 

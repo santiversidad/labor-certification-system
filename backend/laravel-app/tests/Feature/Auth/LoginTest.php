@@ -22,13 +22,13 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create([
             'documento' => '12345678',
-            'password'  => bcrypt('password'),
-            'estado'    => true,
+            'password' => bcrypt('password'),
+            'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Admin->value);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'cedula' => '12345678',
             'password' => 'password',
         ]);
 
@@ -47,7 +47,7 @@ class LoginTest extends TestCase
     public function test_login_falla_con_cedula_inexistente(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '99999999',
+            'cedula' => '99999999',
             'password' => 'password',
         ]);
 
@@ -59,11 +59,11 @@ class LoginTest extends TestCase
     {
         User::factory()->create([
             'documento' => '12345678',
-            'password'  => bcrypt('password'),
+            'password' => bcrypt('password'),
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'cedula' => '12345678',
             'password' => 'wrong-password',
         ]);
 
@@ -75,12 +75,12 @@ class LoginTest extends TestCase
     {
         User::factory()->create([
             'documento' => '12345678',
-            'password'  => bcrypt('password'),
-            'estado'    => false,
+            'password' => bcrypt('password'),
+            'estado' => false,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'cedula' => '12345678',
             'password' => 'password',
         ]);
 
@@ -99,7 +99,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create([
             'documento' => '12345678',
-            'estado'    => true,
+            'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Funcionario->value);
 

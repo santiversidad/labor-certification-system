@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\AuditLogResource;
 use App\Http\Requests\IndexQueryRequest;
+use App\Http\Resources\AuditLogResource;
 use App\Models\AuditLog;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {

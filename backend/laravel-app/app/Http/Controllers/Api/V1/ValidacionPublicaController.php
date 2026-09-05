@@ -66,7 +66,6 @@ class ValidacionPublicaController extends Controller
         );
 
         $snapshot = $certificado->snapshot_datos ?? [];
-
         $data = [
             'valido' => $vigente,
             'resultado' => $resultado,

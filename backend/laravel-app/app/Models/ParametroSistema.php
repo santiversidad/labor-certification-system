@@ -37,7 +37,7 @@ class ParametroSistema extends Model
         return match ($parametro->tipo) {
             'boolean' => filter_var($parametro->valor, FILTER_VALIDATE_BOOLEAN),
             'integer' => (int) $parametro->valor,
-            default   => $parametro->valor,
+            default => $parametro->valor,
         };
     }
 }

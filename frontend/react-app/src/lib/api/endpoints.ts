@@ -3,6 +3,7 @@ export const endpoints = {
     login: '/auth/login',
     me: '/auth/me',
     logout: '/auth/logout',
+    changePassword: '/auth/change-password',
   },
   dashboard: '/dashboard',
   funcionarios: '/funcionarios',
@@ -10,6 +11,8 @@ export const endpoints = {
   rangosSalariales: '/rangos-salariales',
   solicitudes: '/solicitudes',
   disponibilidadCertificacion: '/mi-certificacion/disponibilidad',
+  configuracionCertificaciones: '/configuracion/certificaciones',
+  resetFuncionarioAccess: (id: string | number) => `/funcionarios/${id}/restablecer-acceso`,
   solicitudesActions: {
     aprobar: (id: string) => `/solicitudes/${id}/aprobar`,
     rechazar: (id: string) => `/solicitudes/${id}/rechazar`,

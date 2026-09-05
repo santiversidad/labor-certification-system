@@ -23,7 +23,7 @@ class ActuacionAdministrativa extends Model
     {
         return [
             'tipo_actuacion' => TipoActuacionAdministrativaEnum::class,
-            'fecha_acto'     => 'date',
+            'fecha_acto' => 'date',
         ];
     }
 

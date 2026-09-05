@@ -4,9 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\EstadoFuncionarioEnum;
 use App\Enums\EstadoSolicitudEnum;
+use App\Enums\NaturalezaCargoEnum;
 use App\Enums\RoleEnum;
+use App\Enums\TipoVinculacionEnum;
 use App\Models\Cargo;
 use App\Models\Funcionario;
+use App\Models\FuncionarioCargo;
+use App\Models\RangoSalarial;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -20,8 +24,11 @@ class FaseASolicitudMensualTest extends TestCase
     use RefreshDatabase;
 
     private User $usuarioA;
+
     private User $usuarioB;
+
     private Funcionario $funcionarioA;
+
     private Funcionario $funcionarioB;
 
     protected function setUp(): void
@@ -33,6 +40,10 @@ class FaseASolicitudMensualTest extends TestCase
         $cargo = Cargo::create([
             'codigo' => '219', 'grado' => '02',
             'denominacion' => 'Profesional Universitario', 'estado' => true,
+        ]);
+        RangoSalarial::create([
+            'codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026,
+            'salario_basico' => 5000000, 'moneda' => 'COP', 'estado' => true,
         ]);
         [$this->usuarioA, $this->funcionarioA] = $this->crearFuncionario('10000001', $cargo);
         [$this->usuarioB, $this->funcionarioB] = $this->crearFuncionario('10000002', $cargo);
@@ -85,7 +96,7 @@ class FaseASolicitudMensualTest extends TestCase
     public function test_modalidad_es_obligatoria_y_se_persiste_sin_ambiguedad(): void
     {
         $this->radicar($this->usuarioA, true)->assertCreated()
-            ->assertJsonPath('data.requiere_salario', true);
+            ->assertJsonPath('data.solicitud.requiere_salario', true);
 
         $this->actingAs($this->usuarioB, 'sanctum')->postJson('/api/v1/solicitudes', [
             'tipo_certificado' => 'laboral',
@@ -97,7 +108,7 @@ class FaseASolicitudMensualTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors('requiere_salario');
 
         $this->radicar($this->usuarioB, false)->assertCreated()
-            ->assertJsonPath('data.requiere_salario', false);
+            ->assertJsonPath('data.solicitud.requiere_salario', false);
     }
 
     public function test_funcionario_id_enviado_por_cliente_es_rechazado_y_no_hay_idor(): void
@@ -196,7 +207,16 @@ class FaseASolicitudMensualTest extends TestCase
             'estado' => EstadoFuncionarioEnum::Activo,
             'cargo_id' => $cargo->id,
         ]);
+        FuncionarioCargo::create([
+            'funcionario_id' => $funcionario->id,
+            'cargo_id' => $cargo->id,
+            'tipo_vinculacion' => TipoVinculacionEnum::Planta,
+            'naturaleza_cargo' => NaturalezaCargoEnum::CarreraAdministrativa,
+            'es_cargo_base' => true,
+            'fecha_inicio' => '2020-01-15',
+        ]);
 
+        \Tests\Support\ManualFixture::vincular($funcionario);
         return [$usuario, $funcionario];
     }
 }

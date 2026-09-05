@@ -23,9 +23,9 @@ trait ApiResponse
                 $response['data'] = $data->items();
                 $response['meta'] = [
                     'current_page' => $data->currentPage(),
-                    'per_page'     => $data->perPage(),
-                    'total'        => $data->total(),
-                    'last_page'    => $data->lastPage(),
+                    'per_page' => $data->perPage(),
+                    'total' => $data->total(),
+                    'last_page' => $data->lastPage(),
                 ];
             } elseif (is_array($data) && isset($data['data'], $data['meta'])) {
                 // Resultado de ResourceCollection->response()->getData(true)

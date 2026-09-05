@@ -9,6 +9,8 @@ export type User = {
   documento: string;
   telefono?: string | null;
   estado: boolean;
+  must_change_password: boolean;
+  password_changed_at?: string | null;
   roles: Role[];
   permisos: string[];
   funcionario?: Funcionario;

@@ -13,7 +13,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
@@ -21,6 +21,8 @@ class User extends Authenticatable
         'password',
         'telefono',
         'estado',
+        'must_change_password',
+        'password_changed_at',
         'email',       // opcional: solo para notificaciones
     ];
 
@@ -33,7 +35,9 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'estado'   => 'boolean',
+            'estado' => 'boolean',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
         ];
     }
 

@@ -25,7 +25,7 @@ export function LoginForm() {
     mutationFn: authService.login,
     onSuccess: (response) => {
       authStorage.setSession(response.data);
-      navigate(getHomePath(response.data.user), { replace: true });
+      navigate(response.data.user.must_change_password ? '/cambiar-contrasena' : getHomePath(response.data.user), { replace: true });
     },
   });
 

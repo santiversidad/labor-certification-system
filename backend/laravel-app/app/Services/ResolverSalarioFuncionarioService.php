@@ -20,17 +20,17 @@ class ResolverSalarioFuncionarioService
             ->get();
 
         if ($asignaciones->count() > 1) {
-            throw new DomainException('Existen varias asignaciones de cargo vigentes para el funcionario y la fecha indicados.');
+            throw new DomainException('ASIGNACION_AMBIGUA');
         }
 
         if ($asignaciones->isEmpty()) {
-            throw new DomainException('No existe una asignación de cargo vigente para el funcionario y la fecha indicados.');
+            throw new DomainException('ASIGNACION_NO_VIGENTE');
         }
 
         $asignacion = $asignaciones->first();
         $cargo = $asignacion->cargo;
         if (! $cargo) {
-            throw new DomainException('La asignación vigente no tiene un cargo asociado.');
+            throw new DomainException('CARGO_INVALIDO');
         }
 
         if ($asignacion?->salario_override !== null) {
@@ -51,11 +51,11 @@ class ResolverSalarioFuncionarioService
             ->get();
 
         if ($rangos->isEmpty()) {
-            throw new DomainException('No existe un rango salarial vigente aplicable al cargo y la fecha indicados.');
+            throw new DomainException('SALARIO_NO_RESOLUBLE');
         }
 
         if ($rangos->count() > 1) {
-            throw new DomainException('Existen varios rangos salariales vigentes aplicables al cargo y la fecha indicados.');
+            throw new DomainException('SALARIO_AMBIGUO');
         }
 
         $rango = $rangos->first();

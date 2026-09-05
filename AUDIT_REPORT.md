@@ -1,13 +1,13 @@
 # Auditoría técnica integral — labor-certification-system
 
-**Fecha de corte:** 2026-08-30 (actualizado tras Fase B)  
+**Fecha de corte:** 2026-08-31 (actualizado tras Fase C)
 **Alcance:** código, configuración, esquema PostgreSQL real, contratos API/TypeScript, pruebas automatizadas, compilación, lint, auditorías de dependencias y comprobaciones HTTP/visuales locales.  
-**Entorno:** Docker de desarrollo existente; Fase B reconstruyó/recreó la imagen `app` para validar lockfiles, sin borrar volúmenes ni ejecutar comandos destructivos.  
+**Entorno:** Docker de desarrollo existente; Fases B y C reconstruyeron/recrearon imágenes para validar lockfiles y ejecución, sin borrar volúmenes ni ejecutar comandos destructivos.
 **Criterio de evidencia:** **Confirmado** significa reproducido o demostrado directamente; **Probable** es una consecuencia técnicamente sustentada que no pudo reproducirse con los datos actuales; **Requiere validación funcional** identifica una decisión de negocio o jurídica no deducible solo del código.
 
 ## 1. Resumen ejecutivo
 
-La aplicación implementa un flujo React/Vite → API Laravel → PostgreSQL, con autenticación Bearer mediante Sanctum y autorización mediante Spatie Permission. Tras Fase B, Composer y npm no reportan advisories, el build y ESLint terminan correctamente, existen tests React y la suite Laravel ampliada permanece verde. Los indicadores reproducibles se detallan en `PHASE_B_REPORT.md`.
+La aplicación implementa un flujo React/Vite → API Laravel → PostgreSQL, con autenticación Bearer mediante Sanctum y autorización mediante Spatie Permission. Fase C añadió expedición automática 24/7, ciclo seguro de contraseña inicial, administración integral de funcionarios y un borde explícito para pago real. Composer y npm no reportan advisories; build, ESLint, Vitest y Laravel terminan correctamente. Los indicadores reproducibles se detallan en `PHASE_C_REPORT.md`.
 
 El sistema **no está preparado para producción**. Dos bloqueantes sobresalen:
 
@@ -48,6 +48,19 @@ La autorización por objeto existe y Fase A añadió pruebas con dos titulares: 
 | Dependencias | Composer: 23 advisories → 0; npm React: 9 vulnerabilidades → 0 |
 | Firma/oficialidad | `SIGN-001` y `CERT-001` continúan abiertos deliberadamente; el PDF conserva “TEMPORAL” |
 
+### ESTADO ACTUAL — Fase C
+
+| Control | Estado actual |
+| --- | --- |
+| Autoservicio sin pago | Validación, radicación, snapshot, PDF, certificado y descarga propia inmediata en una operación transaccional |
+| Autoservicio con pago | Orden pendiente y cero certificado; contrato para proveedor real, sin pasarela ficticia ni comprobante manual |
+| Cuota mensual | Una CON salario y una SIN salario por funcionario/mes; constraint e invariantes de servicio |
+| Identidad | Alta atómica usuario-funcionario-asignación; contraseña inicial cifrada y cambio obligatorio impuesto por middleware |
+| Administración | Búsqueda, estado, paginación, alta, edición, activación/desactivación, reset y configuración de pago auditada |
+| Secretaría | Fuera del camino crítico de nuevas expediciones; rutas manuales de decisión retiradas con `410 Gone` |
+| Verificación | 82 pruebas Laravel/398 aserciones y 11 pruebas React; builds, ESLint, Pint (156 archivos) y tres auditorías verdes |
+| Firma/oficialidad | Continúan abiertos `SIGN-001` y `CERT-001`; la automatización no sustituye la decisión jurídica/institucional |
+
 El test defectuoso autenticaba al secretario en un helper y después ejecutaba el escenario “sin autenticación” con el guard todavía resuelto. Se agregó `$this->app['auth']->forgetGuards()` antes del escenario anónimo en `tests/Feature/CertificadoValidacionTest.php`. La corrección restablece el aislamiento del test; no se modificaron middleware ni comportamiento de autenticación.
 
 ### Reglas de negocio confirmadas
@@ -56,9 +69,9 @@ Estas reglas sustituyen cualquier supuesto anterior de la auditoría:
 
 1. Cada funcionario puede radicar como máximo **una certificación CON salario y una certificación SIN salario por mes calendario**. Puede, por tanto, radicar hasta dos en el mismo mes si son de modalidades distintas; no puede radicar dos de la misma modalidad.
 2. Ambas modalidades se gestionan en un único flujo y se persisten mediante `requiere_salario`, obligatorio y sin crear un campo duplicado.
-3. Una solicitud radicada consume el cupo mensual de **su modalidad**, aunque después sea rechazada, cancelada, anulada o no produzca certificado, hasta que la Alcaldía apruebe otra regla.
+3. Una solicitud constituida consume el cupo mensual de **su modalidad**, aunque después sea rechazada, cancelada o anulada. En Fase C, un fallo técnico durante la generación sin pago revierte solicitud, certificado y archivo, por lo que no consume cupo.
 4. El límite usa mes calendario y timezone institucional. Fase A configuró `America/Bogota`; Laravel calcula `periodo_mes` y PostgreSQL impone la unicidad.
-5. El funcionario solo inicia sesión, selecciona modalidad, radica, recibe número de radicado y cierra sesión. No consulta expediente, historial laboral, salarios, actuaciones, reportes, auditoría ni listados históricos.
+5. El funcionario inicia sesión, completa el cambio obligatorio cuando aplica, consulta ambos cupos, selecciona modalidad y recibe descarga inmediata o referencia de pago pendiente. No consulta expediente, historial laboral, salarios, actuaciones, reportes, auditoría ni listados históricos.
 6. El titular se deriva de `usuario autenticado → funcionario asociado`; `funcionario_id` enviado por el cliente no puede decidir el titular.
 7. Las funciones certificadas provienen del Manual Específico de Funciones asociado al cargo/empleo, no de texto libre ni de una copia por funcionario.
 8. El salario, cuando la modalidad lo incluye, proviene de la vinculación, cargo y vigencia salarial institucional aplicables. La modalidad sin salario nunca muestra información salarial.
@@ -72,21 +85,21 @@ Estas reglas sustituyen cualquier supuesto anterior de la auditoría:
 
 | Capa | Tecnología real |
 | --- | --- |
-| Backend | Laravel 13.11.2, PHP 8.4.25 en Docker; `composer.json` requiere PHP `^8.3` y Laravel `^13.8` |
+| Backend | Laravel 13.29.0, PHP 8.4.25 en Docker; `composer.json` requiere PHP `^8.3` y Laravel `^13.8` |
 | Autenticación | Laravel Sanctum 4.3.2, tokens Bearer |
 | Autorización | Spatie Laravel Permission 7.4.1, roles `admin`, `secretario`, `funcionario` |
-| Base de datos | PostgreSQL 16.13, 30 tablas, 21 migraciones de aplicación |
+| Base de datos | PostgreSQL 16, 31 tablas, 23 migraciones ejecutadas |
 | Frontend | React 19.2.6, TypeScript 6.0.2, Vite 8.0.14, React Router 7.15.1, TanStack Query 5.100.11, Axios 1.16.1, React Hook Form, Zod, Tailwind 3.4.17 |
 | Infraestructura local | Nginx 1.28, PHP-FPM, Node 24, Docker Compose |
 | Archivos | Disco privado `storage/app/private` |
 
-No existen Repositories, middleware propios, Events, Listeners, Jobs de aplicación, Commands propios, Notifications ni Mailables. Existen tablas de cola, pero desarrollo usa `QUEUE_CONNECTION=sync`; no hay worker, scheduler ni WebSockets. Redis no se usa. Correo se dirige a log. No se identificaron APIs externas activas.
+No existen Repositories, Events, Listeners, Jobs de aplicación, Commands propios, Notifications ni Mailables. Fase C añadió el middleware de cambio obligatorio y el contrato `PaymentGateway`, pero todavía no existe adaptador externo. Existen tablas de cola, aunque desarrollo usa `QUEUE_CONNECTION=sync`; no hay worker, scheduler ni WebSockets. Redis no se usa y el correo se dirige a log.
 
 ### Estructura backend
 
-- 13 controladores API, 15 Form Requests, 10 Resources, 16 modelos, 3 Policies, 9 Services y 2 Actions.
-- `SolicitudCertificacionController` concentra 272 líneas y las reglas de transición de estados.
-- `GenerarCertificadoService` ensambla datos, crea el PDF, persiste archivo/BD/token y cambia el estado.
+- 15 controladores API, 18 Form Requests, 10 Resources, 17 modelos, 3 Policies, 11 Services, 2 Actions y 1 middleware propio.
+- `SolicitudCertificacionController` delega la expedición nueva en `ExpedirCertificacionService` y conserva consulta administrativa y respuestas `410` para decisiones manuales retiradas.
+- `GenerarCertificadoService` ensambla datos, crea el PDF, persiste archivo/BD/tokens y cambia el estado; `ExpedirCertificacionService` coordina cuota, pago y transacción de autoservicio.
 - `RegistrarAuditoriaAction` implementa auditoría manual, no transversal.
 
 ### Estructura frontend
@@ -134,7 +147,7 @@ No existen Repositories, middleware propios, Events, Listeners, Jobs de aplicaci
 
 ## 4. Modelo de datos
 
-PostgreSQL contiene 30 tablas tras Fase A. Las claves primarias, foráneas y nuevos constraints declarados por migración existen en la base real.
+PostgreSQL contiene 31 tablas tras Fase C. Las claves primarias, foráneas y nuevos constraints declarados por migración existen en la base real.
 
 ### Relaciones principales
 
@@ -471,15 +484,15 @@ Los únicos efectos temporizados propios (`useDebounce`) limpian correctamente e
 
 ## 14. Base de datos
 
-La estructura sigue siendo de prototipo. Fase A añadió integridad mensual, Manual y snapshot; Fase B impuso cardinalidades usuario↔funcionario y pago↔solicitud, checks documentales y bloqueo aplicativo del hard delete con expediente. Sigue pendiente rediseñar FKs/soft delete/retención antes de poblar datos oficiales.
+La estructura sigue siendo de prototipo. Fase A añadió integridad mensual, Manual y snapshot; Fase B impuso cardinalidades usuario↔funcionario y pago↔solicitud, checks documentales y bloqueo aplicativo del hard delete con expediente. Fase C agregó el ciclo de cambio obligatorio, tokens temporales de descarga, órdenes de pago y búsquedas administrativas. Sigue pendiente definir retención, firma y operación productiva antes de poblar datos oficiales.
 
-Fase A aplicó tres migraciones incrementales (batch 2). Fase B comprobó cero duplicados en ambas cardinalidades y aplicó una cuarta migración incremental (batch 3). No se ejecutó `migrate:fresh`, wipe, truncate, eliminación masiva ni borrado de volúmenes; no se eliminó información.
+Fase A aplicó tres migraciones incrementales y Fase B una migración adicional. Fase C agregó `2026_08_31_000005_add_phase_c_self_service_foundation.php` y verificó índices, ausencia de huérfanos/duplicados y cero migraciones pendientes. La base principal local estaba vacía de registros de negocio. No se ejecutó `migrate:fresh`, wipe, truncate, eliminación masiva ni borrado de volúmenes; no se eliminó información.
 
 ## 15. Testing
 
 **ESTADO ORIGINAL/Fase A:** 52 tests Laravel y 207 aserciones, sin infraestructura React.
 
-**ESTADO ACTUAL:** 74 tests Laravel, 341 aserciones, todos verdes; 5 archivos Vitest con 8 tests React, todos verdes. Además de la cobertura de Fase A, Fase B cubre:
+**ESTADO ACTUAL:** 82 tests Laravel, 398 aserciones, todos verdes; 7 archivos Vitest con 11 tests React, todos verdes. Además de la cobertura de Fases A y B, Fase C cubre:
 
 - Acceso privado a soporte por rol, headers/ruta física y lifecycle en éxito, fallo BD y fallo de delete antiguo.
 - Token de 256 bits, PDF alterado/ausente, anulación explícita e integridad pública/descarga.
@@ -489,12 +502,15 @@ Fase A aplicó tres migraciones incrementales (batch 2). Fase B comprobó cero d
 - Salario ausente/ambiguo/rango ausente; SIN salario no resuelve salario.
 - Snapshot obligatorio e inmutable.
 - React: dos modalidades, bloqueo selectivo, radicado real, logout API, validación pública y descarga blob autenticada.
+- Alta atómica de funcionario/cuenta/asignación, cambio obligatorio y reset con revocación de tokens.
+- Expedición y descarga inmediata cuando el pago está apagado; orden pendiente sin certificado cuando está encendido.
+- Inactividad, configuración auditada, titularidad de descarga y retiro del flujo manual nuevo.
 
 Cobertura crítica todavía pendiente:
 
 - Matriz completa rol-permiso-endpoint más allá del flujo funcionario cubierto.
 - CRUD completo de cargos/funcionarios más allá de las reglas focales y todos los casos de cascada/FK.
-- Concurrencia real paralela de procesos para pago; la cuota mensual tiene constraint y simulación de colisión.
+- Concurrencia sostenida multiproceso para pago y expedición; la cuota mensual tiene constraint, bloqueo transaccional y simulación de colisión.
 - Expiración/rotación/uso de tokens cuando exista regla institucional.
 - Contrato uniforme global para endpoints no modificados y CORS de producción.
 - Fecha salarial institucional definitiva y formato oficial del documento.
@@ -576,7 +592,7 @@ El Compose actual es correcto para desarrollo y no debe convertirse sin diseño 
 | BACK-002 | INFORMATIVO | Validación | **CORREGIDO EN APIS MODIFICADAS:** request común, máximo 100 y allowlists | IndexQueryRequest + tests | Entrada acotada | Extender patrón a nuevos listados |
 | BACK-003 | BAJO | Errores | **PARCIAL FASE B:** envelope común en APIs modificadas y no stack | handlers + contract test | Cliente más estable | Auditar endpoints heredados restantes |
 | AUDIT-001 | BAJO | Auditoría | **PARCIAL FASE B:** acciones críticas ampliadas con old/new/IP/UA según soporte del modelo | controladores/services/tests | Mayor trazabilidad | Diseñar retención/inmutabilidad transversal |
-| TEST-001 | BAJO | Testing | **PARCIAL FASE B:** backend ampliado y 8 tests React; E2E aplazado | PHPUnit, Vitest/RTL | Riesgo visual reducido | Incorporar Playwright con fixtures aislados más adelante |
+| TEST-001 | BAJO | Testing | **PARCIAL FASE C:** backend ampliado y 11 tests React; E2E aplazado | PHPUnit, Vitest/RTL | Riesgo funcional reducido | Incorporar Playwright con fixtures aislados más adelante |
 | PROD-001 | MEDIO | Producción | Compose expone Vite dev/debug y credenciales locales | compose líneas 31-46, Dockerfiles | Inseguro si se despliega tal cual | Artefactos e infraestructura productivos separados |
 | DB-003 | INFORMATIVO | BD | **CORREGIDO EN FASE B:** dos cardinalidades hasOne impuestas tras comprobar cero duplicados | migración incremental e índices | Duplicados bloqueados | Mantener preflight en despliegues |
 | CORS-001 | BAJO | CORS | Configuración solo localhost y methods/headers `*` | `config/cors.php` | No desplegable sin parametrizar | Orígenes explícitos por ambiente |
@@ -639,10 +655,13 @@ Siguientes cambios de bajo riesgo recomendados:
 
 ### Fase C — Integridad funcional
 
-- Reglas históricas de cargo/salario y estados.
-- Documento oficial, consecutivo institucional, QR y firma continúan pendientes; token robusto y verificación de hash técnica ya completados.
-- Diseñar firma, evidencia, revocación, versiones y trazabilidad con asesoría jurídica.
-- Formularios, confirmación y validación pública base completados; gobierno institucional del pago/documento sigue pendiente.
+- **Completado:** autoservicio transaccional sin pago y orden pendiente sin certificado con pago.
+- **Completado:** una modalidad CON y una SIN salario por mes, datos automáticos y snapshot inmutable.
+- **Completado:** ciclo de cuenta inicial, cambio obligatorio, administración de funcionarios y parámetro de pago auditado.
+- **Completado:** Secretaría retirada del camino crítico de nuevas expediciones.
+- **Pendiente externo:** proveedor real, webhook autenticado/idempotente y conciliación.
+- Documento oficial, QR y firma continúan pendientes; token robusto y verificación de hash técnica ya están completados.
+- Diseñar firma automática, evidencia, revocación, versiones y trazabilidad con asesoría jurídica.
 
 ### Fase D — Calidad
 
@@ -663,10 +682,14 @@ Siguientes cambios de bajo riesgo recomendados:
 ```text
 docker compose exec -T frontend npm run build
 docker compose exec -T frontend npm run lint
+docker compose exec -T app ./vendor/bin/pint --test
 docker compose exec -e APP_ENV=testing -e CACHE_STORE=array -e SESSION_DRIVER=array -e DB_HOST=postgres -e DB_DATABASE=scl_db_test app php artisan test
 docker compose exec -T app composer audit --format=json
 docker compose exec -T frontend npm audit --json
+docker run --rm -v "${PWD}/backend/laravel-app/package.json:/app/package.json:ro" -v "${PWD}/backend/laravel-app/package-lock.json:/app/package-lock.json:ro" -w /app node:24-alpine npm audit --json
 docker compose exec -T app php artisan route:list --json
+docker compose exec -T app php artisan migrate:status
+docker compose exec -T app php artisan migrate --pretend
 psql: inventario de tablas, constraints, índices y conteos
 HTTP: matriz admin/secretario/funcionario/anónimo, logout y 65 intentos fallidos
 Navegador local: login, panel y solicitudes de funcionario, logout

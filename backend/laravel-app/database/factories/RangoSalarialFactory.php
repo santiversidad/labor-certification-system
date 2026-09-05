@@ -15,13 +15,13 @@ class RangoSalarialFactory extends Factory
     public function definition(): array
     {
         return [
-            'codigo'         => fake()->numerify('###'),
-            'grado'          => fake()->numerify('##'),
-            'vigencia_anio'  => fake()->year(),
+            'codigo' => fake()->numerify('###'),
+            'grado' => fake()->numerify('##'),
+            'vigencia_anio' => fake()->year(),
             'salario_basico' => fake()->randomFloat(2, 1000000, 10000000),
-            'moneda'         => 'COP',
-            'observaciones'  => null,
-            'estado'         => true,
+            'moneda' => 'COP',
+            'observaciones' => null,
+            'estado' => true,
         ];
     }
 }

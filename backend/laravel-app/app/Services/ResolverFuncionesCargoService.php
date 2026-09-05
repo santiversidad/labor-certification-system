@@ -6,6 +6,7 @@ use App\Models\ManualCargoVersion;
 use Carbon\CarbonInterface;
 use DomainException;
 
+/** @deprecated Legacy administrative query. Certificate generation must use ResolverFuncionesFuncionarioService. */
 class ResolverFuncionesCargoService
 {
     public function resolver(int $cargoId, CarbonInterface $fecha): ?array

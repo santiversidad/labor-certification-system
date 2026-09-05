@@ -29,21 +29,21 @@ class ReporteController extends Controller
             ->value('promedio');
 
         return $this->successResponse([
-            'total_funcionarios'        => Funcionario::count(),
-            'total_solicitudes'         => SolicitudCertificacion::count(),
-            'solicitudes_pendientes'    => SolicitudCertificacion::whereIn('estado', [
+            'total_funcionarios' => Funcionario::count(),
+            'total_solicitudes' => SolicitudCertificacion::count(),
+            'solicitudes_pendientes' => SolicitudCertificacion::whereIn('estado', [
                 EstadoSolicitudEnum::Pendiente->value,
                 EstadoSolicitudEnum::EnRevision->value,
                 EstadoSolicitudEnum::PendientePago->value,
                 EstadoSolicitudEnum::PagoEnRevision->value,
             ])->count(),
-            'solicitudes_aprobadas'     => SolicitudCertificacion::whereIn('estado', [
+            'solicitudes_aprobadas' => SolicitudCertificacion::whereIn('estado', [
                 EstadoSolicitudEnum::Aprobada->value,
                 EstadoSolicitudEnum::CertificadoGenerado->value,
             ])->count(),
-            'solicitudes_rechazadas'    => SolicitudCertificacion::where('estado', EstadoSolicitudEnum::Rechazada->value)->count(),
-            'certificados_generados'    => Certificado::count(),
-            'pagos_pendientes'          => PagoSoporte::whereIn('estado', [
+            'solicitudes_rechazadas' => SolicitudCertificacion::where('estado', EstadoSolicitudEnum::Rechazada->value)->count(),
+            'certificados_generados' => Certificado::count(),
+            'pagos_pendientes' => PagoSoporte::whereIn('estado', [
                 EstadoPagoEnum::Pendiente->value,
                 EstadoPagoEnum::Cargado->value,
             ])->count(),

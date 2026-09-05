@@ -30,9 +30,9 @@ class StorePagoSoporteRequest extends FormRequest
     {
         return [
             'archivo.required' => 'Debe adjuntar el soporte de pago.',
-            'archivo.file'     => 'El soporte debe ser un archivo válido.',
-            'archivo.mimes'    => 'El soporte debe ser PDF, JPG o PNG.',
-            'archivo.max'      => 'El archivo no puede superar los 5 MB.',
+            'archivo.file' => 'El soporte debe ser un archivo válido.',
+            'archivo.mimes' => 'El soporte debe ser PDF, JPG o PNG.',
+            'archivo.max' => 'El archivo no puede superar los 5 MB.',
         ];
     }
 }

@@ -57,6 +57,16 @@ Los seeders incluyen cuentas exclusivamente de desarrollo:
 | Secretario | `000000002` | `password` |
 | Funcionario | `000000003` | `password` |
 
+Estas credenciales no deben existir en producción. Las cuentas creadas desde Administración usan la cédula como contraseña inicial cifrada y el backend obliga a cambiarla antes de permitir cualquier función distinta de consultar sesión, cambiar contraseña o cerrar sesión.
+
+## Flujo de autoservicio de Fase C
+
+- Con `requiere_pago_certificado=false`, un funcionario activo expide y descarga inmediatamente su certificado; validación, snapshot, PDF y persistencia se coordinan en una transacción.
+- Con `requiere_pago_certificado=true`, se crea una orden pendiente y no se genera ningún certificado. La continuación exige un proveedor real y un webhook autenticado/idempotente; no existe pasarela simulada ni carga manual de comprobante para el flujo nuevo.
+- La cuota es una certificación CON salario y una SIN salario por funcionario y mes calendario.
+- Las rutas manuales de aprobación/rechazo de solicitudes nuevas están retiradas. Secretaría no participa en el camino crítico automático.
+- El parámetro de pago se modifica desde Administración y el cambio queda auditado.
+
 No deben reutilizarse esas credenciales en otro entorno.
 
 ## Cómo detener
@@ -115,6 +125,7 @@ docker compose exec app composer install
 docker compose exec app composer validate --strict --no-check-publish
 docker compose exec app composer check-platform-reqs
 docker compose exec app composer audit
+docker compose exec app ./vendor/bin/pint --test
 ```
 
 No ejecute `composer update` durante la preparación normal del entorno.
@@ -128,9 +139,15 @@ docker compose exec frontend npm ci
 docker compose exec frontend npm run build
 docker compose exec frontend npm run lint
 docker compose exec frontend npm audit
+docker compose exec frontend npm test -- --run
 ```
 
-El pequeño frontend Blade de Laravel posee `package-lock.json`; sus recursos se construyen reproduciblemente dentro de la imagen PHP con `npm ci` y `npm run build`.
+El pequeño frontend Blade de Laravel posee `package-lock.json`; sus recursos se construyen reproduciblemente en la etapa Node de la imagen PHP con `npm ci` y `npm run build`. La imagen PHP final no contiene Node. Para comprobar el build y auditar ese árbol:
+
+```powershell
+docker compose build app
+docker run --rm -v "${PWD}/backend/laravel-app/package.json:/app/package.json:ro" -v "${PWD}/backend/laravel-app/package-lock.json:/app/package-lock.json:ro" -w /app node:24-alpine npm audit
+```
 
 ## Base de datos
 
@@ -192,7 +209,7 @@ Al cambiar los puertos, reinicie los servicios para que Vite, CORS y `APP_URL` r
 - El entorno local y la conexión React/Vite → Laravel → PostgreSQL funcionan. Los cuatro servicios tienen healthcheck.
 - El build de los recursos Blade del backend termina correctamente.
 - `npm run build` y `npm run lint` terminan correctamente. Vite en desarrollo arranca y renderiza.
-- La suite backend termina con 74 pruebas correctas y 0 fallidas (341 aserciones) usando `scl_db_test`; Vitest termina con 8 pruebas React correctas. Incluye regla mensual, IDOR, soportes privados/lifecycle, Manual, snapshot, hash, contratos, rate limit y errores API.
-- `composer audit` y ambos árboles npm reportan 0 advisories/vulnerabilidades al corte de Fase B.
+- La suite backend termina con 82 pruebas correctas y 0 fallidas (398 aserciones) usando `scl_db_test`; Vitest termina con 11 pruebas React correctas. Incluye autoservicio de Fase C, regla mensual, cambio obligatorio, IDOR, soportes privados/lifecycle, Manual, snapshot, hash, contratos, rate limit y errores API.
+- `composer audit` y ambos árboles npm reportan 0 advisories/vulnerabilidades al corte de Fase C.
 - La auditoría integral posterior detectó brechas funcionales y de seguridad que impiden considerar el sistema listo para producción; están documentadas en `AUDIT_REPORT.md`.
-- Las auditorías de Composer y npm reportan vulnerabilidades conocidas. No se actualizaron dependencias en esta fase.
+- El detalle funcional, el antes/después y los límites de producción están documentados en `PHASE_C_REPORT.md`.

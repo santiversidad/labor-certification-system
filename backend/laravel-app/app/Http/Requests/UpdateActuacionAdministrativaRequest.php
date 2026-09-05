@@ -16,11 +16,11 @@ class UpdateActuacionAdministrativaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'funcionario_id'  => ['sometimes', 'exists:funcionarios,id'],
+            'funcionario_id' => ['sometimes', 'exists:funcionarios,id'],
             'tipo_actuacion' => ['sometimes', Rule::enum(TipoActuacionAdministrativaEnum::class)],
-            'numero_acto'    => ['nullable', 'string', 'max:60'],
-            'fecha_acto'     => ['nullable', 'date'],
-            'descripcion'    => ['sometimes', 'string', 'max:2000'],
+            'numero_acto' => ['nullable', 'string', 'max:60'],
+            'fecha_acto' => ['nullable', 'date'],
+            'descripcion' => ['sometimes', 'string', 'max:2000'],
         ];
     }
 }

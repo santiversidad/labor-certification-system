@@ -27,9 +27,9 @@ class RangoSalarial extends Model
     protected function casts(): array
     {
         return [
-            'vigencia_anio'  => 'integer',
+            'vigencia_anio' => 'integer',
             'salario_basico' => 'decimal:2',
-            'estado'         => 'boolean',
+            'estado' => 'boolean',
         ];
     }
 

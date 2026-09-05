@@ -26,7 +26,7 @@ class TokenValidacion extends Model
     {
         return [
             'expires_at' => 'datetime',
-            'used_at'    => 'datetime',
+            'used_at' => 'datetime',
         ];
     }
 

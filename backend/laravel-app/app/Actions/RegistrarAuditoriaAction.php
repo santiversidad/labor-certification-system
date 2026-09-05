@@ -19,14 +19,14 @@ class RegistrarAuditoriaAction
         $userId = Request::user()?->getKey();
 
         return AuditLog::create([
-            'user_id'     => $userId,
-            'accion'      => $accion,
-            'modelo'      => $modelo,
-            'modelo_id'   => $modeloId,
+            'user_id' => $userId,
+            'accion' => $accion,
+            'modelo' => $modelo,
+            'modelo_id' => $modeloId,
             'descripcion' => $descripcion,
-            'metadata'    => $metadata,
-            'ip_address'  => Request::ip(),
-            'user_agent'  => Request::userAgent(),
+            'metadata' => $metadata,
+            'ip_address' => Request::ip(),
+            'user_agent' => Request::userAgent(),
         ]);
     }
 }

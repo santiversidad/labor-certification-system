@@ -17,9 +17,9 @@ class DatosEjemploSeeder extends Seeder
             ['codigo' => '219', 'grado' => '02'],
             [
                 'denominacion' => 'Profesional Universitario',
-                'nivel'        => 'Profesional',
-                'dependencia'  => 'Dirección de Personal',
-                'estado'       => true,
+                'nivel' => 'Profesional',
+                'dependencia' => 'Dirección de Personal',
+                'estado' => true,
             ]
         );
 
@@ -30,9 +30,9 @@ class DatosEjemploSeeder extends Seeder
             ['codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026],
             [
                 'salario_basico' => 3450000.00,
-                'moneda'         => 'COP',
-                'observaciones'  => 'Salario básico según decreto de salarios 2026.',
-                'estado'         => true,
+                'moneda' => 'COP',
+                'observaciones' => 'Salario básico según decreto de salarios 2026.',
+                'estado' => true,
             ]
         );
 
@@ -46,16 +46,16 @@ class DatosEjemploSeeder extends Seeder
             $funcionario = Funcionario::firstOrCreate(
                 ['user_id' => $userFuncionario->id],
                 [
-                    'tipo_documento'        => 'CC',
-                    'numero_documento'      => '000000003',
-                    'nombres'               => 'Funcionario',
-                    'apellidos'             => 'Prueba',
-                    'correo_institucional'  => 'funcionario@villavicencio.gov.co',
-                    'telefono'              => '3001234567',
-                    'estado'                => 'activo',
-                    'fecha_ingreso'         => '2020-01-15',
-                    'dependencia'           => 'Dirección de Personal',
-                    'cargo_id'              => $cargo->id,
+                    'tipo_documento' => 'CC',
+                    'numero_documento' => '000000003',
+                    'nombres' => 'Funcionario',
+                    'apellidos' => 'Prueba',
+                    'correo_institucional' => 'funcionario@villavicencio.gov.co',
+                    'telefono' => '3001234567',
+                    'estado' => 'activo',
+                    'fecha_ingreso' => '2020-01-15',
+                    'dependencia' => 'Dirección de Personal',
+                    'cargo_id' => $cargo->id,
                 ]
             );
 

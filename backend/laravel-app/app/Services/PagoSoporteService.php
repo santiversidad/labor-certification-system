@@ -22,8 +22,8 @@ class PagoSoporteService
     ) {}
 
     /**
-     * Almacena el archivo en disco privado y crea el registro PagoSoporte.
-     * También avanza la solicitud a estado 'pago_pendiente'.
+     * Conserva de forma segura el histórico de soportes de solicitudes previas
+     * a la activación del flujo automático con pasarela.
      */
     public function cargar(
         SolicitudCertificacion $solicitud,
@@ -110,9 +110,6 @@ class PagoSoporteService
         return $pago;
     }
 
-    /**
-     * Elimina el archivo físico del disco al rechazar o cancelar.
-     */
     public function eliminarArchivo(PagoSoporte $pago): void
     {
         if (Storage::disk('local')->exists($pago->archivo_path)) {

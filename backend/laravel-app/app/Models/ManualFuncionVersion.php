@@ -14,11 +14,13 @@ class ManualFuncionVersion extends Model
         'manual_funciones_id', 'version', 'vigencia_desde', 'vigencia_hasta',
         'acto_tipo', 'acto_numero', 'acto_fecha', 'acto_referencia', 'estado',
         'created_by', 'updated_by',
+        'metadata_manual',
     ];
 
     protected function casts(): array
     {
         return [
+            'metadata_manual' => 'array',
             'vigencia_desde' => 'date',
             'vigencia_hasta' => 'date',
             'acto_fecha' => 'date',

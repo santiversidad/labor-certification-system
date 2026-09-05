@@ -4,18 +4,18 @@ namespace App\Enums;
 
 enum EstadoCertificadoEnum: string
 {
-    case Vigente    = 'vigente';
+    case Vigente = 'vigente';
     case Descargado = 'descargado';
-    case Anulado    = 'anulado';
-    case Vencido    = 'vencido';
+    case Anulado = 'anulado';
+    case Vencido = 'vencido';
 
     public function label(): string
     {
         return match ($this) {
-            self::Vigente    => 'Vigente',
+            self::Vigente => 'Vigente',
             self::Descargado => 'Descargado',
-            self::Anulado    => 'Anulado',
-            self::Vencido    => 'Vencido',
+            self::Anulado => 'Anulado',
+            self::Vencido => 'Vencido',
         };
     }
 

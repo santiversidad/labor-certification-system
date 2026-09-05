@@ -42,7 +42,6 @@ class PagoSoporteTest extends TestCase
 
         $this->secretario = User::factory()->create(['estado' => true]);
         $this->secretario->assignRole(RoleEnum::Secretario->value);
-
         $this->admin = User::factory()->create(['estado' => true]);
         $this->admin->assignRole(RoleEnum::Admin->value);
 
@@ -75,16 +74,17 @@ class PagoSoporteTest extends TestCase
         ]);
     }
 
-    public function test_pago_no_obligatorio_si_configuracion_esta_apagada(): void
+    public function test_funcionario_no_puede_cargar_soporte_manual_con_pago_apagado(): void
     {
         $archivo = UploadedFile::fake()->create('soporte.pdf', 100, 'application/pdf');
 
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", ['archivo' => $archivo])
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertJsonPath('success', false);
     }
 
-    public function test_funcionario_no_tiene_permiso_para_cargar_archivos_de_pago(): void
+    public function test_funcionario_no_puede_usar_ruta_legacy_de_soporte(): void
     {
         $this->activarPagos();
         $archivo = UploadedFile::fake()->create('soporte.exe', 100, 'application/octet-stream');
@@ -94,7 +94,7 @@ class PagoSoporteTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_funcionario_no_puede_cargar_soporte_aunque_pagos_este_activo(): void
+    public function test_funcionario_no_carga_comprobante_manual_aunque_pago_este_activo(): void
     {
         $this->activarPagos();
         $archivo = UploadedFile::fake()->create('soporte.pdf', 500, 'application/pdf');
@@ -103,7 +103,7 @@ class PagoSoporteTest extends TestCase
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", ['archivo' => $archivo])
             ->assertForbidden();
 
-        $this->assertDatabaseCount('pagos_soportes', 0);
+        $this->assertDatabaseMissing('pagos_soportes', ['solicitud_certificacion_id' => $this->solicitud->id]);
     }
 
     public function test_secretario_puede_aprobar_pago(): void

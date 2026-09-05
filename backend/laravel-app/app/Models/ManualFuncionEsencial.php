@@ -9,7 +9,7 @@ class ManualFuncionEsencial extends Model
 {
     protected $table = 'manual_funciones_esenciales';
 
-    protected $fillable = ['manual_cargo_version_id', 'orden', 'descripcion'];
+    protected $fillable = ['manual_cargo_version_id', 'orden', 'descripcion', 'numero_fuente', 'grupo'];
 
     public function cargoVersion(): BelongsTo
     {

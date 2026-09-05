@@ -81,10 +81,12 @@ class SnapshotCertificadoTest extends TestCase
         $this->cargoVersion = ManualCargoVersion::create([
             'manual_funciones_version_id' => $version->id, 'cargo_id' => $this->cargo->id,
             'proposito_principal' => 'Gestionar el talento humano.',
+            'area_funcional' => 'Talento Humano', 'dependencia' => 'Talento Humano',
         ]);
         $this->cargoVersion->funciones()->create([
             'orden' => 1, 'descripcion' => 'Administrar los procesos asignados.',
         ]);
+        $this->funcionario->historialCargos()->update(['manual_cargo_version_id' => $this->cargoVersion->id]);
     }
 
     protected function tearDown(): void
@@ -126,7 +128,7 @@ class SnapshotCertificadoTest extends TestCase
         $certificado = Certificado::firstOrFail();
         $this->assertArrayNotHasKey('salario', $certificado->snapshot_datos);
         $this->assertStringNotContainsString('Salario basico:', Storage::disk('local')->get($certificado->archivo_pdf_path));
-        $this->assertSame(1, $certificado->snapshot_schema_version);
+        $this->assertSame(2, $certificado->snapshot_schema_version);
     }
 
     private function crearSolicitud(bool $requiereSalario, TipoCertificadoEnum $tipo): SolicitudCertificacion
