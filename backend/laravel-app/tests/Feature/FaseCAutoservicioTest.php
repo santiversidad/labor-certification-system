@@ -7,16 +7,22 @@ use App\Enums\NaturalezaCargoEnum;
 use App\Enums\RoleEnum;
 use App\Enums\TipoVinculacionEnum;
 use App\Models\Cargo;
+use App\Models\Certificado;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
 use App\Models\ParametroSistema;
 use App\Models\RangoSalarial;
 use App\Models\User;
+use App\Services\PdfBasicoService;
+use App\Services\ResolverSalarioFuncionarioService;
+use App\Services\TokenValidacionService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class FaseCAutoservicioTest extends TestCase
@@ -47,7 +53,7 @@ class FaseCAutoservicioTest extends TestCase
         ParametroSistema::create([
             'clave' => 'requiere_pago_certificado', 'valor' => 'false', 'tipo' => 'boolean',
         ]);
-        \Tests\Support\ManualFixture::ficha($this->cargo);
+        ManualFixture::ficha($this->cargo);
     }
 
     protected function tearDown(): void
@@ -176,6 +182,128 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'restablecer_acceso_funcionario']);
     }
 
+    public function test_fallo_pdf_revierte_todo_y_permite_reintentar(): void
+    {
+        [$user] = $this->crearFuncionarioDirecto('100200309');
+        $this->mock(PdfBasicoService::class, function ($mock) {
+            $mock->shouldReceive('generarDesdeTexto')->once()->andThrow(new \RuntimeException('PDF_TEST_FAILURE'));
+        });
+        $this->solicitar($user, false)->assertStatus(503)->assertJsonPath('code', 'CERTIFICATE_GENERATION_FAILED');
+        $this->assertDatabaseCount('certificados', 0);
+        $this->assertDatabaseCount('solicitudes_certificacion', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles('certificados'));
+        $this->assertDatabaseHas('audit_logs', ['accion' => 'generacion_certificado_fallida']);
+        $this->app->forgetInstance(PdfBasicoService::class);
+        $this->app['router']->getRoutes()->getByName('v1.solicitudes.store')->flushController();
+        $this->solicitar($user, false)->assertCreated();
+        $this->assertDatabaseCount('certificados', 1);
+    }
+
+    public function test_fallo_bd_despues_de_pdf_elimina_archivo_y_libera_cupo(): void
+    {
+        [$user] = $this->crearFuncionarioDirecto('100200310');
+        $this->mock(TokenValidacionService::class, function ($mock) {
+            $mock->shouldReceive('crearParaCertificado')->once()->andThrow(new \RuntimeException('DB_TEST_FAILURE'));
+        });
+        $this->solicitar($user, false)->assertStatus(503);
+        $this->assertDatabaseCount('certificados', 0);
+        $this->assertDatabaseCount('solicitudes_certificacion', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles('certificados'));
+        $this->app->forgetInstance(TokenValidacionService::class);
+        $this->app['router']->getRoutes()->getByName('v1.solicitudes.store')->flushController();
+        $this->solicitar($user, false)->assertCreated();
+    }
+
+    public function test_expedicion_con_funciones_sin_sesiones_administrativas_y_sin_resolver_salario(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200311'))->assertCreated();
+        $user = User::where('documento', '100200311')->firstOrFail();
+        $user->update(['must_change_password' => false]);
+        $this->assertSame(0, $this->admin->tokens()->count());
+        $this->assertSame(0, User::role(RoleEnum::Secretario->value)->count());
+        $this->mock(ResolverSalarioFuncionarioService::class, fn ($mock) => $mock->shouldNotReceive('resolver'));
+        $this->actingAs($user, 'sanctum')->postJson('/api/v1/solicitudes', [
+            'tipo_certificado' => 'funciones', 'requiere_salario' => false,
+        ])->assertCreated()->assertJsonPath('data.resultado', 'generada');
+        $snapshot = Certificado::sole()->snapshot_datos;
+        $this->assertNotNull($snapshot['manual']['relacion_normativa_id']);
+        $this->assertSame('planta', $snapshot['asignacion']['tipo_vinculacion']);
+        $this->assertSame('2024-01-15', $snapshot['asignacion']['fecha_inicio']);
+        $this->assertSame($this->cargo->id, $snapshot['cargo']['id']);
+        $this->assertSame('Función sintética de pruebas.', $snapshot['funciones_especificas'][0]['descripcion']);
+        $this->assertArrayNotHasKey('salario', $snapshot);
+        $this->assertDatabaseHas('solicitudes_certificacion', ['estado' => 'generada', 'reviewed_by' => null]);
+    }
+
+    public function test_password_pendiente_bloquea_urls_directas_y_sesion_es_minima(): void
+    {
+        [$user] = $this->crearFuncionarioDirecto('100200312', true);
+        $this->actingAs($user, 'sanctum');
+        foreach (['/api/v1/funcionarios', '/api/v1/configuracion/certificaciones', '/api/v1/mi-certificacion/descargar/inventado'] as $url) {
+            $this->getJson($url)->assertForbidden()->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
+        }
+        $this->postJson('/api/v1/solicitudes', ['tipo_certificado' => 'laboral', 'requiere_salario' => false])
+            ->assertForbidden()->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
+        $this->getJson('/api/v1/auth/me')->assertOk()->assertJsonMissingPath('data.funcionario')
+            ->assertJsonMissingPath('data.password');
+    }
+
+    public function test_pago_no_puede_confirmarse_desde_cliente(): void
+    {
+        ParametroSistema::where('clave', 'requiere_pago_certificado')->update(['valor' => 'true']);
+        [$user] = $this->crearFuncionarioDirecto('100200313');
+        $response = $this->solicitar($user, false)->assertCreated();
+        $id = $response->json('data.solicitud.id');
+        $this->patchJson("/api/v1/solicitudes/{$id}/marcar-pago", ['pagado' => true])->assertStatus(410);
+        $this->patchJson('/api/v1/configuracion/certificaciones', ['requiere_pago_certificado' => false])->assertForbidden();
+        $this->assertDatabaseCount('certificados', 0);
+    }
+
+    public function test_listado_admin_filtra_pagina_y_no_expone_secretos(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200314'))->assertCreated();
+        $this->getJson('/api/v1/funcionarios?q=100200314&per_page=1&estado=activo')
+            ->assertOk()->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.usuario.must_change_password', true)
+            ->assertJsonMissingPath('data.0.usuario.password')
+            ->assertJsonStructure(['data' => [['asignacion_actual' => ['ficha_manual']]]]);
+    }
+
+    public function test_login_temporal_real_cambio_y_nuevo_login_sin_password_anterior(): void
+    {
+        $documento = '100200315';
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario($documento))->assertCreated();
+        Auth::forgetGuards();
+        $login = $this->postJson('/api/v1/auth/login', ['cedula' => $documento, 'password' => $documento])
+            ->assertOk()->assertJsonPath('data.user.must_change_password', true);
+        $token = $login->json('data.token');
+        Auth::forgetGuards();
+        $this->withToken($token)->putJson('/api/v1/auth/change-password', [
+            'current_password' => $documento, 'password' => 'OtraClaveNueva2026',
+            'password_confirmation' => 'OtraClaveNueva2026',
+        ])->assertOk();
+        Auth::forgetGuards();
+        $this->withToken($token)->getJson('/api/v1/mi-certificacion/disponibilidad')->assertOk();
+        $this->flushHeaders();
+        Auth::forgetGuards();
+        $this->postJson('/api/v1/auth/login', ['cedula' => $documento, 'password' => $documento])->assertUnprocessable();
+        $this->postJson('/api/v1/auth/login', ['cedula' => $documento, 'password' => 'OtraClaveNueva2026'])
+            ->assertOk()->assertJsonPath('data.user.must_change_password', false);
+    }
+
+    public function test_inactivar_revoca_sesiones_y_conserva_certificado(): void
+    {
+        [$user, $funcionario] = $this->crearFuncionarioDirecto('100200316');
+        $this->solicitar($user, false)->assertCreated();
+        $user->createToken('sesion');
+        $this->actingAs($this->admin, 'sanctum')->putJson("/api/v1/funcionarios/{$funcionario->id}", ['estado' => 'suspendido'])->assertOk();
+        $this->assertFalse($user->fresh()->estado);
+        $this->assertSame(0, $user->tokens()->count());
+        $this->assertDatabaseCount('certificados', 1);
+        $this->assertDatabaseCount('solicitudes_certificacion', 1);
+        $this->solicitar($user->fresh(), true)->assertForbidden();
+    }
+
     private function solicitar(User $user, bool $conSalario)
     {
         return $this->actingAs($user, 'sanctum')->postJson('/api/v1/solicitudes', [
@@ -204,7 +332,8 @@ class FaseCAutoservicioTest extends TestCase
             'es_cargo_base' => true, 'fecha_inicio' => '2020-01-15',
         ]);
 
-        \Tests\Support\ManualFixture::vincular($funcionario);
+        ManualFixture::vincular($funcionario);
+
         return [$user, $funcionario];
     }
 

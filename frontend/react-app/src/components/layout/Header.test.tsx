@@ -21,7 +21,7 @@ describe('Header', () => {
   it('llama el logout API antes de cerrar la sesión local', async () => {
     vi.mocked(authService.logout).mockResolvedValue();
     render(<MemoryRouter><Header /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: 'Salir' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
 
     await waitFor(() => expect(authService.logout).toHaveBeenCalledTimes(1));
     expect(logoutLocal).toHaveBeenCalledTimes(1);

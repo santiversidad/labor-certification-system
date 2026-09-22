@@ -6,6 +6,7 @@ use App\Enums\NaturalezaCargoEnum;
 use App\Enums\TipoVinculacionEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FuncionarioCargo extends Model
 {
@@ -47,6 +48,11 @@ class FuncionarioCargo extends Model
     public function fichaManual(): BelongsTo
     {
         return $this->belongsTo(ManualCargoVersion::class, 'manual_cargo_version_id');
+    }
+
+    public function fichasNormativas(): HasMany
+    {
+        return $this->hasMany(FuncionarioCargoManualFicha::class, 'funcionario_cargo_id');
     }
 
     public function cargo(): BelongsTo

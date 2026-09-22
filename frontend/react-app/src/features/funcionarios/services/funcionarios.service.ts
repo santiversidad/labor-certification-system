@@ -23,4 +23,7 @@ export const funcionariosService = {
   async resetAccess(id: string | number): Promise<void> {
     await apiClient.post(endpoints.resetFuncionarioAccess(id));
   },
+  async setEstado(id: number, estado: Funcionario['estado']): Promise<void> {
+    await apiClient.put(`${endpoints.funcionarios}/${id}`, { estado });
+  },
 };

@@ -14,8 +14,8 @@ final class ManualFixture
     public static function ficha(Cargo $cargo): ManualCargoVersion
     {
         $manual = ManualFuncion::firstOrCreate(['codigo' => 'TEST-FIXTURE'], ['nombre' => 'Manual sintético de pruebas']);
-        $version = $manual->versiones()->firstOrCreate(['version' => 'TEST'], [
-            'estado' => 'publicado', 'acto_tipo' => 'Prueba', 'acto_numero' => 'TEST',
+        $version = $manual->versiones()->firstOrCreate(['version' => 'TEST-'.$cargo->id], [
+            'estado' => 'borrador', 'acto_tipo' => 'Prueba', 'acto_numero' => 'TEST-'.$cargo->id,
             'acto_fecha' => '2020-01-01', 'vigencia_desde' => '2020-01-01',
         ]);
         $ficha = $version->cargos()->firstOrCreate(['cargo_id' => $cargo->id], [
@@ -23,6 +23,9 @@ final class ManualFixture
             'proposito_principal' => 'Validar el flujo de certificación.',
         ]);
         $ficha->funciones()->firstOrCreate(['orden' => 1], ['descripcion' => 'Función sintética de pruebas.']);
+        if ($version->estado === 'borrador') {
+            $version->update(['estado' => 'publicado', 'published_at' => now()]);
+        }
 
         return $ficha;
     }

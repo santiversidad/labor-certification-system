@@ -42,6 +42,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
             Route::get('/fichas', [ManualFuncionController::class, 'fichas'])->name('fichas');
+            Route::get('/estado', [ManualFuncionController::class, 'estado'])->name('estado');
+            Route::get('/diff/{from}/{to}', [ManualFuncionController::class, 'diff'])->name('diff');
+            Route::post('/planificar/{from}/{to}', [ManualFuncionController::class, 'planificar'])->name('planificar');
+            Route::post('/versiones/{version}/importar', [ManualFuncionController::class, 'importar'])->name('versiones.importar');
+            Route::post('/actualizaciones-asignaciones/{actualizacion}/resolver', [ManualFuncionController::class, 'resolverAsignacion'])->name('actualizaciones.resolver');
             Route::get('/', [ManualFuncionController::class, 'index'])->name('index');
             Route::post('/', [ManualFuncionController::class, 'store'])->name('store');
             Route::post('/{manual}/versiones', [ManualFuncionController::class, 'storeVersion'])->name('versiones.store');

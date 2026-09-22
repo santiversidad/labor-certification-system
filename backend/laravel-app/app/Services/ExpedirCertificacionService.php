@@ -36,12 +36,6 @@ class ExpedirCertificacionService
         if (! $funcionario->cargo_id || ! $funcionario->cargo) {
             throw new RuntimeException('EMPLOYEE_WITHOUT_POSITION');
         }
-        $fecha = CarbonImmutable::now(config('app.timezone'));
-        app(ResolverFuncionesFuncionarioService::class)->resolver($funcionario, $fecha, $tipoCertificado === 'funciones');
-        if ($requiereSalario) {
-            app(ResolverSalarioFuncionarioService::class)->resolver($funcionario, $fecha);
-        }
-
         $periodo = $this->disponibilidad->periodo();
         $requierePago = (bool) ParametroSistema::valor('requiere_pago_certificado', false);
         $resultadoGeneracion = null;
@@ -52,6 +46,19 @@ class ExpedirCertificacionService
                 $periodo, $requierePago, &$resultadoGeneracion
             ) {
                 DB::select('SELECT pg_advisory_xact_lock(?)', [$periodo->year]);
+                $funcionario->refresh();
+                $actor->refresh();
+                if (! $actor->estado || $funcionario->estado !== EstadoFuncionarioEnum::Activo) {
+                    throw new RuntimeException('INACTIVE_EMPLOYEE');
+                }
+                if ($actor->must_change_password) {
+                    throw new \DomainException('PASSWORD_CHANGE_REQUIRED');
+                }
+                $fecha = CarbonImmutable::now(config('app.timezone'));
+                app(ResolverFuncionesFuncionarioService::class)->resolver($funcionario, $fecha, $tipoCertificado === 'funciones');
+                if ($requiereSalario) {
+                    app(ResolverSalarioFuncionarioService::class)->resolver($funcionario, $fecha);
+                }
 
                 if (SolicitudCertificacion::query()
                     ->where('funcionario_id', $funcionario->id)
@@ -90,19 +97,23 @@ class ExpedirCertificacionService
                     ]);
                 } else {
                     $resultadoGeneracion = $this->generarCertificado->generar($solicitud, $actor);
+                    $this->registrarAuditoria->execute(
+                        accion: 'generar_certificado_autoservicio', modelo: 'Certificado',
+                        modeloId: $resultadoGeneracion['certificado']->id,
+                        descripcion: 'Certificación expedida automáticamente para su titular.',
+                        metadata: ['solicitud_id' => $solicitud->id, 'actor_funcionario_id' => $funcionario->id, 'cupo_consumido' => true],
+                    );
                 }
 
                 return $solicitud;
             });
-        } catch (QueryException $exception) {
-            if ((string) $exception->getCode() === '23505'
-                && str_contains((string) ($exception->errorInfo[2] ?? ''), 'solicitudes_funcionario_periodo_modalidad_unique')) {
-                throw new RuntimeException('MONTHLY_CERTIFICATE_LIMIT', previous: $exception);
-            }
-            throw $exception;
         } catch (\Throwable $exception) {
             if (isset($resultadoGeneracion['certificado'])) {
                 Storage::disk('local')->delete($resultadoGeneracion['certificado']->archivo_pdf_path);
+            }
+            if ($exception instanceof QueryException && (string) $exception->getCode() === '23505'
+                && str_contains((string) ($exception->errorInfo[2] ?? ''), 'solicitudes_funcionario_periodo_modalidad_unique')) {
+                throw new RuntimeException('MONTHLY_CERTIFICATE_LIMIT', previous: $exception);
             }
             if (! in_array($exception->getMessage(), ['MONTHLY_CERTIFICATE_LIMIT', 'INACTIVE_EMPLOYEE', 'EMPLOYEE_WITHOUT_POSITION'], true)) {
                 $this->registrarAuditoria->execute(
@@ -110,7 +121,7 @@ class ExpedirCertificacionService
                     modelo: 'Funcionario',
                     modeloId: $funcionario->id,
                     descripcion: 'La expedición automática no se constituyó por un error técnico o de fuentes institucionales.',
-                    metadata: ['requiere_salario' => $requiereSalario, 'error' => $exception->getMessage()],
+                    metadata: ['requiere_salario' => $requiereSalario, 'error' => preg_match('/^[A-Z_]+$/', $exception->getMessage()) ? $exception->getMessage() : 'CERTIFICATE_GENERATION_FAILED'],
                 );
             }
             throw $exception;
@@ -122,13 +133,6 @@ class ExpedirCertificacionService
         }
 
         $certificado = $resultadoGeneracion['certificado'];
-        $this->registrarAuditoria->execute(
-            accion: 'generar_certificado_autoservicio',
-            modelo: 'Certificado',
-            modeloId: $certificado->id,
-            descripcion: "Certificado {$certificado->codigo_unico} generado automáticamente para su titular.",
-            metadata: ['solicitud_id' => $solicitud->id, 'actor_funcionario_id' => $funcionario->id, 'cupo_consumido' => true],
-        );
 
         return ['estado' => 'generada', 'solicitud' => $solicitud->fresh(['funcionario.cargo', 'certificado']), ...$resultadoGeneracion];
     }

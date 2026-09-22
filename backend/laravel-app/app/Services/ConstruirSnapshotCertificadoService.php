@@ -31,7 +31,16 @@ class ConstruirSnapshotCertificadoService
             'funciones_especificas' => $manual['funciones_especificas'],
             'funciones_comunes' => $manual['funciones_comunes'],
             'asignacion_id' => $asignacion->id,
+            'asignacion' => [
+                'id' => $asignacion->id, 'cargo_id' => $asignacion->cargo_id,
+                'tipo_vinculacion' => $asignacion->tipo_vinculacion->value,
+                'naturaleza_cargo' => $asignacion->naturaleza_cargo->value,
+                'fecha_inicio' => $asignacion->fecha_inicio->toDateString(),
+                'fecha_fin' => $asignacion->fecha_fin?->toDateString(),
+                'es_cargo_base' => $asignacion->es_cargo_base, 'es_encargo' => $asignacion->es_encargo,
+            ],
             'funcionario' => [
+                'id' => $funcionario->id,
                 'nombres' => $funcionario?->nombres,
                 'apellidos' => $funcionario?->apellidos,
                 'tipo_documento' => $funcionario?->tipo_documento,

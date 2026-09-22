@@ -12,10 +12,18 @@ class FuncionarioResource extends JsonResource
         $vigentes = $this->historialCargos()->whereDate('fecha_inicio', '<=', today())
             ->where(fn ($q) => $q->whereNull('fecha_fin')->orWhereDate('fecha_fin', '>=', today()))->get();
         $asignacion = $vigentes->count() === 1 ? $vigentes->sole() : null;
+        $relacion = $asignacion?->fichasNormativas()
+            ->where(fn ($q) => $q->whereNull('vigencia_desde')->orWhereDate('vigencia_desde', '<=', today()))
+            ->where(fn ($q) => $q->whereNull('vigencia_hasta')->orWhereDate('vigencia_hasta', '>=', today()))
+            ->with('fichaManual.version')->get();
+        $ficha = $relacion?->count() === 1 ? $relacion->sole()->fichaManual
+            : ($relacion?->isEmpty() && ! $asignacion?->fichasNormativas()->exists() ? $asignacion?->fichaManual : null);
 
         return [
             'asignacion_actual' => $asignacion ? [
-                'id' => $asignacion->id, 'manual_cargo_version_id' => $asignacion->manual_cargo_version_id,
+                'id' => $asignacion->id, 'manual_cargo_version_id' => $ficha?->id,
+                'ficha_manual' => $ficha ? ['id' => $ficha->id, 'source_id' => $ficha->source_id,
+                    'area_funcional' => $ficha->area_funcional, 'version' => $ficha->version->version] : null,
                 'tipo_vinculacion' => $asignacion->tipo_vinculacion, 'naturaleza_cargo' => $asignacion->naturaleza_cargo,
             ] : null,
             'id' => $this->id,

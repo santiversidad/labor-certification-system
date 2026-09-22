@@ -9,6 +9,7 @@ use App\Models\ParametroSistema;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ParametroCertificacionController extends Controller
 {
@@ -25,10 +26,16 @@ class ParametroCertificacionController extends Controller
 
     public function update(UpdateParametroPagoRequest $request): JsonResponse
     {
+        return DB::transaction(fn () => $this->updateLocked($request));
+    }
+
+    private function updateLocked(UpdateParametroPagoRequest $request): JsonResponse
+    {
         $parametro = ParametroSistema::firstOrCreate(
             ['clave' => 'requiere_pago_certificado'],
             ['valor' => 'false', 'tipo' => 'boolean', 'descripcion' => 'Exige confirmación de pago antes de expedir certificados.'],
         );
+        $parametro = ParametroSistema::whereKey($parametro->id)->lockForUpdate()->firstOrFail();
         $anterior = filter_var($parametro->valor, FILTER_VALIDATE_BOOLEAN);
         $nuevo = $request->boolean('requiere_pago_certificado');
 

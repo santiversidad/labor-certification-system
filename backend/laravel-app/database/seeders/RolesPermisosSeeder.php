@@ -80,7 +80,7 @@ class RolesPermisosSeeder extends Seeder
 
     public function run(): void
     {
-        // Limpiar caché de Spatie para evitar datos obsoletos tras migrate:fresh
+        // Invalidar cualquier catálogo asociado a otra instancia/restauración de BD.
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Crear todos los permisos
@@ -119,6 +119,9 @@ class RolesPermisosSeeder extends Seeder
         $funcionario->syncPermissions([
             'solicitudes.crear',
         ]);
+
+        // Garantiza que el siguiente proceso lea los IDs recién sincronizados.
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->command->info('Roles y permisos creados correctamente.');
     }

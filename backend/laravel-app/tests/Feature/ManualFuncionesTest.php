@@ -50,6 +50,7 @@ class ManualFuncionesTest extends TestCase
         $vigente = $this->crearVersion('2026', '2026-01-01', null);
         $this->agregarCargo($vigente, $this->cargo, 'Función cargo correcto');
         $this->agregarCargo($vigente, $this->otroCargo, 'Función de otro cargo');
+        $vigente->update(['estado' => 'publicado']);
 
         $resultado = app(ResolverFuncionesCargoService::class)->resolver(
             $this->cargo->id,
@@ -65,6 +66,7 @@ class ManualFuncionesTest extends TestCase
     {
         $futura = $this->crearVersion('2027', '2027-01-01', null);
         $this->agregarCargo($futura, $this->cargo, 'Futura');
+        $futura->update(['estado' => 'publicado']);
         $this->assertNull(app(ResolverFuncionesCargoService::class)->resolver(
             $this->cargo->id,
             CarbonImmutable::parse('2026-08-30'),
@@ -73,6 +75,7 @@ class ManualFuncionesTest extends TestCase
         $futura->update(['estado' => 'inactivo']);
         $vencida = $this->crearVersion('2025', '2025-01-01', '2025-12-31');
         $this->agregarCargo($vencida, $this->cargo, 'Vencida');
+        $vencida->update(['estado' => 'publicado']);
         $this->assertNull(app(ResolverFuncionesCargoService::class)->resolver(
             $this->cargo->id,
             CarbonImmutable::parse('2026-08-30'),
@@ -191,7 +194,7 @@ class ManualFuncionesTest extends TestCase
             'acto_tipo' => 'Decreto',
             'acto_numero' => $version,
             'acto_fecha' => $desde,
-            'estado' => 'publicado',
+            'estado' => $version === 'publicada' ? 'publicado' : 'borrador',
             'created_by' => $this->admin->id,
         ]);
     }

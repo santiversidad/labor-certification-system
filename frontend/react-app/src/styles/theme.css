@@ -1,3 +1,36 @@
 :root {
   color-scheme: light;
+
+  /* Core palette — GOV.CO cobalt with restrained Villavicencio flag accents. */
+  --color-primary: 9 67 181;
+  --color-primary-hover: 4 48 132;
+  --color-secondary: 67 87 122;
+  --color-success: 4 112 82;
+  --color-warning: 153 91 0;
+  --color-error: 176 24 48;
+  --color-info: 38 99 184;
+  --color-background: 246 248 251;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 238 243 249;
+  --color-border: 210 219 231;
+  --color-text-primary: 27 40 58;
+  --color-text-secondary: 82 96 115;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(15 38 70 / 0.06), 0 8px 24px rgb(15 38 70 / 0.05);
+  --shadow-raised: 0 12px 36px rgb(15 38 70 / 0.14);
+  --focus-ring: 0 0 0 3px rgb(var(--color-primary) / 0.24);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

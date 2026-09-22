@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
+/** @deprecated Manual receipts/review are historical compatibility only, not autoservice. */
 class PagoSoporteController extends Controller
 {
     use ApiResponse;

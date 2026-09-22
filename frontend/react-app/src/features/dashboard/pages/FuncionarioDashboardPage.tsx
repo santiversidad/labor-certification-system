@@ -1,58 +1,63 @@
 import { useQuery } from '@tanstack/react-query';
-import { Banknote, CalendarClock, FileText, ShieldCheck } from 'lucide-react';
+import { Banknote, CalendarClock, CheckCircle2, FileText, ListChecks, ShieldCheck } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { solicitudesService } from '../../solicitudes/services/solicitudes.service';
 import type { DisponibilidadModalidad } from '../../solicitudes/types/solicitud.types';
 
-function Opcion({ conSalario, disponibilidad }: { conSalario: boolean; disponibilidad: DisponibilidadModalidad }) {
-  const Icon = conSalario ? Banknote : FileText;
-  const titulo = conSalario ? 'Certificación laboral CON salario' : 'Certificación laboral SIN salario';
+type OptionProps = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  availability: DisponibilidadModalidad;
+  to: string;
+  note: string;
+};
+
+function CertificationOption({ title, description, icon: Icon, availability, to, note }: OptionProps) {
+  const available = availability.puede_solicitar;
   return (
-    <article className="group flex min-h-64 flex-col justify-between rounded-xl border border-border bg-white p-6 transition duration-200 hover:-translate-y-0.5 hover:border-govBlue hover:shadow-lg hover:shadow-blue-950/5">
+    <article className="group flex min-h-72 flex-col justify-between rounded-lg border border-border bg-surface p-5 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-raised sm:p-6">
       <div>
-        <div className="flex items-center justify-between">
-          <span className="rounded-lg bg-blue-50 p-3 text-govBlue"><Icon size={25} /></span>
-          <span className={`text-xs font-semibold uppercase tracking-wide ${disponibilidad.puede_solicitar ? 'text-villavoGreen' : 'text-muted'}`}>
-            {disponibilidad.puede_solicitar ? 'Disponible este mes' : 'Ya utilizada este mes'}
-          </span>
+        <div className="flex items-start justify-between gap-4">
+          <span className="rounded-lg bg-primary/8 p-3 text-primary"><Icon aria-hidden="true" size={24} /></span>
+          <Badge tone={available ? 'green' : 'gray'}>{available ? 'Disponible' : 'Ya solicitada este mes'}</Badge>
         </div>
-        <h2 className="mt-7 text-2xl font-semibold text-text">{titulo}</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          {conSalario ? 'Incluye el salario institucional vigente asociado a su cargo.' : 'Certifica su vinculación sin exponer valores salariales.'}
-        </p>
-        {!disponibilidad.puede_solicitar && disponibilidad.proxima_fecha_disponible ? (
-          <p className="mt-4 flex items-center gap-2 text-xs text-muted"><CalendarClock size={15} /> Próximo cupo: {disponibilidad.proxima_fecha_disponible}</p>
-        ) : null}
+        <h2 className="mt-6 text-xl font-bold tracking-tight text-text">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
+        <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted"><CheckCircle2 className="mt-0.5 shrink-0 text-success" size={15} />{note}</p>
+        {!available && availability.proxima_fecha_disponible ? <p className="mt-3 flex items-center gap-2 text-xs text-muted"><CalendarClock size={15} /> Disponible nuevamente: {availability.proxima_fecha_disponible}</p> : null}
       </div>
-      <Link aria-disabled={!disponibilidad.puede_solicitar} to={disponibilidad.puede_solicitar ? `/app/solicitudes/nueva?modalidad=${conSalario ? 'con_salario' : 'sin_salario'}` : '#'}>
-        <Button className="mt-6 w-full" disabled={!disponibilidad.puede_solicitar} type="button">Solicitar</Button>
-      </Link>
+      {available ? <Link aria-label={`Solicitar ${title}`} className="mt-6" to={to}><Button className="w-full" type="button">Solicitar</Button></Link> : <Button className="mt-6 w-full" disabled type="button">Solicitar</Button>}
     </article>
   );
 }
 
 export function FuncionarioDashboardPage() {
   const query = useQuery({ queryKey: ['disponibilidad-certificacion'], queryFn: solicitudesService.disponibilidad });
-  if (query.isLoading) return <LoadingState />;
-  if (query.isError || !query.data) return <ErrorState />;
-  const disponibilidad = query.data.data;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-7">
-      <PageHeader eyebrow="Autoservicio 24/7" title="Solicitar certificación laboral" description="Seleccione la modalidad. Si no requiere pago, el PDF se genera en el momento." />
-      <div className="flex items-center gap-3 border-y border-border py-4 text-sm text-muted">
-        <ShieldCheck className="shrink-0 text-villavoGreen" size={20} />
-        Un cupo CON salario y uno SIN salario por mes calendario. Sus datos se toman de las fuentes institucionales.
+    <div className="app-page max-w-6xl">
+      <PageHeader eyebrow="Autoservicio 24/7" title="Certificaciones laborales" description="Seleccione el contenido que necesita. El sistema validará sus datos y expedirá el documento automáticamente cuando corresponda." />
+      <div className="flex items-start gap-3 border-y border-border py-4 text-sm leading-6 text-muted">
+        <ShieldCheck className="mt-0.5 shrink-0 text-success" size={20} />
+        <p>Dispone de un cupo con salario y uno sin salario por mes calendario. La información proviene de las fuentes institucionales vigentes.</p>
       </div>
-      <div className="grid gap-5 md:grid-cols-2">
-        <Opcion conSalario={false} disponibilidad={disponibilidad.sin_salario} />
-        <Opcion conSalario disponibilidad={disponibilidad.con_salario} />
-      </div>
-      <p className="text-xs text-muted">Este portal no muestra expediente, historial laboral, actuaciones ni información salarial interna.</p>
+      {query.isError ? <ErrorState message="No fue posible consultar la disponibilidad de certificaciones." /> : null}
+      {query.isLoading ? <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="Cargando modalidades"><Skeleton className="h-72" /><Skeleton className="h-72" /><Skeleton className="h-72" /></div> : null}
+      {query.data ? (
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <CertificationOption availability={query.data.data.sin_salario} description="Certifica su vinculación laboral sin incluir valores salariales." icon={FileText} note="Generación inmediata cuando no se exige pago." title="Certificación laboral SIN salario" to="/app/solicitudes/nueva?modalidad=sin_salario" />
+          <CertificationOption availability={query.data.data.con_salario} description="Incluye el salario institucional vigente asociado a su cargo y grado." icon={Banknote} note="El sistema informará si la configuración vigente requiere pago." title="Certificación laboral CON salario" to="/app/solicitudes/nueva?modalidad=con_salario" />
+          <CertificationOption availability={query.data.data.sin_salario} description="Añade las funciones de la ficha del Manual asignada a su vinculación actual." icon={ListChecks} note="La ficha se valida antes de generar el documento." title="Información laboral y funciones" to="/app/solicitudes/nueva?modalidad=funciones" />
+        </div>
+      ) : null}
+      <p className="text-xs text-muted">Este portal no expone expedientes, actuaciones administrativas ni información salarial interna.</p>
     </div>
   );
 }

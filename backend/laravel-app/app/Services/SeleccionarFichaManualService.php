@@ -12,7 +12,8 @@ class SeleccionarFichaManualService
     {
         if ($fichaId) {
             $ficha = ManualCargoVersion::with('version')->find($fichaId);
-            if (! $ficha || $ficha->cargo_id !== $cargoId || ! in_array($ficha->version->estado, ['borrador', 'publicado'], true)) {
+            if (! $ficha || $ficha->cargo_id !== $cargoId
+                || ! app(ResolverFuncionesFuncionarioService::class)->versionVigente($ficha->version, CarbonImmutable::now())) {
                 throw ValidationException::withMessages(['manual_cargo_version_id' => 'MANUAL_FICHA_INCOMPATIBLE']);
             }
 

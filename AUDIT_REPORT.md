@@ -222,7 +222,7 @@ La alternativa preferente para una SPA de primera parte es Sanctum stateful con 
 | --- | --- | --- |
 | Admin | 33 permisos | 200 en cargos, funcionarios, solicitudes, pagos, certificados, reportes y auditoría |
 | Secretario | 17 permisos de consulta/flujo | 200 en los módulos operativos; 403 en auditoría |
-| Funcionario | `solicitudes.crear`, `pagos.cargar` | 403 al listar solicitudes, pagos, certificados, cargos y funcionarios |
+| Funcionario | `solicitudes.crear` | 403 al listar solicitudes, pagos, certificados, cargos y funcionarios |
 
 `RolesPermisosSeeder.php:80-111` es la fuente de esta matriz. Las operaciones sensibles del backend normalmente llaman Policy, Gate o Form Request; ocultar botones no es el único control.
 
@@ -696,3 +696,29 @@ Navegador local: login, panel y solicitudes de funcionario, logout
 ```
 
 No se ejecutaron `migrate:fresh`, `db:wipe`, `docker compose down -v`, eliminaciones de volúmenes ni comandos equivalentes.
+
+## Cierre de autoservicio real — 2026-09-20
+
+Este apartado actualiza las conclusiones históricas anteriores. El proceso ordinario de certificación laboral es autoservicio automático, no un workflow de aprobación. Administrador y secretario administran fuentes; no revisan ni aprueban cada expedición y no necesitan estar conectados.
+
+- Alta transaccional de funcionario, usuario/rol, asignación y relación normativa explícita. Cédula como login y contraseña temporal hasheada; cambio obligatorio protegido por backend y frontend. Reset revoca sesiones y exige nuevo cambio.
+- Listado administrativo paginado, filtros, ficha normativa vigente, estado de acceso, activación/inactivación, detalle y restablecimiento. Hard delete deshabilitado también para registros sin historial.
+- Pago desactivado: validaciones, snapshot, radicado, PDF y descarga inmediata propia. Pago activado: pendiente de pago sin PDF; contrato de pasarela sin proveedor ni confirmación desde el cliente.
+- Se reforzó la compensación de archivos/BD: un fallo técnico antes de constituir certificado no deja una solicitud ocupando el cupo. Auditoría de éxito dentro de la transacción y fallo separado sin secretos. Se probaron reintentos tras fallo PDF y tras fallo posterior a escritura.
+- Snapshot ampliado con datos de asignación y relación normativa; los anteriores permanecen intactos. La excepción sin fecha efectiva se limita al baseline interno 10; futuras publicaciones la requieren.
+- Los estados y endpoints de aprobación manual quedaron obsoletos para nuevas certificaciones. Las transiciones de aprobar/rechazar/marcar pago responden 410. Se conservan registros y compatibilidad histórica de soportes/generación administrativa; no forman parte de la UX ni del camino crítico del autoservicio.
+- Playwright encontró una URL de descarga con `/api/v1` duplicado; corregida y cubierta por tests de regresión. El recorrido final descargó un PDF real, con administrador desconectado.
+
+Evidencia: backend **133 tests / 701 aserciones**; frontend **23 tests**; **1 E2E Chromium aprobado** con alta → logout admin → login temporal → cambio → solicitud SIN salario → PDF → logout. Incluye dos peticiones concurrentes CON salario/funciones: exactamente **201 y 409**. TypeScript/Vite, ESLint y Pint global (**183 archivos**) aprobados. Docker app/frontend/nginx/postgres healthy al cierre.
+
+Tests backend en `scl_db_test`; E2E en `scl_e2e_test`, con storage separado y fixture protegido contra otra base. Sin pruebas de escritura en `scl_db`, sin migraciones destructivas ni pérdida de datos. Verificación ordinaria: **344 fichas, 3.115 funciones, 2.326 conocimientos**, tres snapshots históricos sin cambio de checksum. MF-0167 permanece bloqueada individualmente.
+
+Deuda vigente: proveedor/webhook y expiración de órdenes de pago, firma/oficialización automática (no implementadas), endurecimiento productivo, recuperación idempotente de respuesta perdida después de una expedición válida y prueba de carga del bloqueo anual de radicación. Persiste advertencia de bundle >500 kB. Auditoría npm productiva sin vulnerabilidades al consultarse; la auditoría completa posterior devolvió 503 del registro, tras avisar instalación de tres vulnerabilidades de desarrollo. No se hicieron upgrades masivos.
+
+Detalle de endpoints, archivos, migraciones reutilizadas, límites y reproducción en `AUTOSERVICE_IMPLEMENTATION_REPORT.md`. Ejecutar E2E con `./scripts/test-autoservice-e2e.ps1`; conserva fixtures/evidencia y detiene únicamente servicios E2E.
+
+## Corrección de regresión de autorización administrativa — 2026-09-21
+
+Se corrigió una contaminación entre el caché de permisos del entorno ordinario y la suite backend. Aunque el admin real tenía rol ID 241 y 39 permisos, Spatie cargaba IDs antiguos o transaccionales de `scl_db_test`; `can()` devolvía false y los endpoints administrativos producían 403. PHPUnit ahora fuerza `CACHE_STORE=array` desde `tests/bootstrap.php`, el arranque del contenedor invalida el caché persistente y el seeder idempotente invalida después de `syncPermissions`.
+
+No se relajaron Policies, roles ni permisos. `/auth/me` permanece solo con `auth:sanctum`, disponible durante cambio obligatorio. El frontend revalida el token con `/auth/me` antes de montar rutas/queries privadas y no trata 403 como logout. Evidencia actual: backend 140 pruebas/739 aserciones, frontend 25 pruebas, 2 E2E reales, matriz admin 200, funcionario 403 administrativo + disponibilidad 200, y secretario limitado a sus 17 permisos. Sin operaciones destructivas ni cambios de datos funcionales.

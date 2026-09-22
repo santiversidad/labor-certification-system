@@ -12,6 +12,14 @@ export const endpoints = {
   solicitudes: '/solicitudes',
   disponibilidadCertificacion: '/mi-certificacion/disponibilidad',
   configuracionCertificaciones: '/configuracion/certificaciones',
+  manuales: {
+    estado: '/manual-funciones/estado',
+    crearVersion: (manualId: number) => `/manual-funciones/${manualId}/versiones`,
+    importar: (versionId: number) => `/manual-funciones/versiones/${versionId}/importar`,
+    diff: (from: number, to: number) => `/manual-funciones/diff/${from}/${to}`,
+    planificar: (from: number, to: number) => `/manual-funciones/planificar/${from}/${to}`,
+    publicar: (versionId: number) => `/manual-funciones/versiones/${versionId}/publicar`,
+  },
   resetFuncionarioAccess: (id: string | number) => `/funcionarios/${id}/restablecer-acceso`,
   solicitudesActions: {
     aprobar: (id: string) => `/solicitudes/${id}/aprobar`,

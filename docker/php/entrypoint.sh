@@ -23,4 +23,9 @@ if grep -Eq '^APP_KEY=[[:space:]]*$' .env; then
     php artisan key:generate --force --no-interaction
 fi
 
+# The file cache is bind-mounted with the application and can outlive a
+# database restore/reseed. Spatie caches numeric role/permission IDs, so a
+# cache created against an older database must never be reused at boot.
+php artisan permission:cache-reset --no-interaction
+
 exec "$@"

@@ -18,6 +18,7 @@ use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class CertificadoValidacionTest extends TestCase
@@ -63,7 +64,7 @@ class CertificadoValidacionTest extends TestCase
             'estado' => EstadoFuncionarioEnum::Activo,
             'cargo_id' => $cargo->id,
         ]);
-        \Tests\Support\ManualFixture::vincular($this->funcionario);
+        ManualFixture::vincular($this->funcionario);
     }
 
     public function test_secretario_puede_generar_certificado_de_solicitud_aprobada(): void

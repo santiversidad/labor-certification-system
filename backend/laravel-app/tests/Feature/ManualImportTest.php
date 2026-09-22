@@ -178,7 +178,7 @@ class ManualImportTest extends TestCase
         $admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
         $admin->assignRole('admin');
         $this->actingAs($admin, 'sanctum')->postJson('/api/v1/manual-funciones/versiones/'.$version->id.'/publicar')
-            ->assertConflict()->assertJsonPath('code', 'MANUAL_FECHAS_PENDIENTES');
+            ->assertConflict()->assertJsonPath('code', 'MANUAL_VIGENCIA_DESDE_REQUERIDA');
         $ficha = ManualCargoVersion::where('source_id', 'MF-0228')->sole();
         $this->actingAs($admin, 'sanctum')->putJson('/api/v1/manual-funciones/versiones/'.$version->id.'/cargos/'.$ficha->cargo_id, [
             'proposito_principal' => 'Cambio no permitido', 'funciones' => [['orden' => 1, 'descripcion' => 'Cambio']],
@@ -234,7 +234,6 @@ class ManualImportTest extends TestCase
             $this->assertStringContainsString($ficha->source_id, $pdf);
             $this->assertStringContainsString('CERTIFICADO LABORAL TEMPORAL', $pdf);
             $this->assertStringContainsString(iconv('UTF-8', 'Windows-1252', mb_substr($ficha->funciones->first()->descripcion, 0, 35)), $pdf);
-            $ficha->funciones->first()->update(['descripcion' => 'Cambio posterior para probar snapshot']);
             $this->assertSame($snapshot, $cert->fresh()->snapshot_datos);
             $this->assertSame($pdf, Storage::disk('local')->get($cert->archivo_pdf_path));
             $pdfs[] = $pdf;
@@ -301,14 +300,6 @@ class ManualImportTest extends TestCase
             ['MANUAL_VERSION_NO_VIGENTE', function () use ($asignacion, $version) {
                 $asignacion->update(['fecha_fin' => null]);
                 $version->update(['vigencia_hasta' => '2020-02-01']);
-            }, false],
-            ['MANUAL_FICHA_INCOMPLETA', function () use ($version, $ficha) {
-                $version->update(['vigencia_hasta' => null]);
-                $ficha->update(['area_funcional' => '']);
-            }, false],
-            ['MANUAL_FUNCIONES_NO_DISPONIBLES', function () use ($ficha) {
-                $ficha->update(['area_funcional' => 'Riesgo']);
-                $ficha->funciones()->update(['descripcion' => '']);
             }, false],
         ];
         foreach ($cases as [$expected, $prepare, $salary]) {

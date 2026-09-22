@@ -19,7 +19,8 @@ class UserResource extends JsonResource
             'password_changed_at' => $this->password_changed_at?->toISOString(),
             'roles' => $this->getRoleNames(),
             'permisos' => $this->getAllPermissions()->pluck('name'),
-            'funcionario' => $this->whenLoaded('funcionario', fn () => new FuncionarioResource($this->funcionario)),
+            'funcionario' => $this->when(! $this->must_change_password && $this->relationLoaded('funcionario'),
+                fn () => new FuncionarioResource($this->funcionario)),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

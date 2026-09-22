@@ -76,7 +76,7 @@ class SnapshotCertificadoTest extends TestCase
         $version = $manual->versiones()->create([
             'version' => '2026', 'vigencia_desde' => '2026-01-01',
             'acto_tipo' => 'Decreto', 'acto_numero' => '100', 'acto_fecha' => '2025-12-20',
-            'estado' => 'publicado',
+            'estado' => 'borrador',
         ]);
         $this->cargoVersion = ManualCargoVersion::create([
             'manual_funciones_version_id' => $version->id, 'cargo_id' => $this->cargo->id,
@@ -86,6 +86,7 @@ class SnapshotCertificadoTest extends TestCase
         $this->cargoVersion->funciones()->create([
             'orden' => 1, 'descripcion' => 'Administrar los procesos asignados.',
         ]);
+        $version->update(['estado' => 'publicado']);
         $this->funcionario->historialCargos()->update(['manual_cargo_version_id' => $this->cargoVersion->id]);
     }
 
@@ -111,9 +112,7 @@ class SnapshotCertificadoTest extends TestCase
         );
         $this->assertStringContainsString('Salario basico: 5000000.00 COP', Storage::disk('local')->get($certificado->archivo_pdf_path));
 
-        $this->cargo->update(['denominacion' => 'Cargo modificado']);
         $this->rango->update(['salario_basico' => 9999999]);
-        $this->cargoVersion->funciones()->firstOrFail()->update(['descripcion' => 'Función modificada']);
 
         $this->assertSame($snapshotOriginal, $certificado->fresh()->snapshot_datos);
     }

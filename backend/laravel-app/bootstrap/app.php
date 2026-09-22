@@ -54,6 +54,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 422);
             }
         });
+        $exceptions->render(function (DomainException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La operación no cumple las reglas de versionado del Manual.',
+                    'code' => $e->getMessage(),
+                ], 409);
+            }
+        });
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([

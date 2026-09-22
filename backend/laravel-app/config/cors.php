@@ -17,6 +17,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:3000'),
         'http://localhost:3000',    // React en desarrollo (Vite default)
         'http://localhost:5173',    // React en desarrollo (Vite alternativo)
         'http://127.0.0.1:3000',

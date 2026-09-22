@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { Alert } from '../../../components/ui/Alert';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { ReportsSummary } from '../components/ReportsSummary';
 import { reportesService } from '../services/reportes.service';
@@ -21,12 +21,10 @@ export function ReportesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Reportes" description="Resumen institucional inicial para analitica y exportaciones futuras." />
+    <div className="app-page">
+      <PageHeader eyebrow="Información institucional" title="Reportes" description="Resumen acumulado respaldado por el servicio actual de reportes." />
       <ReportsSummary resumen={data.data} />
-      <Card title="Alcance actual" description="Resumen operativo provisto por el backend.">
-        <p className="text-sm text-muted">Esta fase alinea el contrato existente sin ampliar todavía la funcionalidad de reportes.</p>
-      </Card>
+      <Alert title="Alcance de los datos" tone="info">El endpoint actual entrega cifras acumuladas y no admite rangos de fecha. No se presenta un filtro que pueda inducir a interpretar un periodo inexistente.</Alert>
     </div>
   );
 }

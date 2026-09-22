@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
+/** @deprecated Historical receipt maintenance; never invoked by automatic certification. */
 class PagoSoporteService
 {
     public function __construct(
