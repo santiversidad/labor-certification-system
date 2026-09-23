@@ -112,7 +112,10 @@ class CertificadoValidacionTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('data.valido', true)
-            ->assertJsonMissingPath('data.salario');
+            ->assertJsonPath('data.tipo_certificado', TipoCertificadoEnum::Sencillo->value)
+            ->assertJsonMissingPath('data.salario')
+            ->assertJsonMissingPath('data.snapshot_datos')
+            ->assertJsonMissingPath('data.funciones');
     }
 
     public function test_token_invalido_retorna_respuesta_controlada(): void

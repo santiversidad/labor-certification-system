@@ -9,6 +9,7 @@ describe('ValidationResultCard', () => {
       resultado: 'valido',
       estado: 'vigente',
       codigo_unico: 'CL-2026-ABC',
+      tipo_certificado: 'funciones',
       fecha_generacion: '2026-08-30',
       funcionario: { nombre: 'Ana Pérez' },
       cargo: 'Profesional Universitario',
@@ -17,6 +18,14 @@ describe('ValidationResultCard', () => {
     expect(screen.getByText('Válido')).toBeInTheDocument();
     expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
     expect(screen.getByText('Profesional Universitario')).toBeInTheDocument();
+    expect(screen.getByText('Certificado laboral con funciones')).toBeInTheDocument();
+    expect(screen.queryByText(/salario|snapshot|funciones del manual/i)).not.toBeInTheDocument();
+  });
+
+  it('muestra la etiqueta humana del certificado sencillo', () => {
+    render(<ValidationResultCard result={{ valido: true, resultado: 'valido', codigo_unico: 'CL-2026-DEF', tipo_certificado: 'sencillo' }} />);
+    expect(screen.getByText('Certificado laboral sencillo')).toBeInTheDocument();
+    expect(screen.queryByText(/^sencillo$/i)).not.toBeInTheDocument();
   });
 
   it('muestra el mensaje exacto para código inválido', () => {

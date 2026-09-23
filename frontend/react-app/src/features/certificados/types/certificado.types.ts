@@ -1,5 +1,7 @@
 export type CertificadoEstado = 'vigente' | 'descargado' | 'anulado' | 'vencido';
 
+import type { TipoCertificado } from '../../solicitudes/types/solicitud.types';
+
 export type Certificado = {
   id: number;
   codigo_unico: string;
@@ -10,7 +12,7 @@ export type Certificado = {
   motivo_anulacion?: string | null;
   snapshot_schema_version?: number | null;
   snapshot_datos?: Record<string, unknown>;
-  solicitud?: { id: number; radicado: string; estado: string } | null;
+  solicitud?: { id: number; radicado: string; estado: string; tipo_certificado: TipoCertificado } | null;
   funcionario?: { id: number; nombres: string; apellidos: string; numero_documento: string } | null;
 };
 

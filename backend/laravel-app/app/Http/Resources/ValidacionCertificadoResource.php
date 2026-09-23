@@ -18,6 +18,7 @@ class ValidacionCertificadoResource extends JsonResource
             'fecha_generacion' => $data['fecha_generacion'] ?? null,
             'estado' => $data['estado'] ?? null,
             'mensaje' => $data['mensaje'] ?? null,
+            'tipo_certificado' => $data['tipo_certificado'] ?? null,
             'funcionario' => $data['funcionario'] ?? null,
             'cargo' => $data['cargo'] ?? null,
         ];

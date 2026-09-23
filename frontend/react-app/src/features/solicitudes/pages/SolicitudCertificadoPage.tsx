@@ -7,7 +7,7 @@ export function SolicitudCertificadoPage() {
       <PageHeader
         eyebrow="Autoservicio"
         title="Confirmar certificación laboral"
-        description="Revise la modalidad. No existe un paso de aprobación humana."
+        description="Revise el tipo de certificado. No existe un paso de aprobación humana."
       />
       <SolicitudForm />
     </div>

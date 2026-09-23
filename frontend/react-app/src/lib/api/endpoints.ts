@@ -8,7 +8,6 @@ export const endpoints = {
   dashboard: '/dashboard',
   funcionarios: '/funcionarios',
   cargos: '/cargos',
-  rangosSalariales: '/rangos-salariales',
   solicitudes: '/solicitudes',
   disponibilidadCertificacion: '/mi-certificacion/disponibilidad',
   configuracionCertificaciones: '/configuracion/certificaciones',

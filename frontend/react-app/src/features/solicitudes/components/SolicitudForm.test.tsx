@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SolicitudForm } from './SolicitudForm';
 import { solicitudesService } from '../services/solicitudes.service';
 
@@ -11,10 +11,12 @@ vi.mock('../services/solicitudes.service', () => ({ solicitudesService: {
 } }));
 
 describe('SolicitudForm', () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it('permite solicitar funciones por autoservicio sin enviar funcionario ni ficha elegidos por el cliente', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><MemoryRouter><SolicitudForm /></MemoryRouter></QueryClientProvider>);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Contenido de la certificación' }), { target: { value: 'funciones' } });
+    fireEvent.click(await screen.findByRole('radio', { name: /Certificado laboral con funciones/i }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     expect(screen.getByRole('heading', { name: 'Revise y confirme' })).toBeInTheDocument();
@@ -25,5 +27,16 @@ describe('SolicitudForm', () => {
     expect(payload).not.toHaveProperty('requiere_salario');
     expect(payload).not.toHaveProperty('funcionario_id');
     expect(payload).not.toHaveProperty('manual_cargo_version_id');
+  });
+
+  it('envía únicamente el tipo sencillo elegido y nunca campos salariales', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><MemoryRouter><SolicitudForm /></MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y generar' }));
+    await waitFor(() => expect(solicitudesService.create).toHaveBeenCalled());
+    expect(vi.mocked(solicitudesService.create).mock.calls[0][0]).toEqual({ tipo_certificado: 'sencillo', observaciones: '' });
+    expect(screen.queryByText(/salario/i)).not.toBeInTheDocument();
   });
 });

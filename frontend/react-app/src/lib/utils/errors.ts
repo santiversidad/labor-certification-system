@@ -5,7 +5,9 @@ export const domainErrorMessages: Record<string, string> = {
   MONTHLY_CERTIFICATE_LIMIT: 'Ya solicitó esta modalidad durante el mes actual. Podrá solicitarla nuevamente el próximo mes.',
   MANUAL_FICHA_INCOMPLETA: 'La ficha del Manual de Funciones está incompleta. Talento Humano debe revisarla antes de expedir este certificado.',
   MANUAL_FICHA_NO_ASIGNADA: 'No tiene una ficha del Manual de Funciones asignada. Comuníquese con Talento Humano para actualizar su información.',
-  SALARIO_NO_RESOLUBLE: 'No fue posible determinar el salario vigente para su cargo y grado. Talento Humano debe revisar la información salarial.',
+  MANUAL_FICHA_INCOMPATIBLE: 'La ficha asignada no es compatible con el empleo. Talento Humano debe revisar la relación normativa.',
+  MANUAL_FICHA_AMBIGUA: 'Existe más de una ficha aplicable al empleo. Talento Humano debe resolver la relación normativa.',
+  MANUAL_VERSION_NO_VIGENTE: 'El Manual asignado no está publicado o no es aplicable. Talento Humano debe revisarlo.',
   PAGO_NO_CONFIRMADO: 'El pago requerido aún no está confirmado. Complete el pago o espere su confirmación antes de continuar.',
   PASSWORD_CHANGE_REQUIRED: 'Por seguridad, debe crear una nueva contraseña antes de continuar.',
 };

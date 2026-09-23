@@ -73,6 +73,9 @@ class ValidacionPublicaController extends Controller
             'fecha_generacion' => $certificado->fecha_generacion?->toDateString(),
             'estado' => $estado->value,
             'mensaje' => $mensaje,
+            'tipo_certificado' => ($certificado->snapshot_schema_version ?? 0) >= 3
+                ? ($snapshot['tipo_certificado'] ?? null)
+                : null,
             'funcionario' => isset($snapshot['funcionario']) ? [
                 'nombre' => trim(($snapshot['funcionario']['nombres'] ?? '').' '.($snapshot['funcionario']['apellidos'] ?? '')),
             ] : null,

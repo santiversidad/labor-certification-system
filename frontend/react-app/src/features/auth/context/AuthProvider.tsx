@@ -20,7 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const syncSession = () => setStoredSession(authStorage.getSession());
+    const syncSession = () => {
+      const nextSession = authStorage.getSession();
+      setStoredSession((currentSession) => {
+        if (currentSession && !nextSession) queryClient.clear();
+        return nextSession;
+      });
+    };
     window.addEventListener('auth-session-changed', syncSession);
     window.addEventListener('storage', syncSession);
 
@@ -28,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('auth-session-changed', syncSession);
       window.removeEventListener('storage', syncSession);
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!token || !identity.data?.data) return;

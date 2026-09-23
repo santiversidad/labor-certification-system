@@ -9,6 +9,7 @@ import { formatDate } from '../../../lib/formatters/dates';
 import { DownloadCertificateButton } from '../components/DownloadCertificateButton';
 import { certificadosService } from '../services/certificados.service';
 import { canDownloadCertificado } from '../utils/certificadoRules';
+import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
 
 export function CertificadoDetailPage() {
   const { id = '' } = useParams();
@@ -42,6 +43,8 @@ export function CertificadoDetailPage() {
           <div><dt className="text-muted">Estado</dt><dd><Badge tone={certificado.estado === 'anulado' ? 'red' : 'green'}>{certificado.estado}</Badge></dd></div>
           <div><dt className="text-muted">Generación</dt><dd className="font-medium">{certificado.fecha_generacion ? formatDate(certificado.fecha_generacion) : '—'}</dd></div>
           <div><dt className="text-muted">Generado por</dt><dd className="font-medium">{certificado.generado_por?.name ?? '—'}</dd></div>
+          <div><dt className="text-muted">Tipo</dt><dd className="font-medium">{certificado.solicitud ? certificateTypeLabel(certificado.solicitud.tipo_certificado) : 'Registro histórico de modelo anterior'}</dd></div>
+          {certificado.snapshot_schema_version && certificado.snapshot_schema_version < 3 ? <div className="sm:col-span-2"><Badge tone="gold">Registro histórico de modelo anterior</Badge></div> : null}
         </dl>
       </Card>
     </div>

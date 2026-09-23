@@ -56,4 +56,4 @@ Puede usar cualquier contrasena no vacia mientras `VITE_USE_MOCKS=true`.
 
 - Publicas: `/login`, `/validar-certificado/:token`
 - Funcionario/secretario: `/app/dashboard`, `/app/solicitudes`, `/app/certificados`
-- Administrador: `/admin/dashboard`, `/admin/funcionarios`, `/admin/cargos`, `/admin/rangos-salariales`, `/admin/auditoria`, `/admin/reportes`
+- Administrador: `/admin/dashboard`, `/admin/funcionarios`, `/admin/cargos`, `/admin/manual`, `/admin/certificados`, `/admin/configuracion`, `/admin/auditoria`, `/admin/reportes`

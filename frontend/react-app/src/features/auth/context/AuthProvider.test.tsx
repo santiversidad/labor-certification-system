@@ -116,4 +116,27 @@ describe('revalidación de identidad', () => {
     await waitFor(() => expect(authStorage.getSession()).toBeNull());
     expect(client.getQueryData(['disponibilidad-certificacion'])).toBeUndefined();
   });
+
+  it('elimina sesión y consultas dependientes de la identidad ante 401', async () => {
+    vi.mocked(authService.me).mockRejectedValue({ response: { status: 401 } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(['disponibilidad-certificacion'], { userId: 2 });
+
+    render(<QueryClientProvider client={client}><AuthProvider><div>Aplicación</div></AuthProvider></QueryClientProvider>);
+
+    await waitFor(() => expect(authStorage.getSession()).toBeNull());
+    expect(client.getQueryData(['disponibilidad-certificacion'])).toBeUndefined();
+  });
+
+  it('conserva sesión y cache de identidad ante 403', async () => {
+    vi.mocked(authService.me).mockRejectedValue({ response: { status: 403 } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(['disponibilidad-certificacion'], { userId: 2 });
+
+    render(<QueryClientProvider client={client}><AuthProvider><div>Aplicación</div></AuthProvider></QueryClientProvider>);
+
+    await waitFor(() => expect(authService.me).toHaveBeenCalled());
+    expect(authStorage.getSession()).not.toBeNull();
+    expect(client.getQueryData(['disponibilidad-certificacion'])).toEqual({ userId: 2 });
+  });
 });

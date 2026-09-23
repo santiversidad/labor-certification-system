@@ -4,11 +4,7 @@ import { Card } from '../../../components/ui/Card';
 import { formatDate } from '../../../lib/formatters/dates';
 import { SolicitudStatusBadge } from '../../solicitudes/components/SolicitudStatusBadge';
 import type { SolicitudCertificacion } from '../../solicitudes/types/solicitud.types';
-
-const tipoLabels: Record<string, string> = {
-  sencillo: 'laboral sencillo',
-  funciones: 'laboral con funciones',
-};
+import { CERTIFICATE_TYPE_LABELS } from '../../solicitudes/utils/certificateType';
 
 export function FuncionarioRecentRequests({ solicitudes }: { solicitudes: SolicitudCertificacion[] }) {
   return (
@@ -31,7 +27,7 @@ export function FuncionarioRecentRequests({ solicitudes }: { solicitudes: Solici
             <div>
               <p className="text-sm font-semibold text-text">Solicitud N° {solicitud.id}</p>
               <p className="mt-1 text-xs text-muted">
-                Certificado {tipoLabels[solicitud.tipo_certificado] ?? solicitud.tipo_certificado} - solicitado el {solicitud.created_at ? formatDate(solicitud.created_at) : '—'}
+                {CERTIFICATE_TYPE_LABELS[solicitud.tipo_certificado]} · solicitado el {solicitud.created_at ? formatDate(solicitud.created_at) : '—'}
               </p>
             </div>
             <SolicitudStatusBadge estado={solicitud.estado} />

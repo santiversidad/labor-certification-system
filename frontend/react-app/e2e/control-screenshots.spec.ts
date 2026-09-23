@@ -1,74 +1,114 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
-const output = 'docs/screenshots';
+const output = 'evidence/certificate-types-phase2';
 
-async function login(page: Page, cedula: string, password = 'password') {
+async function capture(page: Page, name: string) {
+  await expect(page.locator('.animate-pulse')).toHaveCount(0);
+  await page.screenshot({ path: `${output}/${name}.png`, fullPage: true });
+}
+
+async function login(page: Page, documento: string, password: string) {
   await page.goto('/login');
-  await page.getByLabel('Cédula', { exact: true }).fill(cedula);
+  await page.getByLabel('Cédula', { exact: true }).fill(documento);
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
 }
 
-test('capturas institucionales sin datos sensibles', async ({ page }) => {
+test('evidencia visual real de Fase 2', async ({ page }) => {
   await mkdir(output, { recursive: true });
-  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.setViewportSize({ width: 1440, height: 900 });
+
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
-  await page.screenshot({ path: `${output}/01-login.png`, fullPage: true });
+  await capture(page, '01-login');
 
-  await page.evaluate(() => localStorage.setItem('clv_session', JSON.stringify({ token: 'captura-local', user: { id: 9999, name: 'Funcionario Demostración', documento: '000000000', estado: true, must_change_password: true, roles: ['funcionario'], permisos: [] } })));
-  await page.goto('/cambiar-contrasena');
-  await expect(page.getByRole('heading', { name: 'Cambie su contraseña temporal' })).toBeVisible();
-  await page.screenshot({ path: `${output}/02-cambio-contrasena.png`, fullPage: true });
-  await page.evaluate(() => localStorage.clear());
-
-  await login(page, '000000003');
-  await expect(page).toHaveURL(/\/app\/inicio/);
-  await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
-  await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  await page.screenshot({ path: `${output}/03-dashboard-funcionario.png`, fullPage: true });
-  await page.goto('/app/solicitudes/nueva?modalidad=sin_salario');
-  await expect(page.getByRole('heading', { name: 'Confirmar certificación laboral' })).toBeVisible();
-  await page.screenshot({ path: `${output}/04-solicitud.png`, fullPage: true });
-  const result = { resultado: 'generada', solicitud: { id: 9999, radicado: 'CL-DEMO-000001', tipo_certificado: 'laboral', estado: 'generada', requiere_pago: false, requiere_salario: false, periodo_mes: '2026-09-01', created_at: '2026-09-20T10:00:00-05:00' }, descarga_url: '/api/v1/mi-certificacion/descargar/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' };
-  await page.evaluate((payload) => history.replaceState({ ...(history.state ?? {}), usr: payload }, '', '/app/solicitudes/confirmacion'), result);
-  await page.reload();
-  await expect(page.getByRole('heading', { name: 'Certificación generada correctamente' })).toBeVisible();
-  await page.screenshot({ path: `${output}/05-resultado.png`, fullPage: true });
+  const documento = `93${Date.now()}`;
+  await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+  await expect(page).toHaveURL(/\/admin\/dashboard/);
+  await page.goto('/admin/funcionarios/nuevo');
+  await page.getByLabel('Número de cédula').fill(documento);
+  await page.getByLabel('Nombres', { exact: true }).fill('Evidencia');
+  await page.getByLabel('Apellidos', { exact: true }).fill('Visual Fase Dos');
+  await page.getByLabel('Dependencia', { exact: true }).fill('Talento Humano E2E');
+  await page.locator('select[name="cargo_id"]').selectOption({ label: 'Profesional E2E · E2E/01' });
+  await page.getByLabel('Fecha de vinculación').fill('2024-01-15');
+  await expect(page.getByLabel('Ficha del Manual de Funciones')).toHaveValue(/\d+/);
+  await page.getByRole('button', { name: 'Guardar funcionario' }).click();
+  await expect(page).toHaveURL(/\/admin\/funcionarios\/\d+$/);
+  const employeeDetailUrl = page.url();
   await page.getByRole('button', { name: 'Cerrar sesión' }).click();
 
-  await login(page, '000000001');
+  await login(page, documento, documento);
+  await expect(page).toHaveURL(/\/cambiar-contrasena/);
+  await page.getByLabel('Contraseña temporal', { exact: true }).fill(documento);
+  await page.getByLabel('Nueva contraseña', { exact: true }).fill('MiClaveNueva2026');
+  await page.getByLabel('Confirmar nueva contraseña', { exact: true }).fill('MiClaveNueva2026');
+  await page.getByRole('button', { name: 'Guardar y continuar' }).click();
+  await expect(page).toHaveURL(/\/app\/inicio/);
+  await capture(page, '02-dashboard-funcionario');
+
+  await page.goto('/app/solicitudes/nueva?modalidad=sencillo');
+  await expect(page.getByRole('radio', { name: /Certificado laboral sencillo/i })).toBeChecked();
+  await capture(page, '03-solicitud-sencillo');
+  await page.goto('/app/solicitudes/nueva?modalidad=funciones');
+  await expect(page.getByRole('radio', { name: /Certificado laboral con funciones/i })).toBeChecked();
+  await capture(page, '04-solicitud-funciones');
+
+  await page.goto('/app/solicitudes/nueva?modalidad=sencillo');
+  await expect(page.getByRole('radio', { name: /Certificado laboral sencillo/i })).toBeChecked();
+  const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clv_session')!));
+  const request = await page.request.post('http://e2e-api:8080/api/v1/solicitudes', {
+    headers: { Authorization: `Bearer ${session.token}`, Accept: 'application/json' },
+    data: { tipo_certificado: 'sencillo' },
+  });
+  expect(request.status()).toBe(201);
+  const result = (await request.json()).data;
+  await page.evaluate((payload) => {
+    history.pushState({ ...(history.state ?? {}), usr: payload }, '', '/app/solicitudes/confirmacion');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, result);
+  await expect(page.getByRole('heading', { name: 'Certificación generada correctamente' })).toBeVisible();
+  await capture(page, '05-confirmacion');
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+
+  await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
   await expect(page).toHaveURL(/\/admin\/dashboard/);
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  await page.screenshot({ path: `${output}/06-dashboard-admin.png`, fullPage: true });
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  await capture(page, '06-dashboard-admin');
   await page.goto('/admin/funcionarios');
-  await page.getByRole('heading', { name: 'Funcionarios' }).waitFor();
-  await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  await page.screenshot({ path: `${output}/07-funcionarios.png`, fullPage: true });
+  await expect(page.getByRole('heading', { name: 'Funcionarios', exact: true })).toBeVisible();
+  await capture(page, '07-funcionarios');
   await page.goto('/admin/funcionarios/nuevo');
   await expect(page.getByRole('heading', { name: 'Crear funcionario' })).toBeVisible();
-  await page.screenshot({ path: `${output}/08-alta-funcionario.png`, fullPage: true });
-  await page.goto('/admin/funcionarios');
-  await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  const detailLink = page.getByRole('button', { name: 'Ver funcionario' }).first();
-  await expect(detailLink).toBeVisible();
-  await detailLink.click();
+  await capture(page, '08-alta-funcionario');
+  await page.goto(employeeDetailUrl);
   await expect(page.getByText('Información básica')).toBeVisible();
-  await page.screenshot({ path: `${output}/09-detalle-funcionario.png`, fullPage: true });
+  await capture(page, '09-detalle-funcionario');
+  await page.goto('/admin/cargos');
+  await expect(page.getByRole('heading', { name: 'Cargos y grados' })).toBeVisible();
+  await capture(page, '10-cargos');
   await page.goto('/admin/manual-funciones');
-  await page.getByRole('heading', { name: 'Manual de Funciones' }).waitFor();
-  await page.screenshot({ path: `${output}/10-manual-funciones.png`, fullPage: true });
+  await expect(page.getByRole('heading', { name: 'Manual de Funciones' })).toBeVisible();
+  await capture(page, '11-manual-funciones');
+  await page.goto('/admin/certificaciones');
+  await expect(page.getByRole('heading', { name: 'Certificados', exact: true })).toBeVisible();
+  await capture(page, '12-certificaciones');
+  await page.getByRole('link', { name: /CL-2026-/ }).first().click();
+  await expect(page.getByRole('heading', { name: 'Detalle de certificado' })).toBeVisible();
+  await capture(page, '13-detalle-certificado');
   await page.goto('/admin/configuracion');
-  await page.getByRole('heading', { name: 'Pago de certificaciones' }).waitFor();
-  await page.screenshot({ path: `${output}/11-configuracion.png`, fullPage: true });
+  await expect(page.getByRole('heading', { name: 'Pago de certificaciones' })).toBeVisible();
+  await capture(page, '14-configuracion');
+  await page.goto('/admin/auditoria');
+  await expect(page.getByRole('heading', { name: 'Auditoría' })).toBeVisible();
+  await capture(page, '15-auditoria');
+  await page.goto('/admin/reportes');
+  await expect(page.getByRole('heading', { name: 'Reportes' })).toBeVisible();
+  await capture(page, '16-reportes');
 
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.evaluate(() => localStorage.clear());
-  await login(page, '000000003');
-  await expect(page).toHaveURL(/\/app\/inicio/);
-  await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
-  await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  await page.screenshot({ path: `${output}/12-dashboard-funcionario-mobile.png`, fullPage: true });
+  await page.goto('/validar-certificado/codigo-evidencia-no-valido');
+  await expect(page.getByRole('heading', { name: 'Validar certificado' })).toBeVisible();
+  await expect(page.getByText(/No fue posible validar|no encontrado|inválido/i).first()).toBeVisible();
+  await capture(page, '17-validacion-publica');
 });

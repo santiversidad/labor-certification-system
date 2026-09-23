@@ -7,11 +7,7 @@ import { PageHeader } from '../../../components/ui/PageHeader';
 import { formatDate } from '../../../lib/formatters/dates';
 import { SolicitudStatusBadge } from '../components/SolicitudStatusBadge';
 import { solicitudesService } from '../services/solicitudes.service';
-
-const tipoLabels: Record<string, string> = {
-  sencillo: 'Certificación laboral sencilla',
-  funciones: 'Certificación laboral con funciones',
-};
+import { certificateTypeLabel } from '../utils/certificateType';
 
 export function SolicitudDetailPage() {
   const { id = '' } = useParams();
@@ -24,7 +20,7 @@ export function SolicitudDetailPage() {
       <PageHeader title={`Solicitud ${solicitud.radicado}`} description="Consulta histórica. La expedición vigente es automática y esta vista no ofrece acciones manuales." actions={<SolicitudStatusBadge estado={solicitud.estado} />} />
       <Card title="Datos de la solicitud">
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted">Tipo</dt><dd className="font-medium text-text">{tipoLabels[solicitud.tipo_certificado] ?? solicitud.tipo_certificado}</dd></div>
+          <div><dt className="text-muted">Tipo</dt><dd className="font-medium text-text">{certificateTypeLabel(solicitud.tipo_certificado)}</dd></div>
           <div><dt className="text-muted">Periodo</dt><dd className="font-medium text-text">{solicitud.periodo_mes}</dd></div>
           <div><dt className="text-muted">Fecha</dt><dd className="font-medium text-text">{solicitud.created_at ? formatDate(solicitud.created_at) : '—'}</dd></div>
         </dl>

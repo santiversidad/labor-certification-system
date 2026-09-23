@@ -1,6 +1,7 @@
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import type { ValidacionCertificado } from '../types/validacionPublica.types';
+import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
 
 export function ValidationResultCard({ result }: { result: ValidacionCertificado }) {
   const anulado = result.resultado === 'anulado';
@@ -14,6 +15,7 @@ export function ValidationResultCard({ result }: { result: ValidacionCertificado
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div><dt className="text-muted">Estado</dt><dd><Badge tone={result.valido ? 'green' : 'red'}>{anulado ? 'CERTIFICADO ANULADO' : result.valido ? 'Válido' : 'No válido'}</Badge></dd></div>
         <div><dt className="text-muted">Código único</dt><dd className="font-medium text-text">{result.codigo_unico ?? 'No encontrado'}</dd></div>
+        {result.codigo_unico ? <div><dt className="text-muted">Tipo</dt><dd className="font-medium text-text">{certificateTypeLabel(result.tipo_certificado)}</dd></div> : null}
         {result.funcionario ? <div><dt className="text-muted">Funcionario titular</dt><dd className="font-medium text-text">{result.funcionario.nombre}</dd></div> : null}
         {result.cargo ? <div><dt className="text-muted">Cargo</dt><dd className="font-medium text-text">{result.cargo}</dd></div> : null}
         {result.fecha_generacion ? <div><dt className="text-muted">Fecha de generación</dt><dd className="font-medium text-text">{result.fecha_generacion}</dd></div> : null}

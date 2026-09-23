@@ -34,6 +34,7 @@ describe('FuncionarioDashboardPage', () => {
 
     expect(await screen.findByText('Certificado laboral sencillo')).toBeInTheDocument();
     expect(screen.getByText('Certificado laboral con funciones')).toBeInTheDocument();
+    expect(screen.queryByText(/salario/i)).not.toBeInTheDocument();
   });
 
   it('bloquea únicamente la modalidad consumida', async () => {

@@ -39,6 +39,7 @@ class CertificadoResource extends JsonResource
                 'id' => $this->solicitud->id,
                 'radicado' => $this->solicitud->radicado,
                 'estado' => $this->solicitud->estado?->value ?? $this->solicitud->estado,
+                'tipo_certificado' => $this->solicitud->tipo_certificado?->value ?? $this->solicitud->tipo_certificado,
             ] : null),
         ];
     }

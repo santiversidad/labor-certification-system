@@ -49,14 +49,14 @@ export function FuncionarioDashboardPage() {
         <p>Dispone de un cupo sencillo y uno con funciones por mes calendario. La información proviene de las fuentes institucionales vigentes.</p>
       </div>
       {query.isError ? <ErrorState message="No fue posible consultar la disponibilidad de certificaciones." /> : null}
-      {query.isLoading ? <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="Cargando modalidades"><Skeleton className="h-72" /><Skeleton className="h-72" /><Skeleton className="h-72" /></div> : null}
+      {query.isLoading ? <div className="grid gap-5 md:grid-cols-2" aria-label="Cargando tipos de certificado"><Skeleton className="h-72" /><Skeleton className="h-72" /></div> : null}
       {query.data ? (
         <div className="grid gap-5 md:grid-cols-2">
-          <CertificationOption availability={query.data.data.sencillo} description="Certifica su vinculación laboral vigente." icon={FileText} note="No requiere una ficha completa del Manual." title="Certificado laboral sencillo" to="/app/solicitudes/nueva?modalidad=sencillo" />
-          <CertificationOption availability={query.data.data.funciones} description="Añade las funciones de la ficha del Manual asignada a su vinculación actual." icon={ListChecks} note="La ficha se valida antes de generar el documento." title="Certificado laboral con funciones" to="/app/solicitudes/nueva?modalidad=funciones" />
+          <CertificationOption availability={query.data.data.sencillo} description="Constancia de vinculación laboral y datos del empleo." icon={FileText} note="Se valida su vinculación laboral vigente." title="Certificado laboral sencillo" to="/app/solicitudes/nueva?modalidad=sencillo" />
+          <CertificationOption availability={query.data.data.funciones} description="Incluye la información laboral y las funciones correspondientes al empleo según el Manual aplicable." icon={ListChecks} note="Se valida la ficha asignada antes de generar." title="Certificado laboral con funciones" to="/app/solicitudes/nueva?modalidad=funciones" />
         </div>
       ) : null}
-      <p className="text-xs text-muted">Este portal no expone expedientes, actuaciones administrativas ni información salarial interna.</p>
+      <p className="text-xs text-muted">Este portal no permite editar expedientes, fichas ni funciones institucionales.</p>
     </div>
   );
 }
