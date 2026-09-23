@@ -78,7 +78,7 @@ class FuncionarioController extends Controller
 
             $funcionario = Funcionario::create(Arr::except($data, ['tipo_vinculacion', 'naturaleza_cargo', 'manual_cargo_version_id']) + ['user_id' => $user->id]);
 
-            FuncionarioCargo::create([
+            $asignacion = FuncionarioCargo::create([
                 'funcionario_id' => $funcionario->id,
                 'cargo_id' => $data['cargo_id'],
                 'manual_cargo_version_id' => $ficha->id,
@@ -88,17 +88,28 @@ class FuncionarioController extends Controller
                 'es_encargo' => $data['tipo_vinculacion'] === TipoVinculacionEnum::Encargo->value,
                 'fecha_inicio' => $data['fecha_ingreso'],
             ]);
+            $asignacion->fichasNormativas()->create([
+                'manual_cargo_version_id' => $ficha->id,
+                'vigencia_desde' => $data['fecha_ingreso'],
+                'origen' => 'asignacion_inicial',
+                'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
+            ]);
+
+            $this->registrarAuditoria->execute(
+                accion: 'crear_funcionario_con_usuario',
+                modelo: 'Funcionario',
+                modeloId: $funcionario->id,
+                descripcion: "Funcionario y cuenta de primer ingreso creados para {$funcionario->numero_documento}.",
+                metadata: ['user_id' => $funcionario->user_id, 'must_change_password' => true, 'cargo_id' => $funcionario->cargo_id],
+            );
+            $this->registrarAuditoria->execute(
+                accion: 'crear_usuario_funcionario', modelo: 'User', modeloId: $user->id,
+                descripcion: 'Cuenta institucional creada con cambio obligatorio de contraseña.',
+                metadata: ['funcionario_id' => $funcionario->id, 'must_change_password' => true],
+            );
 
             return $funcionario;
         });
-
-        $this->registrarAuditoria->execute(
-            accion: 'crear_funcionario_con_usuario',
-            modelo: 'Funcionario',
-            modeloId: $funcionario->id,
-            descripcion: "Funcionario y cuenta de primer ingreso creados para {$funcionario->numero_documento}.",
-            metadata: ['user_id' => $funcionario->user_id, 'must_change_password' => true, 'cargo_id' => $funcionario->cargo_id],
-        );
 
         return $this->createdResponse(
             new FuncionarioResource($funcionario->load(['cargo', 'user'])),
@@ -149,6 +160,10 @@ class FuncionarioController extends Controller
 
             if ($ficha && $cargoNuevo === $cargoAnterior && $vigente && ! $vigente->manual_cargo_version_id) {
                 $vigente->update(['manual_cargo_version_id' => $ficha->id]);
+                $vigente->fichasNormativas()->create([
+                    'manual_cargo_version_id' => $ficha->id, 'vigencia_desde' => today(),
+                    'origen' => 'asignacion_inicial', 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
+                ]);
             } elseif ($cargoNuevo !== $cargoAnterior || ($ficha && $ficha->id !== $vigente?->manual_cargo_version_id)) {
                 $fechaInicio = now(config('app.timezone'))->startOfDay();
                 if ($vigente && $vigente->fecha_inicio->greaterThanOrEqualTo($fechaInicio)) {
@@ -156,7 +171,7 @@ class FuncionarioController extends Controller
                 }
                 $vigente?->update(['fecha_fin' => $fechaInicio->copy()->subDay()->toDateString()]);
 
-                FuncionarioCargo::create([
+                $nuevaAsignacion = FuncionarioCargo::create([
                     'funcionario_id' => $model->id,
                     'cargo_id' => $cargoNuevo,
                     'manual_cargo_version_id' => $ficha?->id,
@@ -165,6 +180,10 @@ class FuncionarioController extends Controller
                     'es_cargo_base' => true,
                     'es_encargo' => ($data['tipo_vinculacion'] ?? null) === TipoVinculacionEnum::Encargo->value,
                     'fecha_inicio' => $fechaInicio->toDateString(),
+                ]);
+                $nuevaAsignacion->fichasNormativas()->create([
+                    'manual_cargo_version_id' => $ficha->id, 'vigencia_desde' => $fechaInicio,
+                    'origen' => 'asignacion_inicial', 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
                 ]);
             }
         });
@@ -228,9 +247,6 @@ class FuncionarioController extends Controller
             return $this->errorResponse('El funcionario no puede eliminarse porque tiene información administrativa relacionada.', ['relaciones' => array_keys($existentes)], 409, 'EMPLOYEE_HAS_HISTORY');
         }
 
-        $model->delete();
-        $this->registrarAuditoria->execute('eliminar_funcionario_sin_historial', 'Funcionario', $funcionario, 'Funcionario sin historial eliminado.');
-
-        return $this->successResponse(null, 'Funcionario eliminado correctamente.');
+        return $this->errorResponse('La eliminación está deshabilitada. Inactive al funcionario conservando su cuenta y expediente.', null, 410, 'EMPLOYEE_DELETE_DISABLED');
     }
 }

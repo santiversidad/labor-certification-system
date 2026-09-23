@@ -6,10 +6,8 @@ import { SolicitudStatusBadge } from '../../solicitudes/components/SolicitudStat
 import type { SolicitudCertificacion } from '../../solicitudes/types/solicitud.types';
 
 const tipoLabels: Record<string, string> = {
-  laboral: 'laboral',
-  funciones: 'de funciones',
-  salario: 'de salario',
-  laboral_salario: 'laboral con salario',
+  sencillo: 'laboral sencillo',
+  funciones: 'laboral con funciones',
 };
 
 export function FuncionarioRecentRequests({ solicitudes }: { solicitudes: SolicitudCertificacion[] }) {

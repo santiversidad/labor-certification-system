@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
-import { EmptyState } from '../../../components/ui/EmptyState';
+import { Input } from '../../../components/ui/Input';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { AuditoriaTable } from '../components/AuditoriaTable';
 import { auditoriaService } from '../services/auditoria.service';
@@ -12,42 +10,29 @@ export function AuditoriaPage() {
   const [moduleFilter, setModuleFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['auditoria'],
-    queryFn: auditoriaService.list,
-  });
+  const query = useQuery({ queryKey: ['auditoria'], queryFn: auditoriaService.list });
   const filteredLogs = useMemo(() => {
-    const logs = data?.data ?? [];
-
+    const logs = query.data?.data ?? [];
     return logs.filter((log) => {
       const matchesModule = moduleFilter ? (log.modelo ?? '').toLowerCase().includes(moduleFilter.toLowerCase()) : true;
       const matchesUser = userFilter ? (log.user?.name ?? '').toLowerCase().includes(userFilter.toLowerCase()) : true;
       const matchesDate = dateFilter ? log.created_at.startsWith(dateFilter) : true;
       return matchesModule && matchesUser && matchesDate;
     });
-  }, [data, dateFilter, moduleFilter, userFilter]);
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (isError || !data) {
-    return <ErrorState />;
-  }
+  }, [dateFilter, moduleFilter, query.data, userFilter]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Auditoria" description="Consulte actividad del sistema por modulo, usuario y fecha." />
-      <Card title="Filtros">
-        <div className="grid gap-3 md:grid-cols-3">
-          <input className="min-h-10 rounded-md border border-border bg-surface px-3 text-sm" placeholder="Modulo" value={moduleFilter} onChange={(event) => setModuleFilter(event.target.value)} />
-          <input className="min-h-10 rounded-md border border-border bg-surface px-3 text-sm" placeholder="Usuario" value={userFilter} onChange={(event) => setUserFilter(event.target.value)} />
-          <input className="min-h-10 rounded-md border border-border bg-surface px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+    <div className="app-page">
+      <PageHeader eyebrow="Trazabilidad" title="Auditoría" description="Consulte actividad del sistema por módulo, usuario y fecha." />
+      <section className="surface-section space-y-5 p-5 sm:p-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Input label="Recurso o módulo" onChange={(event) => setModuleFilter(event.target.value)} placeholder="Ej. Funcionario" value={moduleFilter} />
+          <Input label="Usuario" onChange={(event) => setUserFilter(event.target.value)} placeholder="Nombre" value={userFilter} />
+          <Input label="Fecha" onChange={(event) => setDateFilter(event.target.value)} type="date" value={dateFilter} />
         </div>
-      </Card>
-      <Card title="Eventos recientes" description="Trazabilidad de operaciones del sistema.">
-        {filteredLogs.length ? <AuditoriaTable logs={filteredLogs} /> : <EmptyState title="Sin eventos" description="No hay registros que coincidan con los filtros." />}
-      </Card>
+        {query.isError ? <ErrorState message="No fue posible consultar los eventos de auditoría." /> : null}
+        <AuditoriaTable loading={query.isLoading} logs={filteredLogs} />
+      </section>
     </div>
   );
 }

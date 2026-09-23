@@ -75,7 +75,9 @@ class GenerarCertificadoService
                     throw ValidationException::withMessages(['certificado' => ['La solicitud ya tiene un certificado generado.']]);
                 }
 
-                Storage::disk('local')->put($ruta, $pdf);
+                if (! Storage::disk('local')->put($ruta, $pdf)) {
+                    throw new \RuntimeException('PDF_STORAGE_FAILED');
+                }
                 $certificado = Certificado::create([
                     'solicitud_certificacion_id' => $bloqueada->id,
                     'funcionario_id' => $bloqueada->funcionario_id,

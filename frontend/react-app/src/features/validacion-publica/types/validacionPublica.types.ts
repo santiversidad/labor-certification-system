@@ -6,5 +6,6 @@ export type ValidacionCertificado = {
   fecha_generacion?: string;
   funcionario?: { nombre: string } | null;
   cargo?: string | null;
+  tipo_certificado?: 'sencillo' | 'funciones' | null;
   mensaje?: string;
 };

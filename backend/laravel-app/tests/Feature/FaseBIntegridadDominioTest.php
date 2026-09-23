@@ -20,6 +20,7 @@ use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class FaseBIntegridadDominioTest extends TestCase
@@ -82,13 +83,13 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'eliminar_funcionario_bloqueado']);
     }
 
-    public function test_funcionario_sin_historial_puede_eliminarse_temporalmente(): void
+    public function test_funcionario_sin_historial_tampoco_se_elimina(): void
     {
         $this->actingAs($this->admin, 'sanctum')
             ->deleteJson("/api/v1/funcionarios/{$this->funcionario->id}")
-            ->assertOk();
+            ->assertStatus(410)->assertJsonPath('code', 'EMPLOYEE_DELETE_DISABLED');
 
-        $this->assertDatabaseMissing('funcionarios', ['id' => $this->funcionario->id]);
+        $this->assertDatabaseHas('funcionarios', ['id' => $this->funcionario->id]);
     }
 
     public function test_cardinalidad_un_usuario_un_funcionario_se_impone_en_bd(): void
@@ -172,7 +173,7 @@ class FaseBIntegridadDominioTest extends TestCase
 
     public function test_snapshot_emitido_no_puede_modificarse(): void
     {
-        \Tests\Support\ManualFixture::vincular($this->funcionario);
+        ManualFixture::vincular($this->funcionario);
         $solicitud = $this->solicitudAprobada(false);
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
@@ -203,7 +204,7 @@ class FaseBIntegridadDominioTest extends TestCase
             'naturaleza_cargo' => NaturalezaCargoEnum::CarreraAdministrativa,
             'es_cargo_base' => true,
             'fecha_inicio' => $fechaInicio,
-            'manual_cargo_version_id' => \Tests\Support\ManualFixture::ficha($this->cargo)->id,
+            'manual_cargo_version_id' => ManualFixture::ficha($this->cargo)->id,
         ]);
     }
 }

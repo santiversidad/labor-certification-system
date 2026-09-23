@@ -77,6 +77,7 @@ class ValidacionPublicaController extends Controller
                 'nombre' => trim(($snapshot['funcionario']['nombres'] ?? '').' '.($snapshot['funcionario']['apellidos'] ?? '')),
             ] : null,
             'cargo' => $snapshot['cargo']['denominacion'] ?? null,
+            'tipo_certificado' => $snapshot['tipo_certificado'] ?? null,
         ];
 
         return $this->successResponse(new ValidacionCertificadoResource($data), $mensaje);

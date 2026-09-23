@@ -22,7 +22,12 @@ export const solicitudesService = {
     return response.data;
   },
   async downloadImmediate(url: string): Promise<{ blob: Blob; filename: string }> {
-    const response = await apiClient.get<Blob>(url, { responseType: 'blob' });
+    // The API returns a root-relative path; Axios already has /api/v1 in baseURL.
+    // Reject other origins/routes so the bearer token never follows an arbitrary URL.
+    if (!/^\/api\/v1\/mi-certificacion\/descargar\/[a-f0-9]{64}$/.test(url)) {
+      throw new Error('El enlace de descarga no es válido.');
+    }
+    const response = await apiClient.get<Blob>(url.slice('/api/v1'.length), { responseType: 'blob' });
     const disposition = response.headers['content-disposition'] as string | undefined;
     const match = disposition?.match(/filename="?([^";]+)"?/i);
     return { blob: response.data, filename: match?.[1] ?? 'certificacion-laboral.pdf' };

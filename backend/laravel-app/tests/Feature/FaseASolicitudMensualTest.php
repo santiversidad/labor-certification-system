@@ -17,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class FaseASolicitudMensualTest extends TestCase
@@ -216,7 +217,8 @@ class FaseASolicitudMensualTest extends TestCase
             'fecha_inicio' => '2020-01-15',
         ]);
 
-        \Tests\Support\ManualFixture::vincular($funcionario);
+        ManualFixture::vincular($funcionario);
+
         return [$usuario, $funcionario];
     }
 }

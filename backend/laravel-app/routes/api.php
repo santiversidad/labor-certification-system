@@ -11,7 +11,6 @@ use App\Http\Controllers\Api\V1\ManualFuncionController;
 use App\Http\Controllers\Api\V1\MiCertificacionController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\ParametroCertificacionController;
-use App\Http\Controllers\Api\V1\RangoSalarialController;
 use App\Http\Controllers\Api\V1\ReporteController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use App\Http\Controllers\Api\V1\ValidacionPublicaController;
@@ -42,6 +41,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
             Route::get('/fichas', [ManualFuncionController::class, 'fichas'])->name('fichas');
+            Route::get('/estado', [ManualFuncionController::class, 'estado'])->name('estado');
+            Route::get('/diff/{from}/{to}', [ManualFuncionController::class, 'diff'])->name('diff');
+            Route::post('/planificar/{from}/{to}', [ManualFuncionController::class, 'planificar'])->name('planificar');
+            Route::post('/versiones/{version}/importar', [ManualFuncionController::class, 'importar'])->name('versiones.importar');
+            Route::post('/actualizaciones-asignaciones/{actualizacion}/resolver', [ManualFuncionController::class, 'resolverAsignacion'])->name('actualizaciones.resolver');
             Route::get('/', [ManualFuncionController::class, 'index'])->name('index');
             Route::post('/', [ManualFuncionController::class, 'store'])->name('store');
             Route::post('/{manual}/versiones', [ManualFuncionController::class, 'storeVersion'])->name('versiones.store');
@@ -55,14 +59,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/', [CargoController::class, 'store'])->name('store');
             Route::get('/{cargo}', [CargoController::class, 'show'])->name('show');
             Route::put('/{cargo}', [CargoController::class, 'update'])->name('update');
-        });
-
-        Route::prefix('rangos-salariales')->name('rangos-salariales.')->group(function () {
-            Route::get('/consultar', [RangoSalarialController::class, 'consultar'])->name('consultar');
-            Route::get('/', [RangoSalarialController::class, 'index'])->name('index');
-            Route::post('/', [RangoSalarialController::class, 'store'])->name('store');
-            Route::get('/{rango_salarial}', [RangoSalarialController::class, 'show'])->name('show');
-            Route::put('/{rango_salarial}', [RangoSalarialController::class, 'update'])->name('update');
         });
 
         Route::prefix('funcionarios')->name('funcionarios.')->group(function () {

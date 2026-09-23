@@ -31,6 +31,8 @@ class ReporteController extends Controller
         return $this->successResponse([
             'total_funcionarios' => Funcionario::count(),
             'total_solicitudes' => SolicitudCertificacion::count(),
+            'solicitudes_sencillas' => SolicitudCertificacion::where('tipo_certificado', 'sencillo')->count(),
+            'solicitudes_con_funciones' => SolicitudCertificacion::where('tipo_certificado', 'funciones')->count(),
             'solicitudes_pendientes' => SolicitudCertificacion::whereIn('estado', [
                 EstadoSolicitudEnum::Pendiente->value,
                 EstadoSolicitudEnum::EnRevision->value,

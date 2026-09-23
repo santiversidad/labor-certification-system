@@ -1,6 +1,8 @@
 export type ReporteResumen = {
   total_funcionarios: number;
   total_solicitudes: number;
+  solicitudes_sencillas: number;
+  solicitudes_con_funciones: number;
   solicitudes_pendientes: number;
   solicitudes_aprobadas: number;
   solicitudes_rechazadas: number;

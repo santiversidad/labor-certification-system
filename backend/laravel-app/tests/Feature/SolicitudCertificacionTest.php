@@ -12,6 +12,7 @@ use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class SolicitudCertificacionTest extends TestCase
@@ -56,7 +57,7 @@ class SolicitudCertificacionTest extends TestCase
             'estado' => EstadoFuncionarioEnum::Activo,
             'cargo_id' => $cargo->id,
         ]);
-        \Tests\Support\ManualFixture::vincular($this->funcionario);
+        ManualFixture::vincular($this->funcionario);
     }
 
     public function test_funcionario_puede_crear_solicitud(): void

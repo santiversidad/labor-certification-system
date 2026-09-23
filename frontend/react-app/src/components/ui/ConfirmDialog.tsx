@@ -1,34 +1,42 @@
+import type { ReactNode } from 'react';
 import { Button } from './Button';
 import { Modal } from './Modal';
 
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
-  message: string;
-  confirmLabel?: string;
-  loading?: boolean;
-  danger?: boolean;
+  description: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  confirmVariant?: 'primary' | 'danger';
+  disabled?: boolean;
+  children?: ReactNode;
+  onCancel: () => void;
   onConfirm: () => void;
-  onClose: () => void;
 };
 
 export function ConfirmDialog({
   open,
   title,
-  message,
-  confirmLabel = 'Confirmar',
-  loading = false,
-  danger = false,
+  description,
+  confirmLabel,
+  cancelLabel = 'Cancelar',
+  confirmVariant = 'primary',
+  disabled = false,
+  children,
+  onCancel,
   onConfirm,
-  onClose,
 }: ConfirmDialogProps) {
   return (
-    <Modal onClose={onClose} open={open} title={title}>
-      <p className="text-sm text-muted">{message}</p>
+    <Modal onClose={onCancel} open={open} title={title}>
+      <p className="text-sm text-muted">{description}</p>
+      {children ? <div className="mt-4">{children}</div> : null}
       <div className="mt-5 flex justify-end gap-2">
-        <Button disabled={loading} onClick={onClose} type="button" variant="secondary">Cancelar</Button>
-        <Button disabled={loading} onClick={onConfirm} type="button" variant={danger ? 'danger' : 'primary'}>
-          {loading ? 'Procesando...' : confirmLabel}
+        <Button onClick={onCancel} type="button" variant="secondary">
+          {cancelLabel}
+        </Button>
+        <Button disabled={disabled} onClick={onConfirm} type="button" variant={confirmVariant}>
+          {confirmLabel}
         </Button>
       </div>
     </Modal>

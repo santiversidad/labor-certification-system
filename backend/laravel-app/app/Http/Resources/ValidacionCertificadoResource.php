@@ -20,6 +20,7 @@ class ValidacionCertificadoResource extends JsonResource
             'mensaje' => $data['mensaje'] ?? null,
             'funcionario' => $data['funcionario'] ?? null,
             'cargo' => $data['cargo'] ?? null,
+            'tipo_certificado' => $data['tipo_certificado'] ?? null,
         ];
     }
 }

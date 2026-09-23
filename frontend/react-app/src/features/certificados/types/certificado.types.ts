@@ -10,7 +10,7 @@ export type Certificado = {
   motivo_anulacion?: string | null;
   snapshot_schema_version?: number | null;
   snapshot_datos?: Record<string, unknown>;
-  solicitud?: { id: number; radicado: string; estado: string } | null;
+  solicitud?: { id: number; radicado: string; estado: string; tipo_certificado: 'sencillo' | 'funciones' } | null;
   funcionario?: { id: number; nombres: string; apellidos: string; numero_documento: string } | null;
 };
 

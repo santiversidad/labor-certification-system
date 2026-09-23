@@ -9,10 +9,8 @@ import { SolicitudStatusBadge } from '../components/SolicitudStatusBadge';
 import { solicitudesService } from '../services/solicitudes.service';
 
 const tipoLabels: Record<string, string> = {
-  laboral: 'Certificación laboral',
-  funciones: 'Certificación de funciones',
-  salario: 'Certificación de salario',
-  laboral_salario: 'Certificación laboral con salario',
+  sencillo: 'Certificado laboral sencillo',
+  funciones: 'Certificado laboral con funciones',
 };
 
 export function SolicitudDetailPage() {
@@ -27,7 +25,6 @@ export function SolicitudDetailPage() {
       <Card title="Datos de la solicitud">
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div><dt className="text-muted">Tipo</dt><dd className="font-medium text-text">{tipoLabels[solicitud.tipo_certificado] ?? solicitud.tipo_certificado}</dd></div>
-          <div><dt className="text-muted">Incluye salario</dt><dd className="font-medium text-text">{solicitud.requiere_salario ? 'Sí' : 'No'}</dd></div>
           <div><dt className="text-muted">Periodo</dt><dd className="font-medium text-text">{solicitud.periodo_mes}</dd></div>
           <div><dt className="text-muted">Fecha</dt><dd className="font-medium text-text">{solicitud.created_at ? formatDate(solicitud.created_at) : '—'}</dd></div>
         </dl>

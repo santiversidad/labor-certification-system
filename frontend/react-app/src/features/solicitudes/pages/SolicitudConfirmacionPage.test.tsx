@@ -28,7 +28,7 @@ describe('SolicitudConfirmacionPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/Radicado CL-2026-000123/)).toBeInTheDocument();
+    expect(screen.getByText('CL-2026-000123')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Descargar PDF' })).toBeInTheDocument();
     expect(screen.queryByText('Pendiente de confirmacion del backend')).not.toBeInTheDocument();
   });

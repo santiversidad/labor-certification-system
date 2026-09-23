@@ -1,8 +1,8 @@
-export type TimelineItem = {
+type TimelineItem = {
   id: string;
   title: string;
-  date?: string;
   description?: string;
+  date?: string;
 };
 
 export function Timeline({ items }: { items: TimelineItem[] }) {
@@ -14,7 +14,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
     <ol className="space-y-4">
       {items.map((item) => (
         <li className="border-l-2 border-border pl-4" key={item.id}>
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <p className="text-sm font-medium text-text">{item.title}</p>
             {item.date ? <time className="text-xs text-muted">{item.date}</time> : null}
           </div>

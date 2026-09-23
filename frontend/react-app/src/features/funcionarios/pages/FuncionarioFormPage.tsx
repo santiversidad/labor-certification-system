@@ -1,12 +1,12 @@
 import { FuncionarioForm } from '../components/FuncionarioForm';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { useParams } from 'react-router-dom';
 
 export function FuncionarioFormPage() {
+  const { id } = useParams();
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Funcionario</h1>
-        <p className="mt-1 text-sm text-muted">La cuenta se crea automáticamente; el login y la contraseña temporal inicial son la cédula.</p>
-      </div>
+    <div className="app-page max-w-5xl">
+      <PageHeader eyebrow="Talento Humano" title={id ? 'Editar funcionario' : 'Crear funcionario'} description="Registre la información institucional y asigne explícitamente la ficha normativa correcta." />
       <FuncionarioForm />
     </div>
   );

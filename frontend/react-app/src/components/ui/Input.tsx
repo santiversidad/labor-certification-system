@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react';
+import { useId, type InputHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils/cn';
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -7,21 +7,25 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export function Input({ className, label, error, id, ...props }: InputProps) {
-  const inputId = id ?? props.name;
+  const generatedId = useId();
+  const inputId = id ?? props.name ?? generatedId;
+  const errorId = error ? `${inputId}-error` : undefined;
 
   return (
-    <label className="block space-y-1 text-sm">
-      {label ? <span className="font-medium text-text">{label}</span> : null}
+    <div className="block space-y-1.5 text-sm">
+      {label ? <label className="block font-semibold text-text" htmlFor={inputId}>{label}</label> : null}
       <input
+        aria-describedby={errorId}
+        aria-invalid={Boolean(error)}
         id={inputId}
         className={cn(
-          'min-h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition placeholder:text-muted focus:border-govBlue focus:ring-2 focus:ring-govBlue/20',
-          error && 'border-villavoRed focus:border-villavoRed focus:ring-villavoRed/20',
+          'field-control',
+          error && 'border-error focus:border-error focus:ring-error/15',
           className,
         )}
         {...props}
       />
-      {error ? <span className="text-xs text-villavoRed">{error}</span> : null}
-    </label>
+      {error ? <span className="block text-xs font-medium text-error" id={errorId} role="alert">{error}</span> : null}
+    </div>
   );
 }

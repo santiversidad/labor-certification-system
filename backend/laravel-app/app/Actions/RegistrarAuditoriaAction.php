@@ -13,10 +13,11 @@ class RegistrarAuditoriaAction
         ?int $modeloId = null,
         ?string $descripcion = null,
         ?array $metadata = null,
+        ?int $actorId = null,
     ): AuditLog {
         // Request::user() respeta el guard activo en la petición (Sanctum en API).
         // Es más fiable que Auth::id() que podría resolver el guard 'web' en tests.
-        $userId = Request::user()?->getKey();
+        $userId = $actorId ?? Request::user()?->getKey();
 
         return AuditLog::create([
             'user_id' => $userId,

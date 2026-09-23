@@ -46,7 +46,6 @@ class SolicitudCertificacionController extends Controller
         try {
             $resultado = $this->expedirCertificacion->expedir(
                 $request->user(),
-                $request->boolean('requiere_salario'),
                 $request->validated('tipo_certificado'),
                 $request->validated('observaciones'),
             );

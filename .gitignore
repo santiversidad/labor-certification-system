@@ -31,4 +31,6 @@ Thumbs.db
 # Local verification artifacts and database backups
 /tmp/
 /output/
+frontend/react-app/test-results/
+frontend/react-app/playwright-report/
 backend/laravel-app/storage/app/manuales/

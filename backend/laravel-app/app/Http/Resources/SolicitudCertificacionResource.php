@@ -15,7 +15,6 @@ class SolicitudCertificacionResource extends JsonResource
             'tipo_certificado' => $this->tipo_certificado?->value ?? $this->tipo_certificado,
             'estado' => $this->estado?->value ?? $this->estado,
             'requiere_pago' => $this->requiere_pago,
-            'requiere_salario' => $this->requiere_salario,
             'periodo_mes' => $this->periodo_mes?->format('Y-m-d'),
             'observaciones' => $this->observaciones,
             'motivo_rechazo' => $this->motivo_rechazo,

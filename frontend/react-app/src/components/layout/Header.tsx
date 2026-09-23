@@ -6,8 +6,9 @@ import { getPrimaryRole } from '../../lib/auth/permissions';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { authService } from '../../features/auth/services/auth.service';
 import { useState } from 'react';
+import { Brand } from './Brand';
 
-export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
+export function Header({ onMenuClick, variant = 'app' }: { onMenuClick?: () => void; variant?: 'app' | 'admin' }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const primaryRole = getPrimaryRole(user);
@@ -24,17 +25,15 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   }
 
   return (
-    <header className="flex min-h-16 items-center justify-between border-b border-border bg-surface px-6">
+    <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-border bg-surface/95 px-4 backdrop-blur sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <Button aria-label="Abrir menu" className="lg:hidden" icon={<Menu size={18} />} onClick={onMenuClick} type="button" variant="secondary" />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text">{user?.name ?? 'Usuario'}</p>
-          <p className="truncate text-xs text-muted">{primaryRole ? roleLabels[primaryRole] : 'Sin rol'}</p>
-        </div>
+        {variant === 'admin' ? <Button aria-label="Abrir menú" className="lg:hidden" icon={<Menu size={18} />} onClick={onMenuClick} type="button" variant="secondary" /> : <Brand compact to="/app/inicio" />}
+        {variant === 'admin' ? <div className="hidden min-w-0 sm:block"><p className="text-sm font-bold text-text">Administración</p><p className="text-xs text-muted">Certificaciones laborales</p></div> : null}
       </div>
-      <Button disabled={isLoggingOut} icon={<LogOut size={16} />} onClick={handleLogout} type="button" variant="secondary">
-        {isLoggingOut ? 'Saliendo...' : 'Salir'}
-      </Button>
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="hidden min-w-0 text-right sm:block"><p className="truncate text-sm font-semibold text-text">{user?.name ?? 'Usuario'}</p><p className="truncate text-xs text-muted">{primaryRole ? roleLabels[primaryRole] : 'Sin rol'}</p></div>
+        <Button aria-label="Cerrar sesión" disabled={isLoggingOut} icon={<LogOut size={16} />} onClick={handleLogout} type="button" variant="secondary"><span className="hidden sm:inline">{isLoggingOut ? 'Saliendo...' : 'Cerrar sesión'}</span></Button>
+      </div>
     </header>
   );
 }

@@ -68,9 +68,9 @@ class DemostrarManualCommand extends Command
             $certificado = null;
             if ($this->option('generar')) {
                 $certificado = Certificado::where('funcionario_id', $user->funcionario->id)
-                    ->whereHas('solicitud', fn ($q) => $q->whereDate('periodo_mes', now()->startOfMonth())->where('requiere_salario', false))->first();
+                    ->whereHas('solicitud', fn ($q) => $q->whereDate('periodo_mes', now()->startOfMonth())->where('tipo_certificado', 'funciones'))->first();
                 if (! $certificado) {
-                    $result = $expedir->expedir($user, false, 'funciones', 'Prueba de desarrollo con ficha importada.');
+                    $result = $expedir->expedir($user, 'funciones', 'Prueba de desarrollo con ficha importada.');
                     if ($result['estado'] !== 'generada') {
                         $this->error('MANUAL_DEMO_PAGO_PENDIENTE: no se altera la configuración de pago.');
 

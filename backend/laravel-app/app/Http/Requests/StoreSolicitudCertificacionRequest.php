@@ -35,10 +35,9 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     {
         return [
             'tipo_certificado' => ['required', Rule::in([
-                TipoCertificadoEnum::Laboral->value,
+                TipoCertificadoEnum::Sencillo->value,
                 TipoCertificadoEnum::Funciones->value,
             ])],
-            'requiere_salario' => ['required', 'boolean'],
             'funcionario_id' => ['prohibited'],
             'observaciones' => ['nullable', 'string', 'max:500'],
         ];
@@ -48,8 +47,7 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     {
         return [
             'tipo_certificado.required' => 'Debe seleccionar el tipo de certificado.',
-            'tipo_certificado.enum' => 'El tipo de certificado seleccionado no es válido.',
-            'requiere_salario.required' => 'Debe indicar expresamente si la certificación requiere salario.',
+            'tipo_certificado.in' => 'El tipo de certificado seleccionado no es válido.',
             'funcionario_id.prohibited' => 'El funcionario se determina a partir de la sesión autenticada.',
         ];
     }

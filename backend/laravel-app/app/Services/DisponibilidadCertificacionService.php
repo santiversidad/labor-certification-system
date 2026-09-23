@@ -20,17 +20,17 @@ class DisponibilidadCertificacionService
     public function consultar(int $funcionarioId, ?CarbonInterface $fecha = null): array
     {
         $periodo = $this->periodo($fecha);
-        $modalidadesConsumidas = SolicitudCertificacion::query()
+        $tiposConsumidos = SolicitudCertificacion::query()
             ->where('funcionario_id', $funcionarioId)
             ->whereDate('periodo_mes', $periodo->toDateString())
-            ->pluck('requiere_salario')
-            ->map(fn ($valor) => (bool) $valor)
+            ->pluck('tipo_certificado')
+            ->map(fn ($valor) => $valor instanceof \BackedEnum ? $valor->value : (string) $valor)
             ->all();
 
         return [
             'periodo' => $periodo->toDateString(),
-            'con_salario' => $this->estadoModalidad(in_array(true, $modalidadesConsumidas, true), $periodo),
-            'sin_salario' => $this->estadoModalidad(in_array(false, $modalidadesConsumidas, true), $periodo),
+            'sencillo' => $this->estadoModalidad(in_array('sencillo', $tiposConsumidos, true), $periodo),
+            'funciones' => $this->estadoModalidad(in_array('funciones', $tiposConsumidos, true), $periodo),
         ];
     }
 

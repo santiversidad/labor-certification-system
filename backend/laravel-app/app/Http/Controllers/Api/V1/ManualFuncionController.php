@@ -6,9 +6,15 @@ use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IndexQueryRequest;
 use App\Models\Cargo;
+use App\Models\ManualActualizacionAsignacion;
+use App\Models\ManualCargoLineage;
 use App\Models\ManualCargoVersion;
 use App\Models\ManualFuncion;
 use App\Models\ManualFuncionVersion;
+use App\Services\CompararVersionesManualService;
+use App\Services\ImportarBorradorManualService;
+use App\Services\PlanificarActualizacionManualService;
+use App\Services\PublicarVersionManualService;
 use App\Services\ResolverFuncionesFuncionarioService;
 use App\Traits\ApiResponse;
 use Carbon\CarbonImmutable;
@@ -52,6 +58,99 @@ class ManualFuncionController extends Controller
             'area_funcional' => $f->area_funcional, 'proposito_principal' => $f->proposito_principal,
             'version' => $f->version->version, 'estado' => $f->version->estado, 'vigente' => $vigentes->contains($f->id),
         ]));
+    }
+
+    public function estado(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('manual_funciones.ver'), 403);
+        $versiones = ManualFuncionVersion::query()->with('manual')
+            ->withCount('cargos')->orderByDesc('published_at')->orderByDesc('id')->get();
+        $ids = $versiones->pluck('id');
+        $funciones = DB::table('manual_funciones_esenciales as f')
+            ->join('manual_cargo_versiones as c', 'c.id', '=', 'f.manual_cargo_version_id')
+            ->whereIn('c.manual_funciones_version_id', $ids)
+            ->groupBy('c.manual_funciones_version_id')->selectRaw('c.manual_funciones_version_id, COUNT(*) total')
+            ->pluck('total', 'manual_funciones_version_id');
+        $importaciones = DB::table('manual_importaciones')->whereIn('manual_funciones_version_id', $ids)
+            ->groupBy('manual_funciones_version_id')->selectRaw('manual_funciones_version_id, MAX(fecha_importacion) fecha')
+            ->pluck('fecha', 'manual_funciones_version_id');
+        $actual = $versiones->first(fn ($v) => $v->estado === 'publicado' && ! $v->vigencia_hasta
+            && (! $v->vigencia_desde || $v->vigencia_desde->lte(now())));
+
+        return $this->successResponse([
+            'manual_vigente' => $actual?->id,
+            'versiones' => $versiones->map(fn ($v) => [
+                'id' => $v->id, 'manual_id' => $v->manual_funciones_id, 'nombre' => $v->manual->nombre,
+                'version' => $v->version, 'acto' => trim("{$v->acto_tipo} {$v->acto_numero}"),
+                'estado' => $v->id === $actual?->id ? 'vigente' : $v->estado,
+                'estado_dominio' => $v->estado, 'vigencia_desde' => $v->vigencia_desde?->toDateString(),
+                'vigencia_hasta' => $v->vigencia_hasta?->toDateString(), 'fichas' => $v->cargos_count,
+                'funciones' => (int) ($funciones[$v->id] ?? 0), 'fecha_importacion' => $importaciones[$v->id] ?? null,
+                'published_at' => $v->published_at?->toIso8601String(),
+            ])->values(),
+        ]);
+    }
+
+    public function diff(Request $request, ManualFuncionVersion $from, ManualFuncionVersion $to,
+        CompararVersionesManualService $service): JsonResponse
+    {
+        abort_unless($request->user()->can('manual_funciones.ver'), 403);
+
+        return $this->successResponse($service->comparar($from, $to));
+    }
+
+    public function planificar(Request $request, ManualFuncionVersion $from, ManualFuncionVersion $to,
+        PlanificarActualizacionManualService $service): JsonResponse
+    {
+        abort_unless($request->user()->can('manual_funciones.editar'), 403);
+        $result = $service->ejecutar($from, $to);
+        $this->registrarAuditoria->execute('planificar_actualizacion_manual', 'ManualFuncionVersion', $to->id,
+            "Actualización normativa {$from->version} → {$to->version} planificada.",
+            ['from_version_id' => $from->id, 'conteos' => $result['diff']['conteos'], 'asignaciones' => $result['asignaciones']]);
+
+        return $this->successResponse($result, 'Comparación y mapa de funcionarios preparados.');
+    }
+
+    public function importar(Request $request, ManualFuncionVersion $version,
+        ImportarBorradorManualService $service): JsonResponse
+    {
+        abort_unless($request->user()->can('manual_funciones.editar'), 403);
+        $data = $request->validate([
+            'archivo' => ['required', 'file', 'mimes:json,xlsx', 'max:20480'],
+            'dry_run' => ['sometimes', 'boolean'],
+        ]);
+        $archivo = $request->file('archivo');
+        $result = $service->ejecutar($version, $archivo->getRealPath(), $archivo->getClientOriginalName(),
+            (bool) ($data['dry_run'] ?? false), $request->user()->id);
+
+        return $this->successResponse($result, ($data['dry_run'] ?? false) ? 'Dry-run completado.' : 'Borrador importado.');
+    }
+
+    public function resolverAsignacion(Request $request, ManualActualizacionAsignacion $actualizacion): JsonResponse
+    {
+        abort_unless($request->user()->can('manual_funciones.editar'), 403);
+        $data = $request->validate(['ficha_candidata_id' => ['required', 'integer', 'exists:manual_cargo_versiones,id']]);
+
+        return DB::transaction(function () use ($request, $actualizacion, $data) {
+            $actualizacion = ManualActualizacionAsignacion::whereKey($actualizacion->id)->lockForUpdate()->firstOrFail();
+            $candidata = ManualCargoVersion::whereKey($data['ficha_candidata_id'])
+                ->where('manual_funciones_version_id', $actualizacion->to_version_id)->firstOrFail();
+            $lineage = ManualCargoLineage::updateOrCreate(
+                ['predecessor_id' => $actualizacion->ficha_anterior_id, 'successor_id' => $candidata->id],
+                ['clasificacion' => 'MODIFICADA', 'estado' => 'confirmado', 'resolved_by' => $request->user()->id,
+                    'resolved_at' => now(), 'diferencias' => ['decision' => 'revision_administrativa']],
+            );
+            $actualizacion->update([
+                'ficha_candidata_id' => $candidata->id, 'clasificacion' => 'AUTO_MIGRABLE',
+                'motivos' => ['revision_administrativa_resuelta', 'lineage_id' => $lineage->id],
+                'resolved_by' => $request->user()->id, 'resolved_at' => now(),
+            ]);
+            $this->registrarAuditoria->execute('resolver_asignacion_manual', 'ManualActualizacionAsignacion',
+                $actualizacion->id, 'Equivalencia normativa resuelta por revisión administrativa.',
+                ['ficha_anterior_id' => $actualizacion->ficha_anterior_id, 'ficha_candidata_id' => $candidata->id]);
+
+            return $this->successResponse($actualizacion->fresh(), 'Asignación normativa resuelta.');
+        });
     }
 
     public function store(Request $request): JsonResponse
@@ -208,70 +307,29 @@ class ManualFuncionController extends Controller
 
     public function publicar(Request $request, ManualFuncionVersion $version): JsonResponse
     {
-        return DB::transaction(fn () => $this->publicarBloqueada($request,
-            ManualFuncionVersion::whereKey($version->id)->lockForUpdate()->firstOrFail()));
-    }
-
-    private function publicarBloqueada(Request $request, ManualFuncionVersion $version): JsonResponse
-    {
         abort_unless($request->user()->can('manual_funciones.publicar'), 403);
-        if ($version->estado !== 'borrador') {
-            return $this->errorResponse('Solo una versión borrador puede publicarse.', null, 409);
+        if ($version->cargos()->whereDoesntHave('funciones')->exists()) {
+            return $this->errorResponse('Cada ficha debe tener al menos una función.', null, 422,
+                'MANUAL_CARGO_WITHOUT_FUNCTIONS');
         }
-        if (! $version->vigencia_desde || ! $version->acto_fecha) {
-            return $this->errorResponse('Confirme fechas documentales antes de publicar.', null, 409, 'MANUAL_FECHAS_PENDIENTES');
+        $data = $request->validate([
+            'vigencia_desde' => ['nullable', 'date'],
+            'adopcion_actual' => ['sometimes', 'boolean'],
+        ]);
+        $adopcion = (bool) ($data['adopcion_actual'] ?? false);
+        if ($adopcion && $version->id !== 10) {
+            return $this->errorResponse('La adopción sin fecha solo aplica a la versión histórica confirmada.', null, 422,
+                'MANUAL_ADOPCION_NO_PERMITIDA');
         }
-        if (! empty($version->metadata_manual['pendientes'])) {
-            return $this->errorResponse('La conciliación documental del origen sigue pendiente.', null, 409, 'MANUAL_CONCILIACION_PENDIENTE');
-        }
-
-        $cargoIds = $version->cargos()->pluck('cargo_id');
-        if ($cargoIds->isEmpty()) {
-            return $this->errorResponse('La versión debe tener al menos un cargo antes de publicarse.', null, 422);
-        }
-
-        $cargosSinFunciones = $version->cargos()
-            ->whereDoesntHave('funciones')
-            ->exists();
-        if ($cargosSinFunciones) {
-            return $this->errorResponse(
-                'Cada cargo de la versión debe tener al menos una función antes de publicarse.',
-                null,
-                422,
-                'MANUAL_CARGO_WITHOUT_FUNCTIONS',
-            );
-        }
-
-        $solapada = ManualCargoVersion::query()
-            ->whereIn('cargo_id', $cargoIds)
-            ->whereHas('version', fn ($query) => $query
-                ->where('estado', 'publicado')
-                ->whereDate('vigencia_desde', '<=', $version->vigencia_hasta?->toDateString() ?? '9999-12-31')
-                ->where(fn ($rango) => $rango
-                    ->whereNull('vigencia_hasta')
-                    ->orWhereDate('vigencia_hasta', '>=', $version->vigencia_desde->toDateString())))
-            ->exists();
-
-        if ($solapada) {
-            return $this->errorResponse(
-                'La vigencia se solapa con otra versión publicada para al menos uno de sus cargos.',
-                null,
-                409,
-                'MANUAL_VERSION_OVERLAP',
-            );
-        }
-
-        $version->update(['estado' => 'publicado', 'updated_by' => $request->user()->id]);
-
-        $this->registrarAuditoria->execute(
-            accion: 'publicar_manual_funciones',
-            modelo: 'ManualFuncionVersion',
-            modeloId: $version->id,
-            descripcion: "Versión {$version->version} del manual publicada.",
-            metadata: ['estado_anterior' => 'borrador', 'estado_nuevo' => 'publicado'],
+        $result = app(PublicarVersionManualService::class)->publicar(
+            $version,
+            isset($data['vigencia_desde']) ? CarbonImmutable::parse($data['vigencia_desde'])
+                : ($version->vigencia_desde ? CarbonImmutable::parse($version->vigencia_desde) : null),
+            $request->user()->id,
+            $adopcion,
         );
 
-        return $this->successResponse($version->fresh(), 'Versión publicada correctamente.');
+        return $this->successResponse($result['version'], 'Versión publicada como Manual vigente.');
     }
 
     private function validarVersion(

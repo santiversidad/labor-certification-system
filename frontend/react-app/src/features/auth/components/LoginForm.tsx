@@ -1,19 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
-import { getHomePath } from '../../../lib/auth/permissions';
 import { authStorage } from '../../../lib/auth/authStorage';
+import { getHomePath } from '../../../lib/auth/permissions';
 import { getErrorMessage } from '../../../lib/utils/errors';
-import { authService } from '../services/auth.service';
 import { loginSchema, type LoginFormValues } from '../schemas/auth.schema';
+import { authService } from '../services/auth.service';
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: import.meta.env.DEV
@@ -30,20 +31,30 @@ export function LoginForm() {
   });
 
   return (
-    <Card title="Iniciar sesion" description="Ingrese cedula y contrasena para acceder al sistema.">
-      <form className="space-y-4" onSubmit={handleSubmit((values) => loginMutation.mutate(values))}>
-        <Input error={errors.cedula?.message} label="Cedula" {...register('cedula')} />
-        <Input error={errors.password?.message} label="Contrasena" type="password" {...register('password')} />
-        {loginMutation.isError ? <p className="text-sm text-villavoRed">{getErrorMessage(loginMutation.error)}</p> : null}
+    <div>
+      <div className="mb-7">
+        <p className="eyebrow">Acceso seguro</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em] text-text">Iniciar sesión</h1>
+        <p className="mt-2 text-sm leading-6 text-muted">Ingrese con las credenciales asignadas por Talento Humano.</p>
+      </div>
+      <form className="space-y-5" noValidate onSubmit={handleSubmit((values) => loginMutation.mutate(values))}>
+        <Input autoComplete="username" error={errors.cedula?.message} inputMode="numeric" label="Cédula" {...register('cedula')} />
+        <div className="relative">
+          <Input autoComplete="current-password" error={errors.password?.message} label="Contraseña" type={showPassword ? 'text' : 'password'} {...register('password')} />
+          <button aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} className="absolute right-2 top-[34px] rounded p-2 text-muted hover:bg-surface-muted hover:text-text" onClick={() => setShowPassword((value) => !value)} type="button">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+        </div>
+        {loginMutation.isError ? <p className="rounded-md border border-error/20 bg-error/5 p-3 text-sm text-error" role="alert">{getErrorMessage(loginMutation.error)}</p> : null}
         <Button className="w-full" disabled={loginMutation.isPending} icon={<LogIn size={16} />} type="submit">
           {loginMutation.isPending ? 'Ingresando...' : 'Ingresar'}
         </Button>
       </form>
-      {import.meta.env.DEV ? <div className="mt-5 rounded-md bg-background p-3 text-xs text-muted space-y-1" data-testid="demo-credentials">
-        <p><span className="font-semibold text-text">000000003</span> / password — Funcionario</p>
-        <p><span className="font-semibold text-text">000000002</span> / password — Secretario</p>
-        <p><span className="font-semibold text-text">000000001</span> / password — Administrador</p>
-      </div> : null}
-    </Card>
+      <p className="mt-5 flex items-center justify-center gap-2 text-xs text-muted"><ShieldCheck size={15} /> Sus datos viajan mediante una conexión segura.</p>
+      {import.meta.env.DEV ? (
+        <details className="mt-6 rounded-md border border-dashed border-border bg-surface-muted/50 p-3 text-xs text-muted" data-testid="demo-credentials">
+          <summary className="cursor-pointer font-semibold text-text">Usuarios de desarrollo</summary>
+          <div className="mt-2 space-y-1"><p><strong>000000003</strong> / password — Funcionario</p><p><strong>000000001</strong> / password — Administrador</p></div>
+        </details>
+      ) : null}
+    </div>
   );
 }

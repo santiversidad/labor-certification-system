@@ -13,7 +13,7 @@ class ManualFuncionVersion extends Model
     protected $fillable = [
         'manual_funciones_id', 'version', 'vigencia_desde', 'vigencia_hasta',
         'acto_tipo', 'acto_numero', 'acto_fecha', 'acto_referencia', 'estado',
-        'created_by', 'updated_by',
+        'created_by', 'updated_by', 'published_by', 'published_at',
         'metadata_manual',
     ];
 
@@ -24,6 +24,7 @@ class ManualFuncionVersion extends Model
             'vigencia_desde' => 'date',
             'vigencia_hasta' => 'date',
             'acto_fecha' => 'date',
+            'published_at' => 'datetime',
         ];
     }
 

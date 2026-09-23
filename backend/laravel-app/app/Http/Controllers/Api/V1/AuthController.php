@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -126,6 +127,11 @@ class AuthController extends Controller
             'must_change_password' => false,
             'password_changed_at' => now(),
         ])->save();
+
+        // Keep this bearer session coherent while invalidating any other issued tokens.
+        $currentToken = $user->currentAccessToken();
+        $user->tokens()->when($currentToken instanceof PersonalAccessToken,
+            fn ($query) => $query->where('id', '<>', $currentToken->id))->delete();
 
         $this->registrarAuditoria->execute(
             accion: 'cambio_password_obligatorio',

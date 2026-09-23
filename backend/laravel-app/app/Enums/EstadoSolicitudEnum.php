@@ -4,6 +4,8 @@ namespace App\Enums;
 
 enum EstadoSolicitudEnum: string
 {
+    // Legacy approval states are retained solely for historical records.
+    // Active autoservice: generando → generada, or pendiente_pago (no PDF).
     case Pendiente = 'pendiente';
     case EnRevision = 'en_revision';
     case PendientePago = 'pendiente_pago';

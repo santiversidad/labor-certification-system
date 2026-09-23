@@ -35,4 +35,14 @@ class ManualCargoVersion extends Model
     {
         return $this->hasMany(ManualFuncionEsencial::class, 'manual_cargo_version_id')->orderBy('orden');
     }
+
+    public function sucesores(): HasMany
+    {
+        return $this->hasMany(ManualCargoLineage::class, 'predecessor_id');
+    }
+
+    public function antecesores(): HasMany
+    {
+        return $this->hasMany(ManualCargoLineage::class, 'successor_id');
+    }
 }
