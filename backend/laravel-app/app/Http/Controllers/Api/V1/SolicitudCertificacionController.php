@@ -46,14 +46,13 @@ class SolicitudCertificacionController extends Controller
         try {
             $resultado = $this->expedirCertificacion->expedir(
                 $request->user(),
-                $request->boolean('requiere_salario'),
                 $request->validated('tipo_certificado'),
                 $request->validated('observaciones'),
             );
         } catch (RuntimeException $exception) {
             return match ($exception->getMessage()) {
                 'MONTHLY_CERTIFICATE_LIMIT' => $this->errorResponse(
-                    'Ya utilizó este mes el cupo de la modalidad seleccionada.', null, 409, 'MONTHLY_CERTIFICATE_LIMIT'
+                    'Ya utilizó este mes el cupo del tipo de certificado seleccionado.', null, 409, 'MONTHLY_CERTIFICATE_LIMIT'
                 ),
                 'INACTIVE_EMPLOYEE' => $this->errorResponse(
                     'Su cuenta o vinculación no está activa para expedir certificaciones.', null, 403, 'INACTIVE_EMPLOYEE'

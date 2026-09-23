@@ -13,7 +13,6 @@ use App\Models\Certificado;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
 use App\Models\PagoSoporte;
-use App\Models\RangoSalarial;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
@@ -67,7 +66,7 @@ class FaseBIntegridadDominioTest extends TestCase
     {
         SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
-            'tipo_certificado' => TipoCertificadoEnum::Laboral,
+            'tipo_certificado' => TipoCertificadoEnum::Sencillo,
             'estado' => EstadoSolicitudEnum::Pendiente,
             'created_by' => $this->funcionarioUser->id,
         ]);
@@ -107,7 +106,7 @@ class FaseBIntegridadDominioTest extends TestCase
 
     public function test_cardinalidad_un_pago_logico_por_solicitud_se_impone_en_bd(): void
     {
-        $solicitud = $this->solicitudAprobada(false);
+        $solicitud = $this->solicitudAprobada();
         $datos = [
             'solicitud_certificacion_id' => $solicitud->id,
             'funcionario_id' => $this->funcionario->id,
@@ -125,9 +124,9 @@ class FaseBIntegridadDominioTest extends TestCase
         ]);
     }
 
-    public function test_generacion_con_salario_falla_si_no_hay_asignacion_vigente(): void
+    public function test_generacion_sencilla_falla_si_no_hay_asignacion_vigente(): void
     {
-        $solicitud = $this->solicitudAprobada(true);
+        $solicitud = $this->solicitudAprobada();
 
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
@@ -138,16 +137,12 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'generar_certificado_fallido']);
     }
 
-    public function test_generacion_con_salario_falla_si_hay_asignaciones_ambiguas(): void
+    public function test_generacion_sencilla_falla_si_hay_asignaciones_ambiguas(): void
     {
         $this->asignarCargo('2020-01-01');
         $this->asignarCargo('2021-01-01');
-        RangoSalarial::create([
-            'codigo' => '219', 'grado' => '02', 'vigencia_anio' => now()->year,
-            'salario_basico' => 4000000, 'moneda' => 'COP', 'estado' => true,
-        ]);
 
-        $solicitud = $this->solicitudAprobada(true);
+        $solicitud = $this->solicitudAprobada();
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
             ->assertConflict();
@@ -155,26 +150,27 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->assertDatabaseCount('certificados', 0);
     }
 
-    public function test_generacion_con_salario_falla_si_no_hay_rango_y_sin_salario_no_lo_invoca(): void
+    public function test_generacion_sencilla_no_exige_ficha_manual(): void
     {
-        $this->asignarCargo('2020-01-01');
-        $conSalario = $this->solicitudAprobada(true);
-
+        FuncionarioCargo::create([
+            'funcionario_id' => $this->funcionario->id,
+            'cargo_id' => $this->cargo->id,
+            'tipo_vinculacion' => TipoVinculacionEnum::Planta,
+            'naturaleza_cargo' => NaturalezaCargoEnum::CarreraAdministrativa,
+            'es_cargo_base' => true,
+            'fecha_inicio' => '2020-01-01',
+        ]);
+        $sencillo = $this->solicitudAprobada();
         $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$conSalario->id}/generar-certificado")
-            ->assertConflict();
-
-        $sinSalario = $this->solicitudAprobada(false);
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$sinSalario->id}/generar-certificado")
+            ->postJson("/api/v1/solicitudes/{$sencillo->id}/generar-certificado")
             ->assertCreated()
-            ->assertJsonPath('data.certificado.snapshot_schema_version', 2);
+            ->assertJsonPath('data.certificado.snapshot_schema_version', 3);
     }
 
     public function test_snapshot_emitido_no_puede_modificarse(): void
     {
         ManualFixture::vincular($this->funcionario);
-        $solicitud = $this->solicitudAprobada(false);
+        $solicitud = $this->solicitudAprobada();
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
             ->assertCreated();
@@ -184,13 +180,12 @@ class FaseBIntegridadDominioTest extends TestCase
         $certificado->update(['snapshot_datos' => ['alterado' => true]]);
     }
 
-    private function solicitudAprobada(bool $requiereSalario): SolicitudCertificacion
+    private function solicitudAprobada(TipoCertificadoEnum $tipo = TipoCertificadoEnum::Sencillo): SolicitudCertificacion
     {
         return SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
-            'tipo_certificado' => TipoCertificadoEnum::Laboral,
+            'tipo_certificado' => $tipo,
             'estado' => EstadoSolicitudEnum::Aprobada,
-            'requiere_salario' => $requiereSalario,
             'created_by' => $this->funcionarioUser->id,
         ]);
     }

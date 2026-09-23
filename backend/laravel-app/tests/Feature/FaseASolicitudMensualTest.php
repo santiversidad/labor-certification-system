@@ -10,7 +10,6 @@ use App\Enums\TipoVinculacionEnum;
 use App\Models\Cargo;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
-use App\Models\RangoSalarial;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -42,10 +41,6 @@ class FaseASolicitudMensualTest extends TestCase
             'codigo' => '219', 'grado' => '02',
             'denominacion' => 'Profesional Universitario', 'estado' => true,
         ]);
-        RangoSalarial::create([
-            'codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026,
-            'salario_basico' => 5000000, 'moneda' => 'COP', 'estado' => true,
-        ]);
         [$this->usuarioA, $this->funcionarioA] = $this->crearFuncionario('10000001', $cargo);
         [$this->usuarioB, $this->funcionarioB] = $this->crearFuncionario('10000002', $cargo);
     }
@@ -56,142 +51,113 @@ class FaseASolicitudMensualTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_una_con_y_una_sin_salario_por_mes_y_renovacion_en_mes_siguiente(): void
+    public function test_un_sencillo_y_un_funciones_por_mes_y_renovacion_en_mes_siguiente(): void
     {
-        $this->radicar($this->usuarioA, false)->assertCreated();
-        $this->radicar($this->usuarioA, false)->assertStatus(409)
+        $this->radicar($this->usuarioA, 'sencillo')->assertCreated();
+        $this->radicar($this->usuarioA, 'sencillo')->assertConflict()
             ->assertJsonPath('code', 'MONTHLY_CERTIFICATE_LIMIT');
-        $this->radicar($this->usuarioA, true)->assertCreated();
-        $this->radicar($this->usuarioA, true)->assertStatus(409)
+        $this->radicar($this->usuarioA, 'funciones')->assertCreated();
+        $this->radicar($this->usuarioA, 'funciones')->assertConflict()
             ->assertJsonPath('code', 'MONTHLY_CERTIFICATE_LIMIT');
 
-        $this->radicar($this->usuarioB, false)->assertCreated();
-        $this->radicar($this->usuarioB, true)->assertCreated();
+        $this->radicar($this->usuarioB, 'sencillo')->assertCreated();
+        $this->radicar($this->usuarioB, 'funciones')->assertCreated();
 
         $this->assertDatabaseHas('solicitudes_certificacion', [
             'funcionario_id' => $this->funcionarioA->id,
             'periodo_mes' => '2026-08-01',
-            'requiere_salario' => false,
+            'tipo_certificado' => 'sencillo',
         ]);
         $this->assertDatabaseCount('solicitudes_certificacion', 4);
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-01 00:01:00', 'America/Bogota'));
-        $this->radicar($this->usuarioA, false)->assertCreated();
-        $this->radicar($this->usuarioA, true)->assertCreated();
-        $this->assertDatabaseHas('solicitudes_certificacion', [
-            'funcionario_id' => $this->funcionarioA->id,
-            'periodo_mes' => '2026-09-01',
-            'requiere_salario' => true,
-        ]);
+        $this->radicar($this->usuarioA, 'sencillo')->assertCreated();
+        $this->radicar($this->usuarioA, 'funciones')->assertCreated();
     }
 
-    public function test_solicitud_rechazada_conserva_cupo_de_su_modalidad(): void
+    public function test_solicitud_rechazada_conserva_cupo_del_mismo_tipo(): void
     {
-        $this->radicar($this->usuarioA, false)->assertCreated();
+        $this->radicar($this->usuarioA, 'sencillo')->assertCreated();
         SolicitudCertificacion::firstOrFail()->update(['estado' => EstadoSolicitudEnum::Rechazada]);
 
-        $this->radicar($this->usuarioA, false)->assertStatus(409);
-        $this->radicar($this->usuarioA, true)->assertCreated();
+        $this->radicar($this->usuarioA, 'sencillo')->assertConflict();
+        $this->radicar($this->usuarioA, 'funciones')->assertCreated();
     }
 
-    public function test_modalidad_es_obligatoria_y_se_persiste_sin_ambiguedad(): void
+    public function test_tipo_canonico_es_obligatorio_y_payload_salarial_es_rechazado(): void
     {
-        $this->radicar($this->usuarioA, true)->assertCreated()
-            ->assertJsonPath('data.solicitud.requiere_salario', true);
+        $this->actingAs($this->usuarioA, 'sanctum')->postJson('/api/v1/solicitudes', [])
+            ->assertUnprocessable()->assertJsonValidationErrors('tipo_certificado');
 
-        $this->actingAs($this->usuarioB, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'laboral',
-        ])->assertStatus(422)->assertJsonValidationErrors('requiere_salario');
-
-        $this->actingAs($this->usuarioB, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'laboral',
-            'requiere_salario' => ['valor-invalido'],
-        ])->assertStatus(422)->assertJsonValidationErrors('requiere_salario');
-
-        $this->radicar($this->usuarioB, false)->assertCreated()
-            ->assertJsonPath('data.solicitud.requiere_salario', false);
-    }
-
-    public function test_funcionario_id_enviado_por_cliente_es_rechazado_y_no_hay_idor(): void
-    {
         $this->actingAs($this->usuarioA, 'sanctum')->postJson('/api/v1/solicitudes', [
             'tipo_certificado' => 'laboral',
-            'requiere_salario' => false,
-            'funcionario_id' => $this->funcionarioB->id,
-        ])->assertStatus(422)->assertJsonValidationErrors('funcionario_id');
+        ])->assertUnprocessable()->assertJsonValidationErrors('tipo_certificado');
 
-        $this->assertDatabaseMissing('solicitudes_certificacion', [
-            'funcionario_id' => $this->funcionarioB->id,
-        ]);
+        $this->actingAs($this->usuarioA, 'sanctum')->postJson('/api/v1/solicitudes', [
+            'tipo_certificado' => 'sencillo',
+            'requiere_salario' => false,
+        ])->assertUnprocessable()->assertJsonValidationErrors('requiere_salario');
+
+        $this->actingAs($this->usuarioA, 'sanctum')->postJson('/api/v1/solicitudes', [
+            'tipo' => 'sencillo',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['tipo', 'tipo_certificado']);
     }
 
-    public function test_disponibilidad_solo_expone_cupos_de_ambas_modalidades(): void
+    public function test_funcionario_id_enviado_por_cliente_es_rechazado(): void
+    {
+        $this->actingAs($this->usuarioA, 'sanctum')->postJson('/api/v1/solicitudes', [
+            'tipo_certificado' => 'sencillo',
+            'funcionario_id' => $this->funcionarioB->id,
+        ])->assertUnprocessable()->assertJsonValidationErrors('funcionario_id');
+    }
+
+    public function test_disponibilidad_expone_sencillo_y_funciones(): void
     {
         $this->actingAs($this->usuarioA, 'sanctum')
             ->getJson('/api/v1/mi-certificacion/disponibilidad')
             ->assertOk()
             ->assertJsonPath('data.periodo', '2026-08-01')
-            ->assertJsonPath('data.con_salario.puede_solicitar', true)
-            ->assertJsonPath('data.sin_salario.puede_solicitar', true)
-            ->assertJsonMissingPath('data.funcionario_id')
-            ->assertJsonMissingPath('data.solicitudes');
+            ->assertJsonPath('data.sencillo.puede_solicitar', true)
+            ->assertJsonPath('data.funciones.puede_solicitar', true)
+            ->assertJsonMissingPath('data.con_salario')
+            ->assertJsonMissingPath('data.sin_salario');
 
-        $this->radicar($this->usuarioA, false)->assertCreated();
+        $this->radicar($this->usuarioA, 'sencillo')->assertCreated();
         $this->actingAs($this->usuarioA, 'sanctum')
             ->getJson('/api/v1/mi-certificacion/disponibilidad')
-            ->assertJsonPath('data.con_salario.puede_solicitar', true)
-            ->assertJsonPath('data.sin_salario.puede_solicitar', false)
-            ->assertJsonPath('data.sin_salario.proxima_fecha_disponible', '2026-09-01');
-
-        $this->radicar($this->usuarioA, true)->assertCreated();
-        $this->actingAs($this->usuarioA, 'sanctum')
-            ->getJson('/api/v1/mi-certificacion/disponibilidad')
-            ->assertJsonPath('data.con_salario.puede_solicitar', false)
-            ->assertJsonPath('data.sin_salario.puede_solicitar', false);
-
-        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-01', 'America/Bogota'));
-        $this->actingAs($this->usuarioA, 'sanctum')
-            ->getJson('/api/v1/mi-certificacion/disponibilidad')
-            ->assertJsonPath('data.con_salario.puede_solicitar', true)
-            ->assertJsonPath('data.sin_salario.puede_solicitar', true);
+            ->assertJsonPath('data.sencillo.puede_solicitar', false)
+            ->assertJsonPath('data.sencillo.proxima_fecha_disponible', '2026-09-01')
+            ->assertJsonPath('data.funciones.puede_solicitar', true);
     }
 
-    public function test_constraint_postgresql_impide_colision_y_api_la_convierte_en_conflicto(): void
+    public function test_constraint_postgresql_impide_colision_del_mismo_tipo(): void
     {
-        $this->radicar($this->usuarioA, false)->assertCreated();
-        $this->radicar($this->usuarioA, false)->assertStatus(409);
-        $this->assertDatabaseCount('solicitudes_certificacion', 1);
+        $this->radicar($this->usuarioA, 'sencillo')->assertCreated();
+        $this->radicar($this->usuarioA, 'sencillo')->assertConflict();
 
         $this->expectException(QueryException::class);
         SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionarioA->id,
-            'tipo_certificado' => 'laboral',
+            'tipo_certificado' => 'sencillo',
             'estado' => EstadoSolicitudEnum::Pendiente,
-            'requiere_salario' => false,
             'periodo_mes' => '2026-08-01',
             'created_by' => $this->usuarioA->id,
         ]);
     }
 
-    public function test_funcionario_no_accede_a_endpoints_internos(): void
+    public function test_rutas_salariales_fueron_retiradas(): void
     {
-        $rutas = [
-            '/api/v1/funcionarios', '/api/v1/funcionarios/'.$this->funcionarioB->id,
-            '/api/v1/cargos', '/api/v1/rangos-salariales',
-            '/api/v1/actuaciones-administrativas', '/api/v1/reportes', '/api/v1/auditoria',
-            '/api/v1/solicitudes',
-        ];
+        $admin = User::factory()->create(['estado' => true]);
+        $admin->assignRole(RoleEnum::Admin->value);
 
-        foreach ($rutas as $ruta) {
-            $this->actingAs($this->usuarioA, 'sanctum')->getJson($ruta)->assertForbidden();
-        }
+        $this->actingAs($admin, 'sanctum')->getJson('/api/v1/rangos-salariales')->assertNotFound();
+        $this->assertFalse($admin->can('rangos_salariales.ver'));
     }
 
-    private function radicar(User $usuario, bool $requiereSalario)
+    private function radicar(User $usuario, string $tipo)
     {
         return $this->actingAs($usuario, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'laboral',
-            'requiere_salario' => $requiereSalario,
+            'tipo_certificado' => $tipo,
         ]);
     }
 
@@ -216,7 +182,6 @@ class FaseASolicitudMensualTest extends TestCase
             'es_cargo_base' => true,
             'fecha_inicio' => '2020-01-15',
         ]);
-
         ManualFixture::vincular($funcionario);
 
         return [$usuario, $funcionario];

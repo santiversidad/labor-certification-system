@@ -33,7 +33,7 @@ class ManualVersioningTest extends TestCase
         [$actor, $funcionario, $asignacion, $manual, $v10, $a] = $this->escenarioBase();
         $resolver = app(ResolverFuncionesFuncionarioService::class);
         $antes = $resolver->resolver($funcionario, CarbonImmutable::parse('2026-09-30'));
-        $c1 = $this->certificado($actor, $funcionario, $antes, 'C1-'.Str::uuid());
+        $c1 = $this->certificado($actor, $funcionario, $antes, 'C1-'.Str::uuid(), '2026-09-01');
 
         $v11 = $this->version($manual, 'Manual test 11', 'borrador', '2026-10-01');
         $cargoRenumerado = Cargo::create(['codigo' => '997', 'grado' => '01', 'denominacion' => 'Profesional', 'nivel' => 'Profesional', 'estado' => true]);
@@ -49,7 +49,7 @@ class ManualVersioningTest extends TestCase
         $this->assertSame($a2->id, $nuevo['ficha_id']);
         $this->assertSame('Ejecutar la función nueva.', $nuevo['funciones'][0]['descripcion']);
         $this->assertSame('Ejecutar la función anterior.', $c1->fresh()->snapshot_datos['manual_funciones']['funciones'][0]['descripcion']);
-        $c2 = $this->certificado($actor, $funcionario, $nuevo, 'C2-'.Str::uuid());
+        $c2 = $this->certificado($actor, $funcionario, $nuevo, 'C2-'.Str::uuid(), '2026-10-01');
         $this->assertSame($a2->id, $c2->snapshot_datos['manual_funciones']['ficha_id']);
         $this->assertSame(1, FuncionarioCargo::where('funcionario_id', $funcionario->id)->count());
         $this->assertNull($asignacion->fresh()->fecha_fin);
@@ -216,11 +216,17 @@ class ManualVersioningTest extends TestCase
         return $ficha;
     }
 
-    private function certificado(User $actor, Funcionario $funcionario, array $manual, string $codigo): Certificado
+    private function certificado(
+        User $actor,
+        Funcionario $funcionario,
+        array $manual,
+        string $codigo,
+        string $periodo,
+    ): Certificado
     {
         $solicitud = SolicitudCertificacion::create([
             'funcionario_id' => $funcionario->id, 'tipo_certificado' => 'funciones', 'estado' => 'aprobada',
-            'requiere_pago' => false, 'requiere_salario' => str_starts_with($codigo, 'C2-'), 'created_by' => $actor->id,
+            'requiere_pago' => false, 'periodo_mes' => $periodo, 'created_by' => $actor->id,
         ]);
 
         return Certificado::create([

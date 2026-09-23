@@ -6,7 +6,7 @@ import { SolicitudForm } from './SolicitudForm';
 import { solicitudesService } from '../services/solicitudes.service';
 
 vi.mock('../services/solicitudes.service', () => ({ solicitudesService: {
-  disponibilidad: vi.fn().mockResolvedValue({ data: { con_salario: { puede_solicitar: true }, sin_salario: { puede_solicitar: true } } }),
+  disponibilidad: vi.fn().mockResolvedValue({ data: { sencillo: { puede_solicitar: true }, funciones: { puede_solicitar: true } } }),
   create: vi.fn().mockImplementation(() => new Promise(() => {})),
 } }));
 
@@ -22,7 +22,7 @@ describe('SolicitudForm', () => {
     await waitFor(() => expect(solicitudesService.create).toHaveBeenCalled());
     const payload = vi.mocked(solicitudesService.create).mock.calls[0][0];
     expect(payload.tipo_certificado).toBe('funciones');
-    expect(payload.requiere_salario).toBe(false);
+    expect(payload).not.toHaveProperty('requiere_salario');
     expect(payload).not.toHaveProperty('funcionario_id');
     expect(payload).not.toHaveProperty('manual_cargo_version_id');
   });

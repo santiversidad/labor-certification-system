@@ -32,11 +32,6 @@ class RolesPermisosSeeder extends Seeder
         'cargos.crear',
         'cargos.editar',
 
-        // Rangos salariales
-        'rangos_salariales.ver',
-        'rangos_salariales.crear',
-        'rangos_salariales.editar',
-
         // Solicitudes
         'solicitudes.ver',
         'solicitudes.crear',
@@ -97,7 +92,6 @@ class RolesPermisosSeeder extends Seeder
         $secretario->syncPermissions([
             'funcionarios.ver',
             'cargos.ver',
-            'rangos_salariales.ver',
             'solicitudes.ver',
             'solicitudes.editar',
             'solicitudes.cambiar_estado',

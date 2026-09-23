@@ -21,19 +21,19 @@ function renderDashboard() {
 describe('FuncionarioDashboardPage', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('muestra las modalidades con y sin salario', async () => {
+  it('muestra los tipos sencillo y funciones', async () => {
     vi.mocked(solicitudesService.disponibilidad).mockResolvedValue({
       success: true,
       data: {
         periodo: '2026-08-01',
-        sin_salario: { puede_solicitar: true, proxima_fecha_disponible: null },
-        con_salario: { puede_solicitar: true, proxima_fecha_disponible: null },
+        sencillo: { puede_solicitar: true, proxima_fecha_disponible: null },
+        funciones: { puede_solicitar: true, proxima_fecha_disponible: null },
       },
     });
     renderDashboard();
 
-    expect(await screen.findByText('Certificación laboral SIN salario')).toBeInTheDocument();
-    expect(screen.getByText('Certificación laboral CON salario')).toBeInTheDocument();
+    expect(await screen.findByText('Certificado laboral sencillo')).toBeInTheDocument();
+    expect(screen.getByText('Certificado laboral con funciones')).toBeInTheDocument();
   });
 
   it('bloquea únicamente la modalidad consumida', async () => {
@@ -41,8 +41,8 @@ describe('FuncionarioDashboardPage', () => {
       success: true,
       data: {
         periodo: '2026-08-01',
-        sin_salario: { puede_solicitar: false, proxima_fecha_disponible: '2026-09-01' },
-        con_salario: { puede_solicitar: true, proxima_fecha_disponible: null },
+        sencillo: { puede_solicitar: false, proxima_fecha_disponible: '2026-09-01' },
+        funciones: { puede_solicitar: true, proxima_fecha_disponible: null },
       },
     });
     renderDashboard();

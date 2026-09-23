@@ -1,7 +1,7 @@
 {{-- Plantilla temporal. Reemplazar por el formato oficial de la Alcaldia cuando sea entregado. --}}
 CERTIFICADO LABORAL TEMPORAL
 
-@if(!empty($snapshot['manual']['prueba_desarrollo']))
+@if(!empty($snapshot['manual_funciones']['prueba_desarrollo']))
 PRUEBA DE DESARROLLO - MANUAL BORRADOR, VIGENCIA PENDIENTE. SIN VALIDEZ OFICIAL.
 @endif
 
@@ -13,11 +13,7 @@ Cargo: {{ $snapshot['cargo']['denominacion'] ?? 'No registrado' }}
 Codigo y grado: {{ $snapshot['cargo']['codigo'] ?? 'No registrado' }} / {{ $snapshot['cargo']['grado'] ?? 'No registrado' }}
 Dependencia: {{ $snapshot['cargo']['dependencia'] ?? 'No registrada' }}
 Fecha de ingreso: {{ $snapshot['funcionario']['fecha_ingreso'] ?? 'No registrada' }}
-Modalidad: {{ $snapshot['modalidad']['descripcion'] }}
-
-@if($snapshot['modalidad']['requiere_salario'])
-Salario basico: {{ $snapshot['salario']['valor'] ?? 'No disponible en la fuente salarial institucional' }} {{ $snapshot['salario']['moneda'] ?? '' }}
-@endif
+Tipo: {{ $snapshot['tipo_certificado'] === 'funciones' ? 'CERTIFICADO LABORAL CON FUNCIONES' : 'CERTIFICADO LABORAL SENCILLO' }}
 
 @if(!empty($snapshot['manual_funciones']))
 Manual de funciones: {{ $snapshot['manual_funciones']['manual_nombre'] }} — version {{ $snapshot['manual_funciones']['version'] }}

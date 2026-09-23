@@ -9,11 +9,10 @@ use Carbon\CarbonImmutable;
 
 class ConstruirSnapshotCertificadoService
 {
-    public const SCHEMA_VERSION = 2;
+    public const SCHEMA_VERSION = 3;
 
     public function __construct(
         private readonly ResolverFuncionesFuncionarioService $resolverFunciones,
-        private readonly ResolverSalarioFuncionarioService $resolverSalario,
     ) {}
 
     public function construir(SolicitudCertificacion $solicitud, User $generadoPor): array
@@ -23,13 +22,11 @@ class ConstruirSnapshotCertificadoService
         $fecha = CarbonImmutable::now(config('app.timezone'));
         $asignacion = $this->resolverFunciones->asignacion($funcionario, $fecha);
         $cargo = $asignacion->cargo;
-        $manual = $this->resolverFunciones->resolver($funcionario, $fecha, $solicitud->tipo_certificado === TipoCertificadoEnum::Funciones);
+        $esFunciones = $solicitud->tipo_certificado === TipoCertificadoEnum::Funciones;
+        $manual = $esFunciones ? $this->resolverFunciones->resolver($funcionario, $fecha) : null;
 
         $snapshot = [
             'schema_version' => self::SCHEMA_VERSION,
-            'manual' => $manual,
-            'funciones_especificas' => $manual['funciones_especificas'],
-            'funciones_comunes' => $manual['funciones_comunes'],
             'asignacion_id' => $asignacion->id,
             'asignacion' => [
                 'id' => $asignacion->id, 'cargo_id' => $asignacion->cargo_id,
@@ -54,23 +51,14 @@ class ConstruirSnapshotCertificadoService
                 'codigo' => $cargo?->codigo,
                 'grado' => $cargo?->grado,
                 'nivel' => $cargo?->nivel,
-                'dependencia' => $manual['dependencia'],
-            ],
-            'modalidad' => [
-                'requiere_salario' => (bool) $solicitud->requiere_salario,
-                'descripcion' => $solicitud->requiere_salario ? 'CON SALARIO' : 'SIN SALARIO',
+                'dependencia' => $manual['dependencia'] ?? $funcionario?->dependencia ?? $cargo?->dependencia,
             ],
             'tipo_certificado' => $solicitud->tipo_certificado->value,
             'fecha_generacion' => $fecha->toIso8601String(),
             'generado_por' => ['id' => $generadoPor->id, 'nombre' => $generadoPor->name],
         ];
 
-        if ($solicitud->requiere_salario) {
-            // Decisión temporal: la fecha de generación es la referencia salarial.
-            $snapshot['salario'] = $this->resolverSalario->resolver($funcionario, $fecha);
-        }
-
-        if ($solicitud->tipo_certificado === TipoCertificadoEnum::Funciones && $cargo) {
+        if ($esFunciones) {
             $snapshot['manual_funciones'] = $manual;
         }
 

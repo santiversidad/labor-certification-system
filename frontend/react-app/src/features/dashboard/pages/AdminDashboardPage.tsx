@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, BadgeCheck, Banknote, BookOpenCheck, FileText, UserCheck, UserX } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, BookOpenCheck, FileText, ListChecks, UserCheck, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -39,8 +39,8 @@ export function AdminDashboardPage() {
     { label: 'Funcionarios activos', value: staff.filter((item) => item.estado === 'activo').length, icon: UserCheck },
     { label: 'Funcionarios inactivos', value: staff.filter((item) => item.estado !== 'activo').length, icon: UserX },
     { label: 'Certificaciones del mes', value: certificatesThisMonth.length, icon: BadgeCheck },
-    { label: 'Con salario', value: requests.filter((item) => item.requiere_salario).length, icon: Banknote },
-    { label: 'Sin salario', value: requests.filter((item) => !item.requiere_salario).length, icon: FileText },
+    { label: 'Sencillos', value: requests.filter((item) => item.tipo_certificado === 'sencillo').length, icon: FileText },
+    { label: 'Con funciones', value: requests.filter((item) => item.tipo_certificado === 'funciones').length, icon: ListChecks },
     { label: 'Errores de expedición', value: requests.filter((item) => item.estado === 'fallida').length, icon: AlertTriangle },
   ];
 

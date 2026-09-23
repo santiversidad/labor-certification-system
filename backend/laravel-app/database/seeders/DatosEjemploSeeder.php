@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Cargo;
 use App\Models\Funcionario;
-use App\Models\RangoSalarial;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -24,19 +23,6 @@ class DatosEjemploSeeder extends Seeder
         );
 
         $this->command->info("Cargo creado: {$cargo->denominacion} ({$cargo->codigo}-{$cargo->grado})");
-
-        // ─── Rango salarial de ejemplo ────────────────────────────────────────
-        $rango = RangoSalarial::firstOrCreate(
-            ['codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026],
-            [
-                'salario_basico' => 3450000.00,
-                'moneda' => 'COP',
-                'observaciones' => 'Salario básico según decreto de salarios 2026.',
-                'estado' => true,
-            ]
-        );
-
-        $this->command->info("Rango salarial creado: código {$rango->codigo} grado {$rango->grado} vigencia {$rango->vigencia_anio} — \${$rango->salario_basico} {$rango->moneda}");
 
         // ─── Funcionario de prueba ────────────────────────────────────────────
         // Vinculado al usuario con documento 000000003 (rol: funcionario)

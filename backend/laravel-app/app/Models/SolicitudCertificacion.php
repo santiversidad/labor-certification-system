@@ -20,7 +20,6 @@ class SolicitudCertificacion extends Model
         'tipo_certificado',
         'estado',
         'requiere_pago',
-        'requiere_salario',
         'periodo_mes',
         'observaciones',
         'motivo_rechazo',
@@ -75,7 +74,6 @@ class SolicitudCertificacion extends Model
             'tipo_certificado' => TipoCertificadoEnum::class,
             'estado' => EstadoSolicitudEnum::class,
             'requiere_pago' => 'boolean',
-            'requiere_salario' => 'boolean',
             'periodo_mes' => 'date:Y-m-d',
             'reviewed_at' => 'datetime',
         ];

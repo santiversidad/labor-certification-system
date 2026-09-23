@@ -61,10 +61,8 @@ export function SolicitudesPage() {
             <span className="font-medium text-text">Tipo</span>
             <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3" value={tipo} onChange={(event) => setTipo(event.target.value as TipoCertificado | '')}>
               <option value="">Todos</option>
-              <option value="laboral">Laboral</option>
+              <option value="sencillo">Sencillo</option>
               <option value="funciones">Funciones</option>
-              <option value="salario">Salario</option>
-              <option value="laboral_salario">Laboral con salario</option>
             </select>
           </label>
           <label className="space-y-1 text-sm">

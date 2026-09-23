@@ -1,7 +1,7 @@
 import type { Certificado } from '../../certificados/types/certificado.types';
 import type { Funcionario } from '../../funcionarios/types/funcionario.types';
 
-export type TipoCertificado = 'laboral' | 'funciones' | 'salario' | 'laboral_salario';
+export type TipoCertificado = 'sencillo' | 'funciones';
 export type SolicitudEstado =
   | 'pendiente' | 'en_revision' | 'pendiente_pago' | 'pago_en_revision'
   | 'aprobada' | 'rechazada' | 'certificado_generado' | 'cerrada'
@@ -13,7 +13,6 @@ export type SolicitudCertificacion = {
   tipo_certificado: TipoCertificado;
   estado: SolicitudEstado;
   requiere_pago: boolean;
-  requiere_salario: boolean;
   periodo_mes: string;
   observaciones?: string | null;
   motivo_rechazo?: string | null;
@@ -30,8 +29,8 @@ export type DisponibilidadModalidad = {
 
 export type DisponibilidadCertificacion = {
   periodo: string;
-  con_salario: DisponibilidadModalidad;
-  sin_salario: DisponibilidadModalidad;
+  sencillo: DisponibilidadModalidad;
+  funciones: DisponibilidadModalidad;
 };
 
 export type ExpedicionCertificacion = {

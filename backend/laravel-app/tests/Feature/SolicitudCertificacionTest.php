@@ -64,15 +64,14 @@ class SolicitudCertificacionTest extends TestCase
     {
         $response = $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson('/api/v1/solicitudes', [
-                'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
-                'requiere_salario' => false,
+                'tipo_certificado' => TipoCertificadoEnum::Sencillo->value,
             ]);
 
         $response->assertCreated()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.resultado', 'generada')
             ->assertJsonPath('data.solicitud.estado', EstadoSolicitudEnum::Generada->value)
-            ->assertJsonPath('data.solicitud.tipo_certificado', TipoCertificadoEnum::Laboral->value)
+            ->assertJsonPath('data.solicitud.tipo_certificado', TipoCertificadoEnum::Sencillo->value)
             ->assertJsonPath('data.solicitud.requiere_pago', false);
 
         $this->assertDatabaseHas('audit_logs', ['accion' => 'solicitar_certificacion_autoservicio']);
@@ -135,8 +134,7 @@ class SolicitudCertificacionTest extends TestCase
     {
         $response = $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson('/api/v1/solicitudes', [
-                'tipo_certificado' => TipoCertificadoEnum::Laboral->value,
-                'requiere_salario' => false,
+                'tipo_certificado' => TipoCertificadoEnum::Sencillo->value,
             ]);
 
         $response->assertCreated();
@@ -147,7 +145,7 @@ class SolicitudCertificacionTest extends TestCase
     {
         return SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
-            'tipo_certificado' => TipoCertificadoEnum::Laboral,
+            'tipo_certificado' => TipoCertificadoEnum::Sencillo,
             'estado' => EstadoSolicitudEnum::Pendiente,
             'created_by' => $this->userFuncionario->id,
             ...$overrides,

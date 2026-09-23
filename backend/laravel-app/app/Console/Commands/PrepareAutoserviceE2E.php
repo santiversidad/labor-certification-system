@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\Cargo;
 use App\Models\ManualFuncion;
 use App\Models\ParametroSistema;
-use App\Models\RangoSalarial;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Console\Command;
@@ -20,7 +19,7 @@ class PrepareAutoserviceE2E extends Command
 
     public function handle(): int
     {
-        if (! app()->environment('testing') || ! in_array(DB::connection()->getDatabaseName(), ['scl_e2e_test', 'scl_recovery_e2e'], true)) {
+        if (! app()->environment('testing') || DB::connection()->getDatabaseName() !== 'scl_certificate_types_e2e') {
             $this->error('E2E_ISOLATION_REQUIRED');
 
             return self::FAILURE;
@@ -51,8 +50,6 @@ class PrepareAutoserviceE2E extends Command
                 $version->update(['estado' => 'publicado']);
             }
             ParametroSistema::updateOrCreate(['clave' => 'requiere_pago_certificado'], ['valor' => 'false', 'tipo' => 'boolean']);
-            RangoSalarial::firstOrCreate(['codigo' => 'E2E', 'grado' => '01', 'vigencia_anio' => now()->year],
-                ['salario_basico' => 4000000, 'moneda' => 'COP', 'estado' => true]);
         });
         $this->info('Fixtures sintéticos preparados en la base E2E aislada; no se eliminaron registros.');
 

@@ -11,7 +11,6 @@ use App\Http\Controllers\Api\V1\ManualFuncionController;
 use App\Http\Controllers\Api\V1\MiCertificacionController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\ParametroCertificacionController;
-use App\Http\Controllers\Api\V1\RangoSalarialController;
 use App\Http\Controllers\Api\V1\ReporteController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use App\Http\Controllers\Api\V1\ValidacionPublicaController;
@@ -60,14 +59,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/', [CargoController::class, 'store'])->name('store');
             Route::get('/{cargo}', [CargoController::class, 'show'])->name('show');
             Route::put('/{cargo}', [CargoController::class, 'update'])->name('update');
-        });
-
-        Route::prefix('rangos-salariales')->name('rangos-salariales.')->group(function () {
-            Route::get('/consultar', [RangoSalarialController::class, 'consultar'])->name('consultar');
-            Route::get('/', [RangoSalarialController::class, 'index'])->name('index');
-            Route::post('/', [RangoSalarialController::class, 'store'])->name('store');
-            Route::get('/{rango_salarial}', [RangoSalarialController::class, 'show'])->name('show');
-            Route::put('/{rango_salarial}', [RangoSalarialController::class, 'update'])->name('update');
         });
 
         Route::prefix('funcionarios')->name('funcionarios.')->group(function () {

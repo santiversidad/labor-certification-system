@@ -236,7 +236,7 @@ class CertificadoValidacionTest extends TestCase
     {
         return SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
-            'tipo_certificado' => TipoCertificadoEnum::Laboral,
+            'tipo_certificado' => TipoCertificadoEnum::Sencillo,
             'estado' => EstadoSolicitudEnum::Aprobada,
             'created_by' => $this->funcionarioUser->id,
             ...$overrides,

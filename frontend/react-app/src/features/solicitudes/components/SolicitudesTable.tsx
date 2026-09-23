@@ -6,10 +6,8 @@ import { SolicitudStatusBadge } from './SolicitudStatusBadge';
 import type { SolicitudCertificacion } from '../types/solicitud.types';
 
 const tipoLabels: Record<string, string> = {
-  laboral: 'Laboral',
-  funciones: 'Funciones',
-  salario: 'Salario',
-  laboral_salario: 'Laboral con salario',
+  sencillo: 'Sencillo',
+  funciones: 'Con funciones',
 };
 
 const columns: TableColumn<SolicitudCertificacion>[] = [

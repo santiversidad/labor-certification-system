@@ -20,20 +20,18 @@ export function SolicitudForm() {
   const [searchParams] = useSearchParams();
   const requestedMode = searchParams.get('modalidad');
   const [screen, setScreen] = useState<'select' | 'summary'>('select');
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<SolicitudFormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<SolicitudFormValues>({
     resolver: zodResolver(solicitudSchema),
     defaultValues: {
-      tipo_certificado: requestedMode === 'funciones' ? 'funciones' : 'laboral',
-      requiere_salario: requestedMode === 'con_salario',
+      tipo_certificado: requestedMode === 'funciones' ? 'funciones' : 'sencillo',
       observaciones: '',
     },
   });
-  const requiereSalario = useWatch({ control, name: 'requiere_salario' });
   const tipoCertificado = useWatch({ control, name: 'tipo_certificado' });
   const observaciones = useWatch({ control, name: 'observaciones' });
   const disponibilidadQuery = useQuery({ queryKey: ['disponibilidad-certificacion'], queryFn: solicitudesService.disponibilidad });
   const disponibilidad = disponibilidadQuery.data?.data;
-  const puedeSolicitar = requiereSalario ? disponibilidad?.con_salario.puede_solicitar : disponibilidad?.sin_salario.puede_solicitar;
+  const puedeSolicitar = disponibilidad?.[tipoCertificado].puede_solicitar;
   const mutation = useMutation({
     mutationFn: solicitudesService.create,
     onSuccess: async (response) => {
@@ -55,22 +53,11 @@ export function SolicitudForm() {
       <div className="p-5 sm:p-8">
         {screen === 'select' ? (
           <div className="space-y-7">
-            <div><p className="eyebrow">Paso 1 de 4</p><h2 className="mt-2 text-xl font-bold text-text">Seleccione la certificación</h2><p className="mt-1 text-sm text-muted">Defina el contenido y si debe incluir información salarial.</p></div>
+            <div><p className="eyebrow">Paso 1 de 4</p><h2 className="mt-2 text-xl font-bold text-text">Seleccione la certificación</h2><p className="mt-1 text-sm text-muted">Defina si necesita información laboral sencilla o las funciones del Manual.</p></div>
             <Select id="contenido-certificacion" label="Contenido de la certificación" hint="Las funciones corresponden a la ficha del Manual asociada por Talento Humano." {...register('tipo_certificado')}>
-              <option value="laboral">Información laboral</option>
+              <option value="sencillo">Certificado laboral sencillo</option>
               <option value="funciones">Información laboral y funciones del Manual</option>
             </Select>
-            <fieldset>
-              <legend className="text-sm font-semibold text-text">Modalidad salarial</legend>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {[false, true].map((value) => (
-                  <button aria-pressed={requiereSalario === value} className={`flex min-h-20 items-center justify-between rounded-lg border p-4 text-left transition ${requiereSalario === value ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-secondary/50'}`} key={String(value)} onClick={() => setValue('requiere_salario', value)} type="button">
-                    <span><strong className="block text-text">{value ? 'CON salario' : 'SIN salario'}</strong><small className="text-muted">{value ? 'Incluye el valor institucional vigente' : 'No muestra valores salariales'}</small></span>
-                    {requiereSalario === value ? <Check className="shrink-0 text-primary" size={20} /> : null}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
             <Textarea error={errors.observaciones?.message} label="Observaciones (opcional)" maxLength={500} {...register('observaciones')} />
             {puedeSolicitar === false ? <Alert title="Ya solicitó esta modalidad" tone="warning">Podrá solicitarla nuevamente en el siguiente mes calendario.</Alert> : null}
             <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-between">
@@ -83,10 +70,10 @@ export function SolicitudForm() {
             <div><p className="eyebrow">Pasos 2 y 3 de 4</p><h2 className="mt-2 text-xl font-bold text-text">Revise y confirme</h2><p className="mt-1 text-sm text-muted">La generación comenzará inmediatamente después de confirmar.</p></div>
             <dl className="divide-y divide-border rounded-lg border border-border">
               <SummaryRow label="Contenido" value={tipoCertificado === 'funciones' ? 'Información laboral y funciones' : 'Información laboral'} />
-              <SummaryRow label="Modalidad" value={requiereSalario ? 'CON salario' : 'SIN salario'} />
+              <SummaryRow label="Tipo" value={tipoCertificado === 'funciones' ? 'Certificado laboral con funciones' : 'Certificado laboral sencillo'} />
               <SummaryRow label="Observaciones" value={observaciones?.trim() || 'Sin observaciones'} />
             </dl>
-            <Alert title="Antes de confirmar" tone="info">El sistema validará el cupo mensual, cargo, ficha del Manual y fuentes salariales. Si la configuración exige pago, creará una orden pendiente.</Alert>
+            <Alert title="Antes de confirmar" tone="info">El sistema validará el cupo mensual y la asignación laboral. Para certificados con funciones también validará la ficha del Manual. Si la configuración exige pago, creará una orden pendiente.</Alert>
             {mutation.isError ? <Alert title="No fue posible expedir la certificación" tone="error">{getErrorMessage(mutation.error)}</Alert> : null}
             <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-between">
               <Button disabled={mutation.isPending} icon={<ArrowLeft size={16} />} onClick={() => setScreen('select')} type="button" variant="secondary">Modificar</Button>

@@ -22,7 +22,6 @@ class FuncionarioCargo extends Model
         'fecha_inicio',
         'fecha_fin',
         'acto_administrativo_id',
-        'salario_override',
         'manual_cargo_version_id', 'es_prueba_manual',
     ];
 
@@ -36,7 +35,6 @@ class FuncionarioCargo extends Model
             'es_encargo' => 'boolean',
             'fecha_inicio' => 'date',
             'fecha_fin' => 'date',
-            'salario_override' => 'decimal:2',
         ];
     }
 

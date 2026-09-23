@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Banknote, CalendarClock, CheckCircle2, FileText, ListChecks, ShieldCheck } from 'lucide-react';
+import { CalendarClock, CheckCircle2, FileText, ListChecks, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
@@ -46,15 +46,14 @@ export function FuncionarioDashboardPage() {
       <PageHeader eyebrow="Autoservicio 24/7" title="Certificaciones laborales" description="Seleccione el contenido que necesita. El sistema validará sus datos y expedirá el documento automáticamente cuando corresponda." />
       <div className="flex items-start gap-3 border-y border-border py-4 text-sm leading-6 text-muted">
         <ShieldCheck className="mt-0.5 shrink-0 text-success" size={20} />
-        <p>Dispone de un cupo con salario y uno sin salario por mes calendario. La información proviene de las fuentes institucionales vigentes.</p>
+        <p>Dispone de un cupo sencillo y uno con funciones por mes calendario. La información proviene de las fuentes institucionales vigentes.</p>
       </div>
       {query.isError ? <ErrorState message="No fue posible consultar la disponibilidad de certificaciones." /> : null}
       {query.isLoading ? <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="Cargando modalidades"><Skeleton className="h-72" /><Skeleton className="h-72" /><Skeleton className="h-72" /></div> : null}
       {query.data ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <CertificationOption availability={query.data.data.sin_salario} description="Certifica su vinculación laboral sin incluir valores salariales." icon={FileText} note="Generación inmediata cuando no se exige pago." title="Certificación laboral SIN salario" to="/app/solicitudes/nueva?modalidad=sin_salario" />
-          <CertificationOption availability={query.data.data.con_salario} description="Incluye el salario institucional vigente asociado a su cargo y grado." icon={Banknote} note="El sistema informará si la configuración vigente requiere pago." title="Certificación laboral CON salario" to="/app/solicitudes/nueva?modalidad=con_salario" />
-          <CertificationOption availability={query.data.data.sin_salario} description="Añade las funciones de la ficha del Manual asignada a su vinculación actual." icon={ListChecks} note="La ficha se valida antes de generar el documento." title="Información laboral y funciones" to="/app/solicitudes/nueva?modalidad=funciones" />
+        <div className="grid gap-5 md:grid-cols-2">
+          <CertificationOption availability={query.data.data.sencillo} description="Certifica su vinculación laboral vigente." icon={FileText} note="No requiere una ficha completa del Manual." title="Certificado laboral sencillo" to="/app/solicitudes/nueva?modalidad=sencillo" />
+          <CertificationOption availability={query.data.data.funciones} description="Añade las funciones de la ficha del Manual asignada a su vinculación actual." icon={ListChecks} note="La ficha se valida antes de generar el documento." title="Certificado laboral con funciones" to="/app/solicitudes/nueva?modalidad=funciones" />
         </div>
       ) : null}
       <p className="text-xs text-muted">Este portal no expone expedientes, actuaciones administrativas ni información salarial interna.</p>

@@ -67,7 +67,7 @@ class PagoSoporteTest extends TestCase
 
         $this->solicitud = SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
-            'tipo_certificado' => TipoCertificadoEnum::Laboral,
+            'tipo_certificado' => TipoCertificadoEnum::Sencillo,
             'estado' => EstadoSolicitudEnum::PendientePago,
             'requiere_pago' => true,
             'created_by' => $this->userFuncionario->id,

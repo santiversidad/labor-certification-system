@@ -33,12 +33,6 @@ class IndexQueryRequest extends FormRequest
                 'estado' => ['sometimes', 'boolean'],
                 'orden' => ['sometimes', Rule::in(['denominacion', 'codigo', 'grado', 'created_at'])],
             ],
-            'v1.rangos-salariales.index' => $rules + [
-                'vigencia' => ['sometimes', 'integer', 'min:2000', 'max:2100'],
-                'codigo' => ['sometimes', 'string', 'max:10'],
-                'estado' => ['sometimes', 'boolean'],
-                'orden' => ['sometimes', Rule::in(['vigencia_anio', 'codigo', 'grado', 'salario_basico', 'created_at'])],
-            ],
             'v1.funcionarios.index' => $rules + [
                 'estado' => ['sometimes', Rule::enum(EstadoFuncionarioEnum::class)],
                 'dependencia' => ['sometimes', 'string', 'max:150'],

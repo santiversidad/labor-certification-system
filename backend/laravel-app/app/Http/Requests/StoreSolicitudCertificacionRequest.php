@@ -12,10 +12,6 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     {
         $data = [];
 
-        if ($this->has('tipo') && ! $this->has('tipo_certificado')) {
-            $data['tipo_certificado'] = $this->input('tipo');
-        }
-
         if ($this->has('observacion') && ! $this->has('observaciones')) {
             $data['observaciones'] = $this->input('observacion');
         }
@@ -35,10 +31,11 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     {
         return [
             'tipo_certificado' => ['required', Rule::in([
-                TipoCertificadoEnum::Laboral->value,
+                TipoCertificadoEnum::Sencillo->value,
                 TipoCertificadoEnum::Funciones->value,
             ])],
-            'requiere_salario' => ['required', 'boolean'],
+            'requiere_salario' => ['prohibited'],
+            'tipo' => ['prohibited'],
             'funcionario_id' => ['prohibited'],
             'observaciones' => ['nullable', 'string', 'max:500'],
         ];
@@ -48,8 +45,9 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     {
         return [
             'tipo_certificado.required' => 'Debe seleccionar el tipo de certificado.',
-            'tipo_certificado.enum' => 'El tipo de certificado seleccionado no es válido.',
-            'requiere_salario.required' => 'Debe indicar expresamente si la certificación requiere salario.',
+            'tipo_certificado.in' => 'El tipo de certificado seleccionado no es válido.',
+            'requiere_salario.prohibited' => 'El campo requiere_salario fue retirado; use tipo_certificado.',
+            'tipo.prohibited' => 'Use el campo canónico tipo_certificado.',
             'funcionario_id.prohibited' => 'El funcionario se determina a partir de la sesión autenticada.',
         ];
     }

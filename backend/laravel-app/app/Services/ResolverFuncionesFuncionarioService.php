@@ -31,7 +31,7 @@ class ResolverFuncionesFuncionarioService
         return $asignacion;
     }
 
-    public function resolver(Funcionario $funcionario, CarbonInterface $fecha, bool $requiereFunciones = true): array
+    public function resolver(Funcionario $funcionario, CarbonInterface $fecha): array
     {
         $asignacion = $this->asignacion($funcionario, $fecha);
         $relaciones = $asignacion->fichasNormativas()->with('fichaManual.version')
@@ -73,12 +73,10 @@ class ResolverFuncionesFuncionarioService
         if (! $demo && ! $this->versionVigente($version, $fecha)) {
             throw new DomainException('MANUAL_VERSION_NO_VIGENTE');
         }
-        if (! trim((string) $ficha->area_funcional) || ! trim($ficha->proposito_principal)) {
+        if (! trim((string) $ficha->area_funcional) || ! trim($ficha->proposito_principal)
+            || $ficha->funciones->isEmpty()
+            || $ficha->funciones->contains(fn ($f) => ! trim($f->descripcion))) {
             throw new DomainException('MANUAL_FICHA_INCOMPLETA');
-        }
-        if ($requiereFunciones && ($ficha->funciones->isEmpty()
-            || $ficha->funciones->contains(fn ($f) => ! trim($f->descripcion)))) {
-            throw new DomainException('MANUAL_FUNCIONES_NO_DISPONIBLES');
         }
         // Level from the preserved source protects against subsequent catalog edits.
         $nivel = $ficha->metadata_manual['nivel'] ?? $asignacion->cargo->nivel;

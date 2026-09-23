@@ -13,10 +13,9 @@ describe('SolicitudConfirmacionPage', () => {
           solicitud: {
             id: 123,
             radicado: 'CL-2026-000123',
-            tipo_certificado: 'laboral',
+            tipo_certificado: 'sencillo',
             estado: 'generada',
             requiere_pago: false,
-            requiere_salario: false,
             periodo_mes: '2026-08-01',
           },
           descarga_url: '/api/v1/mi-certificado/descargar/token-seguro',
@@ -42,10 +41,9 @@ describe('SolicitudConfirmacionPage', () => {
           solicitud: {
             id: 124,
             radicado: 'CL-2026-000124',
-            tipo_certificado: 'laboral',
+            tipo_certificado: 'sencillo',
             estado: 'pendiente_pago',
             requiere_pago: true,
-            requiere_salario: true,
             periodo_mes: '2026-08-01',
           },
           orden_pago: { referencia: 'PAGO-ABC-124', estado: 'pendiente' },

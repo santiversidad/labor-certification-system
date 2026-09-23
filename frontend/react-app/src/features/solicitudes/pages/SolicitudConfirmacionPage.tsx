@@ -38,7 +38,7 @@ export function SolicitudConfirmacionPage() {
           <dl className="mt-6 divide-y divide-border rounded-lg border border-border text-sm">
             <ResultRow label="Radicado" value={resultado.solicitud.radicado} />
             <ResultRow label="Fecha" value={resultado.solicitud.created_at ? formatDate(resultado.solicitud.created_at) : 'Generado ahora'} />
-            <ResultRow label="Modalidad" value={`${resultado.solicitud.tipo_certificado === 'funciones' ? 'Información laboral y funciones' : 'Información laboral'} · ${resultado.solicitud.requiere_salario ? 'CON salario' : 'SIN salario'}`} />
+            <ResultRow label="Tipo" value={resultado.solicitud.tipo_certificado === 'funciones' ? 'Certificado laboral con funciones' : 'Certificado laboral sencillo'} />
             <div className="grid gap-1 px-4 py-3 sm:grid-cols-[120px_1fr]"><dt className="text-muted">Estado</dt><dd><Badge tone={generada ? 'green' : 'gold'}>{generada ? 'Disponible' : 'Requiere pago'}</Badge></dd></div>
           </dl>
           {resultado.orden_pago ? <p className="mt-4 rounded-lg bg-surface-muted p-3 text-sm text-text">Referencia de pago: <strong>{resultado.orden_pago.referencia}</strong></p> : null}

@@ -12,15 +12,13 @@ use App\Models\Cargo;
 use App\Models\Certificado;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
-use App\Models\ManualCargoVersion;
-use App\Models\ManualFuncion;
-use App\Models\RangoSalarial;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
 class SnapshotCertificadoTest extends TestCase
@@ -33,12 +31,6 @@ class SnapshotCertificadoTest extends TestCase
 
     private Funcionario $funcionario;
 
-    private Cargo $cargo;
-
-    private ManualCargoVersion $cargoVersion;
-
-    private RangoSalarial $rango;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -50,7 +42,7 @@ class SnapshotCertificadoTest extends TestCase
         $this->secretario->assignRole(RoleEnum::Secretario->value);
         $this->funcionarioUser = User::factory()->create(['estado' => true]);
         $this->funcionarioUser->assignRole(RoleEnum::Funcionario->value);
-        $this->cargo = Cargo::create([
+        $cargo = Cargo::create([
             'codigo' => '219', 'grado' => '02', 'denominacion' => 'Profesional Universitario',
             'nivel' => 'Profesional', 'dependencia' => 'Talento Humano', 'estado' => true,
         ]);
@@ -58,36 +50,15 @@ class SnapshotCertificadoTest extends TestCase
             'user_id' => $this->funcionarioUser->id, 'tipo_documento' => 'CC',
             'numero_documento' => '123456789', 'nombres' => 'Ana', 'apellidos' => 'Pérez',
             'estado' => EstadoFuncionarioEnum::Activo, 'fecha_ingreso' => '2020-01-15',
-            'dependencia' => 'Talento Humano', 'cargo_id' => $this->cargo->id,
+            'dependencia' => 'Talento Humano', 'cargo_id' => $cargo->id,
         ]);
         FuncionarioCargo::create([
-            'funcionario_id' => $this->funcionario->id,
-            'cargo_id' => $this->cargo->id,
+            'funcionario_id' => $this->funcionario->id, 'cargo_id' => $cargo->id,
             'tipo_vinculacion' => TipoVinculacionEnum::Planta,
             'naturaleza_cargo' => NaturalezaCargoEnum::CarreraAdministrativa,
-            'es_cargo_base' => true,
-            'fecha_inicio' => '2020-01-15',
+            'es_cargo_base' => true, 'fecha_inicio' => '2020-01-15',
         ]);
-        $this->rango = RangoSalarial::create([
-            'codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026,
-            'salario_basico' => 5000000, 'moneda' => 'COP', 'estado' => true,
-        ]);
-        $manual = ManualFuncion::create(['codigo' => 'MEF-001', 'nombre' => 'Manual oficial']);
-        $version = $manual->versiones()->create([
-            'version' => '2026', 'vigencia_desde' => '2026-01-01',
-            'acto_tipo' => 'Decreto', 'acto_numero' => '100', 'acto_fecha' => '2025-12-20',
-            'estado' => 'borrador',
-        ]);
-        $this->cargoVersion = ManualCargoVersion::create([
-            'manual_funciones_version_id' => $version->id, 'cargo_id' => $this->cargo->id,
-            'proposito_principal' => 'Gestionar el talento humano.',
-            'area_funcional' => 'Talento Humano', 'dependencia' => 'Talento Humano',
-        ]);
-        $this->cargoVersion->funciones()->create([
-            'orden' => 1, 'descripcion' => 'Administrar los procesos asignados.',
-        ]);
-        $version->update(['estado' => 'publicado']);
-        $this->funcionario->historialCargos()->update(['manual_cargo_version_id' => $this->cargoVersion->id]);
+        ManualFixture::vincular($this->funcionario);
     }
 
     protected function tearDown(): void
@@ -96,47 +67,56 @@ class SnapshotCertificadoTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_snapshot_con_salario_y_funciones_permanece_inmutable_ante_cambios_vivos(): void
+    public function test_snapshot_funciones_contiene_manual_y_nunca_salario(): void
     {
-        $solicitud = $this->crearSolicitud(true, TipoCertificadoEnum::Funciones);
+        $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
             ->assertCreated();
 
         $certificado = Certificado::firstOrFail();
-        $snapshotOriginal = $certificado->snapshot_datos;
-        $this->assertSame('5000000.00', $snapshotOriginal['salario']['valor']);
-        $this->assertSame(
-            'Administrar los procesos asignados.',
-            $snapshotOriginal['manual_funciones']['funciones'][0]['descripcion'],
-        );
-        $this->assertStringContainsString('Salario basico: 5000000.00 COP', Storage::disk('local')->get($certificado->archivo_pdf_path));
-
-        $this->rango->update(['salario_basico' => 9999999]);
-
-        $this->assertSame($snapshotOriginal, $certificado->fresh()->snapshot_datos);
+        $snapshot = $certificado->snapshot_datos;
+        $this->assertSame('funciones', $snapshot['tipo_certificado']);
+        $this->assertSame('Función sintética de pruebas.', $snapshot['manual_funciones']['funciones'][0]['descripcion']);
+        $this->assertArrayNotHasKey('salario', $snapshot);
+        $this->assertArrayNotHasKey('requiere_salario', $snapshot);
+        $this->assertSame(3, $certificado->snapshot_schema_version);
+        $this->assertStringNotContainsString('Salario', Storage::disk('local')->get($certificado->archivo_pdf_path));
     }
 
-    public function test_certificado_sin_salario_no_guarda_ni_renderiza_valor_salarial(): void
+    public function test_snapshot_sencillo_no_contiene_manual_funciones_ni_salario(): void
     {
-        $solicitud = $this->crearSolicitud(false, TipoCertificadoEnum::Laboral);
+        $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Sencillo);
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
             ->assertCreated();
 
         $certificado = Certificado::firstOrFail();
-        $this->assertArrayNotHasKey('salario', $certificado->snapshot_datos);
-        $this->assertStringNotContainsString('Salario basico:', Storage::disk('local')->get($certificado->archivo_pdf_path));
-        $this->assertSame(2, $certificado->snapshot_schema_version);
+        $snapshot = $certificado->snapshot_datos;
+        $this->assertSame('sencillo', $snapshot['tipo_certificado']);
+        $this->assertArrayNotHasKey('manual_funciones', $snapshot);
+        $this->assertArrayNotHasKey('salario', $snapshot);
+        $this->assertArrayNotHasKey('funciones', $snapshot);
+        $this->assertSame(3, $certificado->snapshot_schema_version);
     }
 
-    private function crearSolicitud(bool $requiereSalario, TipoCertificadoEnum $tipo): SolicitudCertificacion
+    public function test_snapshot_emitido_permanece_inmutable(): void
+    {
+        $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
+        $this->actingAs($this->secretario, 'sanctum')
+            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
+            ->assertCreated();
+
+        $this->expectException(\DomainException::class);
+        Certificado::firstOrFail()->update(['snapshot_datos' => ['alterado' => true]]);
+    }
+
+    private function crearSolicitud(TipoCertificadoEnum $tipo): SolicitudCertificacion
     {
         return SolicitudCertificacion::create([
             'funcionario_id' => $this->funcionario->id,
             'tipo_certificado' => $tipo,
             'estado' => EstadoSolicitudEnum::Aprobada,
-            'requiere_salario' => $requiereSalario,
             'created_by' => $this->funcionarioUser->id,
         ]);
     }

@@ -223,13 +223,13 @@ class ManualImportTest extends TestCase
         $this->assertNotSame($fa['funciones'], $fb['funciones']);
         $pdfs = [];
         foreach ([$a, $b] as $user) {
-            $result = app(ExpedirCertificacionService::class)->expedir($user, false, 'funciones', null);
+            $result = app(ExpedirCertificacionService::class)->expedir($user, 'funciones', null);
             $cert = $result['certificado'];
             $snapshot = $cert->snapshot_datos;
-            $ficha = ManualCargoVersion::findOrFail($snapshot['manual']['ficha_id']);
-            $this->assertSame($ficha->manual_funciones_version_id, $snapshot['manual']['version_id']);
-            $this->assertSame($ficha->funciones->pluck('descripcion')->all(), array_column($snapshot['funciones_especificas'], 'descripcion'));
-            $this->assertArrayHasKey('funciones_comunes', $snapshot);
+            $ficha = ManualCargoVersion::findOrFail($snapshot['manual_funciones']['ficha_id']);
+            $this->assertSame($ficha->manual_funciones_version_id, $snapshot['manual_funciones']['version_id']);
+            $this->assertSame($ficha->funciones->pluck('descripcion')->all(), array_column($snapshot['manual_funciones']['funciones_especificas'], 'descripcion'));
+            $this->assertArrayHasKey('funciones_comunes', $snapshot['manual_funciones']);
             $pdf = Storage::disk('local')->get($cert->archivo_pdf_path);
             $this->assertStringContainsString($ficha->source_id, $pdf);
             $this->assertStringContainsString('CERTIFICADO LABORAL TEMPORAL', $pdf);
@@ -275,7 +275,7 @@ class ManualImportTest extends TestCase
         $u = $this->empleado('MF-0229', 'TEST-MANUAL-C');
         $u->update(['must_change_password' => true]);
         try {
-            app(ExpedirCertificacionService::class)->expedir($u, false, 'funciones', null);
+            app(ExpedirCertificacionService::class)->expedir($u, 'funciones', null);
             $this->fail('Debió bloquear contraseña');
         } catch (DomainException $e) {
             $this->assertSame('PASSWORD_CHANGE_REQUIRED', $e->getMessage());
@@ -284,28 +284,27 @@ class ManualImportTest extends TestCase
         $this->assertSame(0, DB::table('solicitudes_certificacion')->count());
     }
 
-    public function test_precheck_fuentes_y_salario_devuelve_codigos_y_no_genera_pdf(): void
+    public function test_precheck_fuentes_devuelve_codigos_y_no_genera_pdf(): void
     {
         $version = $this->version(true);
         $u = $this->empleado('MF-0229', 'TEST-MANUAL-P');
         $asignacion = $u->funcionario->historialCargos()->sole();
         $ficha = $asignacion->fichaManual;
         $cases = [
-            ['SALARIO_NO_RESOLUBLE', fn () => null, true],
-            ['CARGO_INVALIDO', fn () => $asignacion->cargo->update(['estado' => false]), false],
+            ['CARGO_INVALIDO', fn () => $asignacion->cargo->update(['estado' => false])],
             ['ASIGNACION_NO_VIGENTE', function () use ($asignacion) {
                 $asignacion->cargo->update(['estado' => true]);
                 $asignacion->update(['fecha_fin' => '2020-02-01']);
-            }, false],
+            }],
             ['MANUAL_VERSION_NO_VIGENTE', function () use ($asignacion, $version) {
                 $asignacion->update(['fecha_fin' => null]);
                 $version->update(['vigencia_hasta' => '2020-02-01']);
-            }, false],
+            }],
         ];
-        foreach ($cases as [$expected, $prepare, $salary]) {
+        foreach ($cases as [$expected, $prepare]) {
             $prepare();
             try {
-                app(ExpedirCertificacionService::class)->expedir($u->fresh(), $salary, 'funciones', null);
+                app(ExpedirCertificacionService::class)->expedir($u->fresh(), 'funciones', null);
                 $this->fail('Debió bloquear '.$expected);
             } catch (DomainException $e) {
                 $this->assertSame($expected, $e->getMessage());
@@ -335,13 +334,13 @@ class ManualImportTest extends TestCase
             $u = $this->empleado($source, 'TEST-MANUAL-HTTP'.$i);
             $u->assignRole('funcionario');
             $response = $this->actingAs($u, 'sanctum')->postJson('/api/v1/solicitudes', [
-                'tipo_certificado' => 'funciones', 'requiere_salario' => false,
+                'tipo_certificado' => 'funciones',
             ])->assertCreated()->assertJsonPath('data.resultado', 'generada');
             $cert = Certificado::where('funcionario_id', $u->funcionario->id)->sole();
-            $this->assertSame($source, $cert->snapshot_datos['manual']['source_id']);
+            $this->assertSame($source, $cert->snapshot_datos['manual_funciones']['source_id']);
             $this->actingAs($u, 'sanctum')->get($response->json('data.descarga_url'))->assertOk();
             $this->actingAs($u, 'sanctum')->postJson('/api/v1/solicitudes', [
-                'tipo_certificado' => 'funciones', 'requiere_salario' => false,
+                'tipo_certificado' => 'funciones',
             ])->assertConflict()->assertJsonPath('code', 'MONTHLY_CERTIFICATE_LIMIT');
         }
     }

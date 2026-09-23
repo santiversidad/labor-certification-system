@@ -11,10 +11,9 @@ use App\Models\Certificado;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
 use App\Models\ParametroSistema;
-use App\Models\RangoSalarial;
 use App\Models\User;
 use App\Services\PdfBasicoService;
-use App\Services\ResolverSalarioFuncionarioService;
+use App\Services\ResolverFuncionesFuncionarioService;
 use App\Services\TokenValidacionService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
@@ -22,6 +21,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Mockery\MockInterface;
 use Tests\Support\ManualFixture;
 use Tests\TestCase;
 
@@ -45,10 +45,6 @@ class FaseCAutoservicioTest extends TestCase
         $this->cargo = Cargo::create([
             'codigo' => '219', 'grado' => '02', 'denominacion' => 'Profesional Universitario',
             'nivel' => 'Profesional', 'dependencia' => 'Talento Humano', 'estado' => true,
-        ]);
-        RangoSalarial::create([
-            'codigo' => '219', 'grado' => '02', 'vigencia_anio' => 2026,
-            'salario_basico' => 5000000, 'moneda' => 'COP', 'estado' => true,
         ]);
         ParametroSistema::create([
             'clave' => 'requiere_pago_certificado', 'valor' => 'false', 'tipo' => 'boolean',
@@ -80,7 +76,7 @@ class FaseCAutoservicioTest extends TestCase
     public function test_alta_de_funcionario_no_cambia_identidad_ni_permisos_del_admin(): void
     {
         $adminId = $this->admin->id;
-        $this->assertCount(39, $this->admin->getAllPermissions());
+        $this->assertCount(36, $this->admin->getAllPermissions());
 
         $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200390'))
@@ -95,7 +91,7 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertSame($adminId, $admin->id);
         $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
         $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
-        $this->assertCount(39, $admin->getAllPermissions());
+        $this->assertCount(36, $admin->getAllPermissions());
         $this->assertTrue($admin->can('funcionarios.ver'));
         $this->assertNull($admin->funcionario);
     }
@@ -115,7 +111,7 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertSame($adminId, $admin->id);
         $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
         $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
-        $this->assertCount(39, $admin->getAllPermissions());
+        $this->assertCount(36, $admin->getAllPermissions());
         $this->assertTrue($admin->can('funcionarios.ver'));
         $this->assertNull($admin->funcionario);
         $this->assertDatabaseMissing('funcionarios', ['user_id' => $adminId]);
@@ -155,7 +151,7 @@ class FaseCAutoservicioTest extends TestCase
     {
         [$user] = $this->crearFuncionarioDirecto('100200303');
         $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'laboral', 'requiere_salario' => false,
+            'tipo_certificado' => 'sencillo',
         ])->assertCreated()
             ->assertJsonPath('data.resultado', 'generada')
             ->assertJsonPath('data.solicitud.estado', 'generada')
@@ -169,13 +165,24 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'descargar_certificado_autoservicio']);
     }
 
+    public function test_sencillo_no_invoca_resolucion_de_funciones(): void
+    {
+        [$user] = $this->crearFuncionarioDirecto('100200317');
+        $this->partialMock(ResolverFuncionesFuncionarioService::class, function (MockInterface $mock): void {
+            $mock->shouldNotReceive('resolver');
+        });
+
+        $this->solicitar($user, 'sencillo')->assertCreated();
+        $this->assertArrayNotHasKey('manual_funciones', Certificado::sole()->snapshot_datos);
+    }
+
     public function test_cupos_son_independientes_y_segunda_modalidad_igual_se_bloquea(): void
     {
         [$user] = $this->crearFuncionarioDirecto('100200305');
-        $this->solicitar($user, false)->assertCreated();
-        $this->solicitar($user, false)->assertConflict()->assertJsonPath('code', 'MONTHLY_CERTIFICATE_LIMIT');
-        $this->solicitar($user, true)->assertCreated()->assertJsonPath('data.resultado', 'generada');
-        $this->solicitar($user, true)->assertConflict();
+        $this->solicitar($user, 'sencillo')->assertCreated();
+        $this->solicitar($user, 'sencillo')->assertConflict()->assertJsonPath('code', 'MONTHLY_CERTIFICATE_LIMIT');
+        $this->solicitar($user, 'funciones')->assertCreated()->assertJsonPath('data.resultado', 'generada');
+        $this->solicitar($user, 'funciones')->assertConflict();
         $this->assertDatabaseCount('certificados', 2);
     }
 
@@ -184,7 +191,7 @@ class FaseCAutoservicioTest extends TestCase
         ParametroSistema::where('clave', 'requiere_pago_certificado')->update(['valor' => 'true']);
         [$user] = $this->crearFuncionarioDirecto('100200306');
 
-        $this->solicitar($user, false)->assertCreated()
+        $this->solicitar($user)->assertCreated()
             ->assertJsonPath('data.resultado', 'pendiente_pago')
             ->assertJsonPath('data.orden_pago.estado', 'pendiente')
             ->assertJsonMissingPath('data.certificado');
@@ -197,7 +204,7 @@ class FaseCAutoservicioTest extends TestCase
     {
         [$user, $funcionario] = $this->crearFuncionarioDirecto('100200307');
         $funcionario->update(['estado' => EstadoFuncionarioEnum::Retirado]);
-        $this->solicitar($user, false)->assertForbidden()->assertJsonPath('code', 'INACTIVE_EMPLOYEE');
+        $this->solicitar($user)->assertForbidden()->assertJsonPath('code', 'INACTIVE_EMPLOYEE');
 
         $this->actingAs($this->admin, 'sanctum')->patchJson('/api/v1/configuracion/certificaciones', [
             'requiere_pago_certificado' => true,
@@ -232,14 +239,14 @@ class FaseCAutoservicioTest extends TestCase
         $this->mock(PdfBasicoService::class, function ($mock) {
             $mock->shouldReceive('generarDesdeTexto')->once()->andThrow(new \RuntimeException('PDF_TEST_FAILURE'));
         });
-        $this->solicitar($user, false)->assertStatus(503)->assertJsonPath('code', 'CERTIFICATE_GENERATION_FAILED');
+        $this->solicitar($user)->assertStatus(503)->assertJsonPath('code', 'CERTIFICATE_GENERATION_FAILED');
         $this->assertDatabaseCount('certificados', 0);
         $this->assertDatabaseCount('solicitudes_certificacion', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('certificados'));
         $this->assertDatabaseHas('audit_logs', ['accion' => 'generacion_certificado_fallida']);
         $this->app->forgetInstance(PdfBasicoService::class);
         $this->app['router']->getRoutes()->getByName('v1.solicitudes.store')->flushController();
-        $this->solicitar($user, false)->assertCreated();
+        $this->solicitar($user)->assertCreated();
         $this->assertDatabaseCount('certificados', 1);
     }
 
@@ -249,32 +256,31 @@ class FaseCAutoservicioTest extends TestCase
         $this->mock(TokenValidacionService::class, function ($mock) {
             $mock->shouldReceive('crearParaCertificado')->once()->andThrow(new \RuntimeException('DB_TEST_FAILURE'));
         });
-        $this->solicitar($user, false)->assertStatus(503);
+        $this->solicitar($user)->assertStatus(503);
         $this->assertDatabaseCount('certificados', 0);
         $this->assertDatabaseCount('solicitudes_certificacion', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('certificados'));
         $this->app->forgetInstance(TokenValidacionService::class);
         $this->app['router']->getRoutes()->getByName('v1.solicitudes.store')->flushController();
-        $this->solicitar($user, false)->assertCreated();
+        $this->solicitar($user)->assertCreated();
     }
 
-    public function test_expedicion_con_funciones_sin_sesiones_administrativas_y_sin_resolver_salario(): void
+    public function test_expedicion_con_funciones_resuelve_ficha_sin_sesiones_administrativas(): void
     {
         $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200311'))->assertCreated();
         $user = User::where('documento', '100200311')->firstOrFail();
         $user->update(['must_change_password' => false]);
         $this->assertSame(0, $this->admin->tokens()->count());
         $this->assertSame(0, User::role(RoleEnum::Secretario->value)->count());
-        $this->mock(ResolverSalarioFuncionarioService::class, fn ($mock) => $mock->shouldNotReceive('resolver'));
         $this->actingAs($user, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'funciones', 'requiere_salario' => false,
+            'tipo_certificado' => 'funciones',
         ])->assertCreated()->assertJsonPath('data.resultado', 'generada');
         $snapshot = Certificado::sole()->snapshot_datos;
-        $this->assertNotNull($snapshot['manual']['relacion_normativa_id']);
+        $this->assertNotNull($snapshot['manual_funciones']['relacion_normativa_id']);
         $this->assertSame('planta', $snapshot['asignacion']['tipo_vinculacion']);
         $this->assertSame('2024-01-15', $snapshot['asignacion']['fecha_inicio']);
         $this->assertSame($this->cargo->id, $snapshot['cargo']['id']);
-        $this->assertSame('Función sintética de pruebas.', $snapshot['funciones_especificas'][0]['descripcion']);
+        $this->assertSame('Función sintética de pruebas.', $snapshot['manual_funciones']['funciones_especificas'][0]['descripcion']);
         $this->assertArrayNotHasKey('salario', $snapshot);
         $this->assertDatabaseHas('solicitudes_certificacion', ['estado' => 'generada', 'reviewed_by' => null]);
     }
@@ -286,7 +292,7 @@ class FaseCAutoservicioTest extends TestCase
         foreach (['/api/v1/funcionarios', '/api/v1/configuracion/certificaciones', '/api/v1/mi-certificacion/descargar/inventado'] as $url) {
             $this->getJson($url)->assertForbidden()->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
         }
-        $this->postJson('/api/v1/solicitudes', ['tipo_certificado' => 'laboral', 'requiere_salario' => false])
+        $this->postJson('/api/v1/solicitudes', ['tipo_certificado' => 'sencillo'])
             ->assertForbidden()->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
         $this->getJson('/api/v1/auth/me')->assertOk()->assertJsonMissingPath('data.funcionario')
             ->assertJsonMissingPath('data.password');
@@ -296,7 +302,7 @@ class FaseCAutoservicioTest extends TestCase
     {
         ParametroSistema::where('clave', 'requiere_pago_certificado')->update(['valor' => 'true']);
         [$user] = $this->crearFuncionarioDirecto('100200313');
-        $response = $this->solicitar($user, false)->assertCreated();
+        $response = $this->solicitar($user)->assertCreated();
         $id = $response->json('data.solicitud.id');
         $this->patchJson("/api/v1/solicitudes/{$id}/marcar-pago", ['pagado' => true])->assertStatus(410);
         $this->patchJson('/api/v1/configuracion/certificaciones', ['requiere_pago_certificado' => false])->assertForbidden();
@@ -338,20 +344,20 @@ class FaseCAutoservicioTest extends TestCase
     public function test_inactivar_revoca_sesiones_y_conserva_certificado(): void
     {
         [$user, $funcionario] = $this->crearFuncionarioDirecto('100200316');
-        $this->solicitar($user, false)->assertCreated();
+        $this->solicitar($user)->assertCreated();
         $user->createToken('sesion');
         $this->actingAs($this->admin, 'sanctum')->putJson("/api/v1/funcionarios/{$funcionario->id}", ['estado' => 'suspendido'])->assertOk();
         $this->assertFalse($user->fresh()->estado);
         $this->assertSame(0, $user->tokens()->count());
         $this->assertDatabaseCount('certificados', 1);
         $this->assertDatabaseCount('solicitudes_certificacion', 1);
-        $this->solicitar($user->fresh(), true)->assertForbidden();
+        $this->solicitar($user->fresh(), 'funciones')->assertForbidden();
     }
 
-    private function solicitar(User $user, bool $conSalario)
+    private function solicitar(User $user, string $tipo = 'sencillo')
     {
         return $this->actingAs($user, 'sanctum')->postJson('/api/v1/solicitudes', [
-            'tipo_certificado' => 'laboral', 'requiere_salario' => $conSalario,
+            'tipo_certificado' => $tipo,
         ]);
     }
 
