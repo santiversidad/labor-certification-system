@@ -40,15 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const status = (identity.error as { response?: { status?: number } } | null)?.response?.status;
     if (status === 401) {
+      queryClient.clear();
       authStorage.clearSession();
     }
-  }, [identity.error]);
+  }, [identity.error, queryClient]);
 
   const logout = useCallback(() => {
-    if (token) queryClient.removeQueries({ queryKey: ['auth', 'me', token] });
+    queryClient.clear();
     setStoredSession(null);
     authStorage.clearSession();
-  }, [queryClient, token]);
+  }, [queryClient]);
 
   const updateUser = useCallback((user: User) => {
     if (!token) return;

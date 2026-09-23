@@ -77,6 +77,50 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertDatabaseHas('funcionario_cargo', ['funcionario_id' => $user->funcionario->id, 'cargo_id' => $this->cargo->id]);
     }
 
+    public function test_alta_de_funcionario_no_cambia_identidad_ni_permisos_del_admin(): void
+    {
+        $adminId = $this->admin->id;
+        $this->assertCount(39, $this->admin->getAllPermissions());
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200390'))
+            ->assertCreated();
+
+        $nuevo = User::where('documento', '100200390')->firstOrFail();
+        $this->assertNotSame($adminId, $nuevo->id);
+        $this->assertTrue($nuevo->hasRole(RoleEnum::Funcionario->value));
+        $this->assertSame($nuevo->id, $nuevo->funcionario->user_id);
+
+        $admin = $this->admin->fresh();
+        $this->assertSame($adminId, $admin->id);
+        $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
+        $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
+        $this->assertCount(39, $admin->getAllPermissions());
+        $this->assertTrue($admin->can('funcionarios.ver'));
+        $this->assertNull($admin->funcionario);
+    }
+
+    public function test_documento_del_admin_no_puede_reutilizarse_para_crear_funcionario(): void
+    {
+        $adminId = $this->admin->id;
+        $usuariosAntes = User::count();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/v1/funcionarios', $this->datosFuncionario($this->admin->documento))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('numero_documento');
+
+        $admin = $this->admin->fresh();
+        $this->assertSame($usuariosAntes, User::count());
+        $this->assertSame($adminId, $admin->id);
+        $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
+        $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
+        $this->assertCount(39, $admin->getAllPermissions());
+        $this->assertTrue($admin->can('funcionarios.ver'));
+        $this->assertNull($admin->funcionario);
+        $this->assertDatabaseMissing('funcionarios', ['user_id' => $adminId]);
+    }
+
     public function test_primer_login_bloquea_funciones_hasta_cambiar_password(): void
     {
         $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200301'))->assertCreated();
