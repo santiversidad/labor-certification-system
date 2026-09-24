@@ -51,6 +51,10 @@ php artisan db:seed
 php artisan serve
 ```
 
+### Esquema nuevo y datos de desarrollo
+
+`migrate` instala la estructura; `db:seed` carga roles, permisos, cuentas y datos sintéticos de ejemplo. Ninguno instala el Manual institucional de Funciones. Para `scl_certificate_types_dev`, el paso adicional y sus controles están documentados en [CT_MANUAL_BOOTSTRAP_REPORT.md](../../CT_MANUAL_BOOTSTRAP_REPORT.md) y [CERTIFICATE_TYPES_ENVIRONMENT.md](../../CERTIFICATE_TYPES_ENVIRONMENT.md). El bootstrap del Manual está restringido a esa base de desarrollo; las bases de pruebas usan fixtures sintéticos mínimos.
+
 ---
 
 ## Variables de entorno relevantes
@@ -176,7 +180,6 @@ Prefijo base: `/api/v1`
 ```bash
 # Migraciones
 php artisan migrate               # Ejecutar migraciones pendientes
-php artisan migrate:fresh --seed  # Reiniciar BD completa con datos seed
 php artisan migrate:rollback      # Revertir última migración
 
 # Seeders individuales
@@ -187,7 +190,6 @@ php artisan db:seed --class=DatosEjemploSeeder
 # Pruebas
 php artisan test                          # Todas las pruebas
 php artisan test --filter LoginTest       # Solo autenticación
-php artisan test --filter RangoSalarial   # Solo rangos salariales
 
 # Inspección de rutas
 php artisan route:list --path=api

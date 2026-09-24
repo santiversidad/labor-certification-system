@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesPermisosSeeder::class,      // 1. Roles y permisos primero
             UsuariosInicialesSeeder::class,  // 2. Usuarios con roles asignados
-            DatosEjemploSeeder::class,       // 3. Cargos y rangos salariales de ejemplo
+            DatosEjemploSeeder::class,       // 3. Cargo y funcionario sintéticos de desarrollo
             ParametrosSistemaSeeder::class,  // 4. Parámetros globales del sistema
         ]);
     }
