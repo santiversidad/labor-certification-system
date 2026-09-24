@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 
@@ -31,7 +32,7 @@ export function Modal({ open, title, children, onClose }: ModalProps) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
       <div aria-labelledby={titleId} aria-modal="true" className="w-full max-w-lg animate-fade-up rounded-lg bg-surface p-5 shadow-raised sm:p-6" ref={panelRef} role="dialog" tabIndex={-1}>
         <div className="mb-4 flex items-center justify-between">
@@ -40,6 +41,7 @@ export function Modal({ open, title, children, onClose }: ModalProps) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

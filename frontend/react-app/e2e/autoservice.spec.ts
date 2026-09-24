@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const api = 'http://e2e-api:8080/api/v1';
@@ -127,6 +127,9 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     expect(body.data.certificado.snapshot_datos).not.toHaveProperty('manual_funciones');
     expect(JSON.stringify(body)).not.toMatch(/salario|requiere_salario/i);
     await showRealConfirmation(page, body.data);
+    await expect(page.locator('.result-reveal')).toHaveCSS('opacity', '1');
+    await mkdir('evidence/reactbits-phase25', { recursive: true });
+    await page.screenshot({ path: 'evidence/reactbits-phase25/07-confirmacion.png', fullPage: true });
     await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
     const parsed = await assertPdfDownload(page, 'SENCILLO');
     expect(parsed.text).not.toContain('Funciones esenciales');

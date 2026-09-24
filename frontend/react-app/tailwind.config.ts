@@ -7,6 +7,8 @@ export default {
       colors: {
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+        'brand-deep': 'rgb(var(--color-brand-deep) / <alpha-value>)',
+        'brand-highlight': 'rgb(var(--color-brand-highlight) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
         success: 'rgb(var(--color-success) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
@@ -15,6 +17,7 @@ export default {
         background: 'rgb(var(--color-background) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         'surface-muted': 'rgb(var(--color-surface-muted) / <alpha-value>)',
+        'surface-hover': 'rgb(var(--color-surface-hover) / <alpha-value>)',
         border: 'rgb(var(--color-border) / <alpha-value>)',
         text: 'rgb(var(--color-text-primary) / <alpha-value>)',
         muted: 'rgb(var(--color-text-secondary) / <alpha-value>)',
@@ -37,6 +40,7 @@ export default {
       boxShadow: {
         soft: 'var(--shadow-soft)',
         raised: 'var(--shadow-raised)',
+        institutional: 'var(--shadow-institutional)',
       },
       maxWidth: {
         content: '90rem',

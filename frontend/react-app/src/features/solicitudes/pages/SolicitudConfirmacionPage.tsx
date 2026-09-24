@@ -29,9 +29,9 @@ export function SolicitudConfirmacionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-soft sm:p-9">
+    <div className="result-reveal mx-auto max-w-2xl overflow-hidden rounded-lg border border-border bg-surface p-6 shadow-institutional sm:p-9">
       <div className="flex gap-4">
-        {generada ? <CheckCircle className="shrink-0 text-success" size={36} /> : <Hourglass className="shrink-0 text-warning" size={36} />}
+        {generada ? <CheckCircle aria-hidden="true" className="shrink-0 text-success" size={36} /> : <Hourglass aria-hidden="true" className="shrink-0 text-warning" size={36} />}
         <div className="min-w-0 flex-1">
           <p className="eyebrow">Paso 4 de 4 · Resultado</p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-text">{generada ? 'Certificación generada correctamente' : 'Pendiente de confirmación de pago'}</h1>

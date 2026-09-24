@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, CheckCircle2, FileText, ListChecks, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { SpotlightCard } from '../../../components/react-bits/SpotlightCard/SpotlightCard';
 import { solicitudesService } from '../../solicitudes/services/solicitudes.service';
 import type { DisponibilidadModalidad } from '../../solicitudes/types/solicitud.types';
 
@@ -20,21 +21,22 @@ type OptionProps = {
 };
 
 function CertificationOption({ title, description, icon: Icon, availability, to, note }: OptionProps) {
+  const navigate = useNavigate();
   const available = availability.puede_solicitar;
   return (
-    <article className="group flex min-h-72 flex-col justify-between rounded-lg border border-border bg-surface p-5 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-raised sm:p-6">
+    <SpotlightCard disabled={!available} className={`flex min-h-72 flex-col justify-between rounded-lg border bg-surface p-5 shadow-soft transition-[border-color,box-shadow] duration-200 sm:p-6 ${available ? 'border-border hover:border-primary/40 hover:shadow-institutional focus-within:border-primary/40' : 'border-border/80 bg-surface-muted/40'}`}>
       <div>
         <div className="flex items-start justify-between gap-4">
           <span className="rounded-lg bg-primary/8 p-3 text-primary"><Icon aria-hidden="true" size={24} /></span>
-          <Badge tone={available ? 'green' : 'gray'}>{available ? 'Disponible' : 'Ya solicitada este mes'}</Badge>
+          <Badge tone={available ? 'green' : 'gray'}><span className="inline-flex items-center gap-1.5">{available ? <CheckCircle2 aria-hidden="true" size={13} /> : <CalendarClock aria-hidden="true" size={13} />}{available ? 'Disponible' : 'Ya solicitada este mes'}</span></Badge>
         </div>
         <h2 className="mt-6 text-xl font-bold tracking-tight text-text">{title}</h2>
         <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
         <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted"><CheckCircle2 className="mt-0.5 shrink-0 text-success" size={15} />{note}</p>
         {!available && availability.proxima_fecha_disponible ? <p className="mt-3 flex items-center gap-2 text-xs text-muted"><CalendarClock size={15} /> Disponible nuevamente: {availability.proxima_fecha_disponible}</p> : null}
       </div>
-      {available ? <Link aria-label={`Solicitar ${title}`} className="mt-6" to={to}><Button className="w-full" type="button">Solicitar</Button></Link> : <Button className="mt-6 w-full" disabled type="button">Solicitar</Button>}
-    </article>
+      <Button className="mt-6 w-full" disabled={!available} onClick={() => navigate(to)} type="button">Solicitar</Button>
+    </SpotlightCard>
   );
 }
 

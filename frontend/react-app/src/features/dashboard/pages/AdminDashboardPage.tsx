@@ -5,6 +5,7 @@ import { ErrorState } from '../../../components/feedback/ErrorState';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Badge } from '../../../components/ui/Badge';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { CountUp } from '../../../components/react-bits/CountUp/CountUp';
 import { certificadosService } from '../../certificados/services/certificados.service';
 import { configuracionService } from '../../configuracion/services/configuracion.service';
 import { funcionariosService } from '../../funcionarios/services/funcionarios.service';
@@ -47,11 +48,11 @@ export function AdminDashboardPage() {
   return (
     <div className="app-page">
       <PageHeader eyebrow="Resumen operativo" title="Dashboard" description="Estado actual de funcionarios, expediciones, Manual y configuración de pago." />
-      <section aria-label="Indicadores" className="grid overflow-hidden rounded-lg border border-border bg-surface shadow-soft sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {stats.map((stat, index) => <div className={`p-5 ${index ? 'border-t border-border sm:border-l sm:border-t-0' : ''}`} key={stat.label}><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-muted">{stat.label}</p><stat.icon className="text-primary" size={19} /></div>{loading ? <Skeleton className="mt-4 h-9 w-16" /> : <p className="mt-3 text-3xl font-bold tracking-tight text-text">{stat.value}</p>}</div>)}
+      <section aria-label="Indicadores" className="grid gap-px overflow-hidden rounded-lg border border-border bg-border shadow-soft sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {stats.map((stat) => <div className="bg-surface p-5 transition-colors duration-200 hover:bg-surface-hover" key={stat.label}><div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold text-muted">{stat.label}</p><stat.icon aria-hidden="true" className="shrink-0 text-primary" size={19} /></div>{loading ? <Skeleton className="mt-4 h-9 w-16" /> : <p className="mt-3 text-3xl font-bold tracking-tight text-text"><CountUp to={stat.value} /></p>}</div>)}
       </section>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
-        <section className="surface-section p-5 sm:p-6"><div className="mb-4"><h2 className="font-bold text-text">Expediciones recientes</h2><p className="mt-1 text-sm text-muted">Últimas solicitudes informadas por el servicio institucional.</p></div>{loading ? <Skeleton className="h-56 w-full" /> : <RecentRequestsTable solicitudes={requests.slice(0, 5)} />}</section>
+        <section className="surface-section min-w-0 p-5 sm:p-6"><div className="mb-4"><h2 className="font-bold text-text">Expediciones recientes</h2><p className="mt-1 text-sm text-muted">Últimas solicitudes informadas por el servicio institucional.</p></div>{loading ? <Skeleton className="h-56 w-full" /> : <RecentRequestsTable solicitudes={requests.slice(0, 5)} />}</section>
         <aside className="surface-section divide-y divide-border p-5 sm:p-6">
           <div className="pb-5"><div className="flex items-center justify-between gap-3"><h2 className="font-bold text-text">Manual vigente</h2><BookOpenCheck className="text-primary" size={19} /></div>{loading ? <Skeleton className="mt-4 h-12" /> : currentManual ? <><p className="mt-3 text-xl font-bold text-text">{currentManual.version}</p><p className="mt-1 text-sm text-muted">{currentManual.acto}</p></> : <p className="mt-3 text-sm text-muted">No hay versión vigente informada.</p>}</div>
           <div className="py-5"><p className="text-sm font-bold text-text">Pago de certificaciones</p>{loading ? <Skeleton className="mt-3 h-8 w-28" /> : <Badge className="mt-3" tone={configuracion.data?.data.requiere_pago_certificado ? 'gold' : 'green'}>{configuracion.data?.data.requiere_pago_certificado ? 'ACTIVADO' : 'DESACTIVADO'}</Badge>}</div>

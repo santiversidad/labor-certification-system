@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { solicitudesService } from '../../solicitudes/services/solicitudes.service';
 import { FuncionarioDashboardPage } from './FuncionarioDashboardPage';
@@ -11,9 +12,13 @@ vi.mock('../../solicitudes/services/solicitudes.service', () => ({
 
 function renderDashboard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  function CurrentRoute() {
+    const location = useLocation();
+    return <output data-testid="current-route">{location.pathname + location.search}</output>;
+  }
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter><FuncionarioDashboardPage /></MemoryRouter>
+      <MemoryRouter><FuncionarioDashboardPage /><CurrentRoute /></MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -51,5 +56,22 @@ describe('FuncionarioDashboardPage', () => {
     const botones = await screen.findAllByRole('button', { name: 'Solicitar' });
     expect(botones[0]).toBeDisabled();
     expect(botones[1]).toBeEnabled();
+  });
+
+  it('permite seleccionar la modalidad disponible con teclado', async () => {
+    vi.mocked(solicitudesService.disponibilidad).mockResolvedValue({
+      success: true,
+      data: {
+        periodo: '2026-08-01',
+        sencillo: { puede_solicitar: false, proxima_fecha_disponible: '2026-09-01' },
+        funciones: { puede_solicitar: true, proxima_fecha_disponible: null },
+      },
+    });
+    renderDashboard();
+    const [, available] = await screen.findAllByRole('button', { name: 'Solicitar' });
+    available.focus();
+    expect(available).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByTestId('current-route')).toHaveTextContent('/app/solicitudes/nueva?modalidad=funciones');
   });
 });

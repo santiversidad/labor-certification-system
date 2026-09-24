@@ -4,6 +4,8 @@
   /* Core palette — GOV.CO cobalt with restrained Villavicencio flag accents. */
   --color-primary: 9 67 181;
   --color-primary-hover: 4 48 132;
+  --color-brand-deep: 6 40 94;
+  --color-brand-highlight: 191 219 254;
   --color-secondary: 67 87 122;
   --color-success: 4 112 82;
   --color-warning: 153 91 0;
@@ -12,6 +14,7 @@
   --color-background: 246 248 251;
   --color-surface: 255 255 255;
   --color-surface-muted: 238 243 249;
+  --color-surface-hover: 249 251 254;
   --color-border: 210 219 231;
   --color-text-primary: 27 40 58;
   --color-text-secondary: 82 96 115;
@@ -22,6 +25,8 @@
   --radius-xl: 1.25rem;
   --shadow-soft: 0 1px 2px rgb(15 38 70 / 0.06), 0 8px 24px rgb(15 38 70 / 0.05);
   --shadow-raised: 0 12px 36px rgb(15 38 70 / 0.14);
+  --shadow-institutional: 0 2px 4px rgb(15 38 70 / 0.04), 0 18px 42px rgb(15 38 70 / 0.08);
+  --transition-quick: 180ms ease-out;
   --focus-ring: 0 0 0 3px rgb(var(--color-primary) / 0.24);
 }
 @media (prefers-reduced-motion: reduce) {
