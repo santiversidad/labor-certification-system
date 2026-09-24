@@ -12,7 +12,7 @@ use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
 use App\Models\ParametroSistema;
 use App\Models\User;
-use App\Services\PdfBasicoService;
+use App\Services\CertificadoPdfService;
 use App\Services\ResolverFuncionesFuncionarioService;
 use App\Services\TokenValidacionService;
 use Carbon\CarbonImmutable;
@@ -236,15 +236,15 @@ class FaseCAutoservicioTest extends TestCase
     public function test_fallo_pdf_revierte_todo_y_permite_reintentar(): void
     {
         [$user] = $this->crearFuncionarioDirecto('100200309');
-        $this->mock(PdfBasicoService::class, function ($mock) {
-            $mock->shouldReceive('generarDesdeTexto')->once()->andThrow(new \RuntimeException('PDF_TEST_FAILURE'));
+        $this->mock(CertificadoPdfService::class, function ($mock) {
+            $mock->shouldReceive('generarDesdeSnapshot')->once()->andThrow(new \RuntimeException('PDF_TEST_FAILURE'));
         });
         $this->solicitar($user)->assertStatus(503)->assertJsonPath('code', 'CERTIFICATE_GENERATION_FAILED');
         $this->assertDatabaseCount('certificados', 0);
         $this->assertDatabaseCount('solicitudes_certificacion', 0);
         $this->assertSame([], Storage::disk('local')->allFiles('certificados'));
         $this->assertDatabaseHas('audit_logs', ['accion' => 'generacion_certificado_fallida']);
-        $this->app->forgetInstance(PdfBasicoService::class);
+        $this->app->forgetInstance(CertificadoPdfService::class);
         $this->app['router']->getRoutes()->getByName('v1.solicitudes.store')->flushController();
         $this->solicitar($user)->assertCreated();
         $this->assertDatabaseCount('certificados', 1);

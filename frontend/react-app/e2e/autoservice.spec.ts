@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const api = 'http://e2e-api:8080/api/v1';
 const employeePassword = 'MiClaveNueva2026';
@@ -52,12 +53,27 @@ async function completeFirstLogin(page: Page, documento: string) {
   await expect(page).toHaveURL(/\/app\/inicio/);
 }
 
-async function assertPdfDownload(page: Page) {
+async function extractPdf(buffer: Buffer) {
+  const document = await getDocument({ data: new Uint8Array(buffer), isEvalSupported: false }).promise;
+  const pages: string[] = [];
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const content = await (await document.getPage(pageNumber)).getTextContent();
+    pages.push(content.items.flatMap((item) => ('str' in item ? [item.str] : [])).join(' '));
+  }
+  return { pages, text: pages.join(' ') };
+}
+
+async function assertPdfDownload(page: Page, expectedType: 'SENCILLO' | 'CON FUNCIONES') {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Descargar PDF' }).click();
   const file = await (await downloadPromise).path();
   expect(file).not.toBeNull();
-  expect((await readFile(file!)).subarray(0, 5).toString()).toBe('%PDF-');
+  const bytes = await readFile(file!);
+  expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+  const parsed = await extractPdf(bytes);
+  expect(parsed.text).toContain(expectedType);
+  expect(parsed.text).toContain('BORRADOR');
+  return parsed;
 }
 
 async function showRealConfirmation(page: Page, payload: unknown) {
@@ -112,7 +128,8 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     expect(JSON.stringify(body)).not.toMatch(/salario|requiere_salario/i);
     await showRealConfirmation(page, body.data);
     await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
-    await assertPdfDownload(page);
+    const parsed = await assertPdfDownload(page, 'SENCILLO');
+    expect(parsed.text).not.toContain('Funciones esenciales');
     await logout(page);
   });
 
@@ -134,7 +151,12 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clv_session')!));
     const pdf = await page.request.get(`http://e2e-api:8080${body.data.descarga_url}`, { headers: { Authorization: `Bearer ${session.token}` } });
     expect(pdf.status()).toBe(200);
-    expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+    const bytes = await pdf.body();
+    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+    const parsed = await extractPdf(bytes);
+    expect(parsed.text).toContain('CON FUNCIONES');
+    expect(parsed.text).toContain('Atender pruebas sintéticas.');
+    expect(parsed.pages.length).toBeGreaterThan(1);
     await logout(page);
   });
 

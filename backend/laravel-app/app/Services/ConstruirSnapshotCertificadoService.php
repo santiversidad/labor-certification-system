@@ -15,8 +15,12 @@ class ConstruirSnapshotCertificadoService
         private readonly ResolverFuncionesFuncionarioService $resolverFunciones,
     ) {}
 
-    public function construir(SolicitudCertificacion $solicitud, User $generadoPor): array
-    {
+    public function construir(
+        SolicitudCertificacion $solicitud,
+        User $generadoPor,
+        ?string $codigoTecnico = null,
+        ?string $urlValidacionTecnica = null,
+    ): array {
         $solicitud->loadMissing('funcionario.cargo', 'funcionario.historialCargos.cargo');
         $funcionario = $solicitud->funcionario;
         $fecha = CarbonImmutable::now(config('app.timezone'));
@@ -55,6 +59,12 @@ class ConstruirSnapshotCertificadoService
             ],
             'tipo_certificado' => $solicitud->tipo_certificado->value,
             'fecha_generacion' => $fecha->toIso8601String(),
+            'expedicion' => [
+                'fecha_expedicion' => $fecha->toDateString(),
+                'radicado' => $solicitud->radicado,
+                'codigo_tecnico' => $codigoTecnico,
+                'url_validacion_tecnica' => $urlValidacionTecnica,
+            ],
             'generado_por' => ['id' => $generadoPor->id, 'nombre' => $generadoPor->name],
         ];
 

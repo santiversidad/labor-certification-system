@@ -49,6 +49,12 @@ class PrepareAutoserviceE2E extends Command
                     'proposito_principal' => 'Verificar un flujo aislado.',
                 ]);
                 $ficha->funciones()->create(['orden' => 1, 'descripcion' => 'Atender pruebas sintéticas.']);
+                for ($order = 2; $order <= 24; $order++) {
+                    $ficha->funciones()->create([
+                        'orden' => $order,
+                        'descripcion' => "Función extensa ficticia E2E {$order}: gestionar información institucional de prueba con precisión, trazabilidad, oportunidad y criterios verificables de calidad, sin alterar el orden definido en el snapshot.",
+                    ]);
+                }
                 $version->update(['estado' => 'publicado']);
             }
 

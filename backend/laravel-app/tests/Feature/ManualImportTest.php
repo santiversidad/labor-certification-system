@@ -20,6 +20,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Smalot\PdfParser\Parser;
 use Tests\TestCase;
 
 class ManualImportTest extends TestCase
@@ -231,9 +232,13 @@ class ManualImportTest extends TestCase
             $this->assertSame($ficha->funciones->pluck('descripcion')->all(), array_column($snapshot['manual_funciones']['funciones_especificas'], 'descripcion'));
             $this->assertArrayHasKey('funciones_comunes', $snapshot['manual_funciones']);
             $pdf = Storage::disk('local')->get($cert->archivo_pdf_path);
-            $this->assertStringContainsString($ficha->source_id, $pdf);
-            $this->assertStringContainsString('CERTIFICADO LABORAL TEMPORAL', $pdf);
-            $this->assertStringContainsString(iconv('UTF-8', 'Windows-1252', mb_substr($ficha->funciones->first()->descripcion, 0, 35)), $pdf);
+            $pdfText = trim((string) preg_replace('/\s+/u', ' ', (new Parser)->parseContent($pdf)->getText()));
+            $this->assertStringContainsString($ficha->source_id, $pdfText);
+            $this->assertStringContainsString('CERTIFICACIÓN LABORAL', $pdfText);
+            $this->assertStringContainsString('CON FUNCIONES', $pdfText);
+            $firstFunctionWord = strtok($ficha->funciones->first()->descripcion, ' ');
+            $this->assertIsString($firstFunctionWord);
+            $this->assertStringContainsString($firstFunctionWord, $pdfText);
             $this->assertSame($snapshot, $cert->fresh()->snapshot_datos);
             $this->assertSame($pdf, Storage::disk('local')->get($cert->archivo_pdf_path));
             $pdfs[] = $pdf;

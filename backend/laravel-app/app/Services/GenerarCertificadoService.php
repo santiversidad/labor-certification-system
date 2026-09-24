@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 class GenerarCertificadoService
 {
     public function __construct(
-        private readonly PdfBasicoService $pdfBasicoService,
+        private readonly CertificadoPdfService $certificadoPdfService,
         private readonly TokenValidacionService $tokenValidacionService,
         private readonly ConstruirSnapshotCertificadoService $construirSnapshot,
     ) {}
@@ -55,15 +55,14 @@ class GenerarCertificadoService
         $tokenValidacionPlano = bin2hex(random_bytes(32));
         $tokenDescargaPlano = bin2hex(random_bytes(32));
         $frontend = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
-        $snapshot = $this->construirSnapshot->construir($solicitud, $generadoPor);
-
-        $html = view('certificados.laboral', [
-            'snapshot' => $snapshot,
-            'codigo' => $codigo,
-            'urlValidacion' => "{$frontend}/validar-certificado/{$tokenValidacionPlano}",
-        ])->render();
-        $texto = trim(html_entity_decode(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $html))));
-        $pdf = $this->pdfBasicoService->generarDesdeTexto($texto);
+        $urlValidacion = "{$frontend}/validar-certificado/{$tokenValidacionPlano}";
+        $snapshot = $this->construirSnapshot->construir(
+            $solicitud,
+            $generadoPor,
+            $codigo,
+            $urlValidacion,
+        );
+        $pdf = $this->certificadoPdfService->generarDesdeSnapshot($snapshot);
         $ruta = 'certificados/'.now()->format('Y')."/{$codigo}.pdf";
 
         try {
@@ -110,7 +109,7 @@ class GenerarCertificadoService
         return [
             'certificado' => $certificado->fresh(['funcionario', 'solicitud', 'generadoPor']),
             'token' => $tokenValidacionPlano,
-            'url_validacion' => "{$frontend}/validar-certificado/{$tokenValidacionPlano}",
+            'url_validacion' => $urlValidacion,
             'download_token' => $tokenDescargaPlano,
             'download_url' => "/api/v1/mi-certificacion/descargar/{$tokenDescargaPlano}",
         ];

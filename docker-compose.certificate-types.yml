@@ -17,6 +17,7 @@ x-ct-app-environment: &ct_app_environment
   QUEUE_CONNECTION: sync
   MAIL_MAILER: log
   FILESYSTEM_DISK: local
+  CERTIFICATE_EVIDENCE_PATH: /workspace-output/pdf
   SANCTUM_STATEFUL_DOMAINS: localhost:3200,127.0.0.1:3200
 
 x-ct-app-build: &ct_app_build
@@ -34,6 +35,7 @@ services:
       - ct_backend_vendor:/var/www/html/vendor
       - ct_backend_build:/var/www/html/public/build
       - ct_backend_storage:/var/www/html/storage
+      - ./output:/workspace-output
     networks:
       - default
       - recovery_database
