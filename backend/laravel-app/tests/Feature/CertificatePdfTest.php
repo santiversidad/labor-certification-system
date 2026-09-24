@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Manual\JsonManualParser;
 use App\Services\CertificadoPdfService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Smalot\PdfParser\Parser;
 use Tests\TestCase;
 
@@ -72,7 +74,8 @@ class CertificatePdfTest extends TestCase
         $text = $this->text($service->generarDesdeSnapshot($snapshot));
 
         $this->assertStringContainsString('María José Muñoz Álvarez', $html);
-        $this->assertStringContainsString('María', $text);
+        // Smalot can omit the first fragment of a justified Dompdf line. The
+        // HTML verifies the full source; the PDF checks remaining Unicode text.
         $this->assertStringContainsString('Álvarez', $text);
         $this->assertStringContainsString('Planeación e Innovación Pública', $text);
         $this->assertStringContainsString('Función fixture con énfasis técnico.', $text);
@@ -146,6 +149,70 @@ class CertificatePdfTest extends TestCase
 
         $this->assertSame(0, $queries);
         $this->assertStringContainsString('Dato congelado del snapshot', $text);
+    }
+
+    public function test_funciones_conservan_el_orden_del_snapshot(): void
+    {
+        $text = $this->service()->renderHtml($this->snapshot('funciones', 3));
+
+        $this->assertLessThan(strpos($text, 'Función sintética 2'), strpos($text, 'Función fixture con énfasis'));
+        $this->assertLessThan(strpos($text, 'Función sintética 3'), strpos($text, 'Función sintética 2'));
+    }
+
+    public function test_campos_vacios_no_se_imprimen_como_null_ni_na(): void
+    {
+        $snapshot = $this->snapshot();
+        $snapshot['funcionario']['nombres'] = null;
+        $snapshot['funcionario']['apellidos'] = 'undefined';
+        $snapshot['cargo']['dependencia'] = 'N/A';
+        $snapshot['expedicion']['radicado'] = null;
+        $html = $this->service()->renderHtml($snapshot);
+
+        $this->assertStringNotContainsString('undefined', $html);
+        $this->assertStringNotContainsString('>N/A<', $html);
+        $this->assertStringNotContainsString('>null<', $html);
+        $this->assertStringNotContainsString('bajo el radicado', $html);
+    }
+
+    public function test_evidencia_mf0002_contiene_once_funciones_reales_en_orden(): void
+    {
+        $path = storage_path('framework/testing/pdf-evidence-'.uniqid());
+        try {
+            $this->artisan('certificates:generate-pdf-evidence', ['--output' => $path])->assertSuccessful();
+            $pdf = File::get($path.'/certificado-funciones-mf0002-borrador.pdf');
+            $text = $this->text($pdf);
+            $source = file_get_contents(database_path('data/manual_funciones_decreto_015_2023.json'));
+            $profile = collect(app(JsonManualParser::class)->parse($source))
+                ->first(fn ($item) => $item->origen['perfil_id'] === 'MF-0002');
+            $this->assertCount(11, $profile->origen['funciones']);
+            $this->assertStringContainsString('MF-0002', $text);
+            $this->assertStringContainsString('Secretario de Despacho 020-02', $text);
+            $this->assertCount(3, (new Parser)->parseContent($pdf)->getPages());
+
+            $snapshot = [
+                'schema_version' => 3,
+                'tipo_certificado' => 'funciones',
+                'manual_funciones' => [
+                    'funciones' => array_map(static fn ($function) => [
+                        'orden' => $function['orden'], 'descripcion' => $function['texto'],
+                    ], $profile->origen['funciones']),
+                ],
+            ];
+            $html = $this->service()->renderHtml($snapshot);
+
+            $lastPosition = -1;
+            foreach ($profile->origen['funciones'] as $function) {
+                $position = strpos($html, e($function['texto']));
+                $this->assertNotFalse($position, 'La función '.$function['orden'].' falta o fue reescrita.');
+                $this->assertGreaterThan($lastPosition, $position);
+                $lastPosition = $position;
+                $this->assertMatchesRegularExpression('/(?:^|\s)'.$function['orden'].'\./u', $text);
+            }
+        } finally {
+            if (is_dir($path)) {
+                File::deleteDirectory($path);
+            }
+        }
     }
 
     private function service(): CertificadoPdfService

@@ -111,6 +111,26 @@ class SnapshotCertificadoTest extends TestCase
         Certificado::firstOrFail()->update(['snapshot_datos' => ['alterado' => true]]);
     }
 
+    public function test_descarga_existente_conserva_snapshot_y_pdf_tras_cambiar_datos_vivos(): void
+    {
+        $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
+        $this->actingAs($this->secretario, 'sanctum')
+            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
+            ->assertCreated();
+
+        $certificado = Certificado::firstOrFail();
+        $snapshot = $certificado->snapshot_datos;
+        $original = Storage::disk('local')->get($certificado->archivo_pdf_path);
+        $this->funcionario->update(['nombres' => 'Nombre Posterior', 'apellidos' => 'Modificado']);
+
+        $response = $this->actingAs($this->secretario, 'sanctum')
+            ->get("/api/v1/certificados/{$certificado->id}/descargar");
+        $response->assertOk()->assertDownload($certificado->codigo_unico.'.pdf');
+        $this->assertSame($snapshot, $certificado->fresh()->snapshot_datos);
+        $this->assertSame($original, file_get_contents($response->baseResponse->getFile()->getPathname()));
+        $this->assertSame($original, Storage::disk('local')->get($certificado->archivo_pdf_path));
+    }
+
     private function crearSolicitud(TipoCertificadoEnum $tipo): SolicitudCertificacion
     {
         return SolicitudCertificacion::create([
