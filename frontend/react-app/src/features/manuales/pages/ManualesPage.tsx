@@ -3,10 +3,12 @@ import { ArrowRight, CheckCircle2, FileDiff, FileUp, LockKeyhole, Plus, ScrollTe
 import { useState } from 'react';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { Alert } from '../../../components/ui/Alert';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { PageHeader } from '../../../components/ui/PageHeader';
+import { getErrorMessage } from '../../../lib/utils/errors';
 import { manualesService, type ManualDiff } from '../services/manuales.service';
 
 const pasos = ['Crear nueva versión', 'Cargar JSON o Excel', 'Ejecutar dry-run', 'Comparar versiones', 'Resolver ambigüedades', 'Mapear funcionarios', 'Publicar', 'Activar desde fecha efectiva'];
@@ -35,6 +37,7 @@ export function ManualesPage() {
   return (
     <div className="space-y-7">
       <PageHeader eyebrow="Gestión normativa" title="Manual de Funciones" description="Versiones completas, comparables e inmutables después de su publicación." actions={<Button icon={<Plus size={17} />} onClick={() => setCrear((value) => !value)}>Crear borrador</Button>} />
+      {[createMutation, importMutation, diffMutation, planMutation, publishMutation].filter((mutation) => mutation.isError).map((mutation, index) => <Alert key={index} title="No fue posible completar la operación del Manual" variant="error">{getErrorMessage(mutation.error)}</Alert>)}
 
       {vigente ? <section className="overflow-hidden rounded-xl bg-govBlue text-white transition-all duration-300">
         <div className="grid gap-6 px-7 py-7 md:grid-cols-[1fr_auto] md:items-end">
@@ -69,6 +72,7 @@ export function ManualesPage() {
           <input accept=".json,.xlsx" className="mt-5 block w-full text-sm text-muted file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-govBlue" onChange={(e) => setArchivo(e.target.files?.[0] ?? null)} type="file" />
           <div className="mt-4 flex flex-wrap gap-3"><Button disabled={!archivo || importMutation.isPending} icon={<FileDiff size={17} />} onClick={() => importMutation.mutate({ id: borrador.id, dry: true })} variant="secondary">Dry-run</Button><Button disabled={!archivo || importMutation.isPending} icon={<FileUp size={17} />} onClick={() => importMutation.mutate({ id: borrador.id, dry: false })}>Importar</Button><Button icon={<FileDiff size={17} />} onClick={() => diffMutation.mutate({ from: vigente.id, to: borrador.id })} variant="secondary">Comparar</Button></div>
           {diff ? <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 border-t border-border pt-5 text-sm">{Object.entries(diff.conteos).map(([label, value]) => <div className="flex justify-between" key={label}><span className="text-muted">{label.replace('_', ' ')}</span><strong>{value}</strong></div>)}</div> : null}
+          <Alert className="mt-5" title="Antes de publicar" variant="warning">Una versión publicada queda solo para consulta. Revise la comparación, el mapeo de funcionarios y la fecha efectiva antes de continuar.</Alert>
           <div className="mt-5 flex flex-wrap items-end gap-3"><Input label="Fecha efectiva" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /><Button disabled={!diff || planMutation.isPending} onClick={() => planMutation.mutate({ from: vigente.id, to: borrador.id })} variant="secondary">Mapear funcionarios</Button><Button disabled={!fecha || publishMutation.isPending} onClick={() => publishMutation.mutate(borrador.id)}>Publicar</Button></div>
         </div>
         <ol className="border-l border-border pl-6">{pasos.map((paso, index) => <li className="group relative flex min-h-12 items-start gap-3" key={paso}><span className="absolute -left-[31px] grid h-6 w-6 place-items-center rounded-full border border-border bg-white text-xs font-semibold text-govBlue transition group-hover:border-govBlue">{index + 1}</span><span className="pt-0.5 text-sm text-text">{paso}</span>{index < pasos.length - 1 ? <ArrowRight className="ml-auto rotate-90 text-border" size={15} /> : null}</li>)}</ol>

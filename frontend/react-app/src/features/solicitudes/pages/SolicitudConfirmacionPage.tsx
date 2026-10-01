@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { Alert } from '../../../components/ui/Alert';
 import { getErrorMessage } from '../../../lib/utils/errors';
 import { formatDate } from '../../../lib/formatters/dates';
 import { solicitudesService } from '../services/solicitudes.service';
@@ -33,9 +34,9 @@ export function SolicitudConfirmacionPage() {
       <div className="flex gap-4">
         {generada ? <CheckCircle aria-hidden="true" className="shrink-0 text-success" size={36} /> : <Hourglass aria-hidden="true" className="shrink-0 text-warning" size={36} />}
         <div className="min-w-0 flex-1">
-          <p className="eyebrow">Paso 4 de 4 · Resultado</p>
+          <p className="eyebrow">Resultado de la solicitud</p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-text">{generada ? 'Certificación generada correctamente' : 'Pendiente de confirmación de pago'}</h1>
-          <p className="mt-3 text-sm leading-6 text-muted">{generada ? 'El documento está listo. Descárguelo ahora; el enlace inmediato tiene vigencia limitada.' : 'La certificación se generará automáticamente cuando una futura pasarela confirme el pago al backend.'}</p>
+          <Alert className="mt-4" title={generada ? 'Documento listo para descargar' : 'Qué sucede ahora'} variant={generada ? 'success' : 'warning'}>{generada ? 'Descárguelo ahora; el enlace inmediato tiene vigencia limitada.' : 'La certificación se generará cuando se confirme el pago.'}</Alert>
           <dl className="mt-6 divide-y divide-border rounded-lg border border-border text-sm">
             <ResultRow label="Radicado" value={resultado.solicitud.radicado} />
             <ResultRow label="Fecha" value={resultado.solicitud.created_at ? formatDate(resultado.solicitud.created_at) : 'Generado ahora'} />
@@ -43,7 +44,7 @@ export function SolicitudConfirmacionPage() {
             <div className="grid gap-1 px-4 py-3 sm:grid-cols-[120px_1fr]"><dt className="text-muted">Estado</dt><dd><Badge tone={generada ? 'green' : 'gold'}>{generada ? 'Disponible' : 'Requiere pago'}</Badge></dd></div>
           </dl>
           {resultado.orden_pago ? <p className="mt-4 rounded-lg bg-surface-muted p-3 text-sm text-text">Referencia de pago: <strong>{resultado.orden_pago.referencia}</strong></p> : null}
-          {error ? <p className="mt-4 text-sm text-error" role="alert">{error}</p> : null}
+          {error ? <Alert className="mt-4" title="No fue posible descargar" variant="error">{error}</Alert> : null}
           <div className="mt-7 flex flex-wrap gap-3">
             {generada ? <Button disabled={downloading} icon={<Download size={17} />} onClick={descargar} type="button">{downloading ? 'Descargando…' : 'Descargar PDF'}</Button> : null}
             <Link to="/app/inicio"><Button icon={<Home size={17} />} type="button" variant="secondary">Volver al inicio</Button></Link>

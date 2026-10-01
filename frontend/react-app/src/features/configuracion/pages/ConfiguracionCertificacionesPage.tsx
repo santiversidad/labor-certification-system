@@ -37,7 +37,7 @@ export function ConfiguracionCertificacionesPage() {
           <Switch checked={config.requiere_pago_certificado} description="Cambiar esta opción afecta las nuevas solicitudes." disabled={mutation.isPending} label="Exigir pago para certificaciones" onChange={setPendingValue} />
         </div>
         <div className="border-t border-border bg-surface-muted/45 p-6 sm:px-8">
-          <Alert title="Impacto operativo" tone="info">Al activar el pago, las nuevas solicitudes crean una orden pendiente y no generan el PDF hasta que el backend reciba una confirmación válida. No existe aprobación humana en este flujo.</Alert>
+          <Alert title="Impacto de cambiar esta opción" variant="warning">Al activar el pago, las nuevas solicitudes crean una orden pendiente y no generan el PDF hasta que el backend reciba una confirmación válida. No existe aprobación humana en este flujo.</Alert>
         </div>
       </section>
       <ConfirmDialog confirmLabel={activating ? 'Activar pago' : 'Desactivar pago'} description={activating ? 'Las nuevas solicitudes quedarán pendientes hasta recibir confirmación de pago.' : 'Las nuevas solicitudes elegibles volverán a generar el certificado de inmediato.'} disabled={mutation.isPending} onCancel={() => setPendingValue(null)} onConfirm={() => pendingValue !== null && mutation.mutate(pendingValue)} open={pendingValue !== null} title={activating ? 'Activar pago de certificaciones' : 'Desactivar pago de certificaciones'} />

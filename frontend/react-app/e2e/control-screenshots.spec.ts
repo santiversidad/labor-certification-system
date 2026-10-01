@@ -48,17 +48,17 @@ test('evidencia visual real de Fase 2', async ({ page }) => {
   await expect(page).toHaveURL(/\/app\/inicio/);
   await capture(page, '02-dashboard-funcionario');
 
-  await page.goto('/app/solicitudes/nueva?modalidad=sencillo');
-  await expect(page.getByRole('radio', { name: /Certificado laboral sencillo/i })).toBeChecked();
+  await page.goto('/app/solicitudes/nueva/sencillo');
+  await expect(page.getByRole('heading', { name: 'Certificado laboral sencillo' })).toBeVisible();
   await capture(page, '03-solicitud-sencillo');
-  await page.goto('/app/solicitudes/nueva?modalidad=funciones');
-  await expect(page.getByRole('radio', { name: /Certificado laboral con funciones/i })).toBeChecked();
+  await page.goto('/app/solicitudes/nueva/funciones');
+  await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
   await capture(page, '04-solicitud-funciones');
 
-  await page.goto('/app/solicitudes/nueva?modalidad=sencillo');
-  await expect(page.getByRole('radio', { name: /Certificado laboral sencillo/i })).toBeChecked();
+  await page.goto('/app/solicitudes/nueva/sencillo');
+  await expect(page.getByRole('heading', { name: 'Certificado laboral sencillo' })).toBeVisible();
   const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clv_session')!));
-  const request = await page.request.post('http://e2e-api:8080/api/v1/solicitudes', {
+  const request = await page.request.post('http://e2e-api:8280/api/v1/solicitudes', {
     headers: { Authorization: `Bearer ${session.token}`, Accept: 'application/json' },
     data: { tipo_certificado: 'sencillo' },
   });

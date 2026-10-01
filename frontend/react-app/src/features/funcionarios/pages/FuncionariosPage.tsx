@@ -50,7 +50,7 @@ export function FuncionariosPage() {
           <Select label="Estado" onChange={(event) => { setEstado(event.target.value); setPage(1); }} value={estado}><option value="">Todos</option><option value="activo">Activo</option><option value="retirado">Retirado</option><option value="suspendido">Suspendido</option></Select>
         </div>
         {error && !query.isLoading ? <ErrorState message={getErrorMessage(error)} /> : null}
-        {reset.isSuccess ? <Alert title="Acceso restablecido" tone="success">El próximo ingreso exigirá cambio de contraseña y las sesiones anteriores fueron revocadas.</Alert> : null}
+        {reset.isSuccess ? <Alert announce title="Acceso restablecido" tone="success">El próximo ingreso exigirá cambio de contraseña y las sesiones anteriores fueron revocadas.</Alert> : null}
         <FuncionariosTable
           funcionarios={rows}
           loading={query.isLoading}

@@ -1,4 +1,5 @@
 import { Badge } from '../../../components/ui/Badge';
+import { Alert } from '../../../components/ui/Alert';
 import { Card } from '../../../components/ui/Card';
 import type { ValidacionCertificado } from '../types/validacionPublica.types';
 import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
@@ -20,7 +21,7 @@ export function ValidationResultCard({ result }: { result: ValidacionCertificado
         {result.cargo ? <div><dt className="text-muted">Cargo</dt><dd className="font-medium text-text">{result.cargo}</dd></div> : null}
         {result.fecha_generacion ? <div><dt className="text-muted">Fecha de generación</dt><dd className="font-medium text-text">{result.fecha_generacion}</dd></div> : null}
       </dl>
-      {mensaje ? <p className="mt-4 rounded-md bg-background px-4 py-3 text-sm text-muted">{mensaje}</p> : null}
+      {mensaje ? <Alert className="mt-4" title={result.valido ? 'Certificado válido' : 'Certificado no válido'} variant={result.valido ? 'success' : 'error'}>{mensaje}</Alert> : null}
     </Card>
   );
 }

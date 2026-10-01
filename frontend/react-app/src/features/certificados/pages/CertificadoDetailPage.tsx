@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { Badge } from '../../../components/ui/Badge';
+import { Alert } from '../../../components/ui/Alert';
 import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
@@ -44,7 +45,7 @@ export function CertificadoDetailPage() {
           <div><dt className="text-muted">Generación</dt><dd className="font-medium">{certificado.fecha_generacion ? formatDate(certificado.fecha_generacion) : '—'}</dd></div>
           <div><dt className="text-muted">Generado por</dt><dd className="font-medium">{certificado.generado_por?.name ?? '—'}</dd></div>
           <div><dt className="text-muted">Tipo</dt><dd className="font-medium">{certificado.solicitud ? certificateTypeLabel(certificado.solicitud.tipo_certificado) : 'Registro histórico de modelo anterior'}</dd></div>
-          {certificado.snapshot_schema_version && certificado.snapshot_schema_version < 3 ? <div className="sm:col-span-2"><Badge tone="gold">Registro histórico de modelo anterior</Badge></div> : null}
+          {certificado.snapshot_schema_version && certificado.snapshot_schema_version < 3 ? <div className="sm:col-span-2"><Alert title="Registro histórico" variant="warning">Este certificado corresponde a un modelo anterior. Consulte sus datos y estado antes de utilizarlo.</Alert></div> : null}
         </dl>
       </Card>
     </div>
