@@ -24,8 +24,13 @@ function setup(path: string) {
 }
 beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); });
 
+it('anuncia sesión expirada a partir de la ubicación del router', () => {
+  setup('/login?sesion=expirada');
+  expect(screen.getByRole('status')).toHaveTextContent('Sesión expirada');
+});
+
 it('primer login redirige sin mostrar dashboard', async () => {
-  vi.mocked(authService.login).mockResolvedValue({ success: true, data: { token: 'token', user } });
+  vi.mocked(authService.login).mockResolvedValue({ success: true, data: { status: 'PASSWORD_CHANGE_REQUIRED', user } });
   setup('/login');
   await userEvent.type(screen.getByLabelText('Usuario'), '123456');
   await userEvent.type(screen.getByLabelText('Contraseña', { exact: true }), '123456');
@@ -35,7 +40,7 @@ it('primer login redirige sin mostrar dashboard', async () => {
 });
 
 it('URL directa bloqueada; cambiar contraseña habilita dashboard y actualiza sesión', async () => {
-  authStorage.setSession({ token: 'token', user });
+  authStorage.setSession({ user });
   vi.mocked(authService.changePassword).mockResolvedValue({ success: true, data: { ...user, must_change_password: false } });
   setup('/app/inicio');
   expect(await screen.findByText('Cambie su contraseña temporal')).toBeInTheDocument();
@@ -49,7 +54,7 @@ it('URL directa bloqueada; cambiar contraseña habilita dashboard y actualiza se
 });
 
 it('sesión con cambio completado permite dashboard', () => {
-  authStorage.setSession({ token: 'token', user: { ...user, must_change_password: false } });
+  authStorage.setSession({ user: { ...user, must_change_password: false } });
   setup('/app/inicio');
   expect(screen.getByText('Dashboard habilitado')).toBeInTheDocument();
 });

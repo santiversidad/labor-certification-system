@@ -18,7 +18,7 @@ vi.mock('../auth/hooks/useAuth', () => ({ useAuth: () => auth }));
 vi.mock('./services/paymentWorkflow.service', () => ({ paymentWorkflowService: { list: vi.fn(), detail: vi.fn(), confirm: vi.fn(), reject: vi.fn(), upload: vi.fn(), download: vi.fn() } }));
 vi.mock('../solicitudes/services/solicitudes.service', () => ({ solicitudesService: { getById: vi.fn(), disponibilidad: vi.fn(), create: vi.fn() } }));
 
-const receipt: ComprobantePago = { id: 1, version: 1, nombre_original: 'FICTICIO.pdf', mime_type: 'application/pdf', size_bytes: 120, sha256: 'a'.repeat(64), estado: 'rechazado', motivo_rechazo: 'Comprobante ilegible', archivo_url: '/api/v1/solicitudes/1/pago/comprobantes/1' };
+const receipt: ComprobantePago = { id: 1, version: 1, nombre_original: 'FICTICIO.pdf', mime_type: 'application/pdf', size_bytes: 120, estado: 'rechazado', motivo_rechazo: 'Comprobante ilegible', archivo_url: '/api/v1/solicitudes/1/pago/comprobantes/1' };
 const payment: SolicitudPago = { id: 1, radicado: 'CL-FICTICIO-1', tipo_certificado: 'sencillo', estado: 'pago_en_revision', requiere_pago: true, funcionario: { id: 1, nombres: 'Funcionario', apellidos: 'Ficticio', documento_parcial: '••••0001' }, comprobantes: [receipt], comprobante_max_kb: 5120 };
 
 function mount(element: React.ReactNode, route = '/') {

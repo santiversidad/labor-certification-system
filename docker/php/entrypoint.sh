@@ -19,8 +19,12 @@ mkdir -p \
 
 chown -R www-data:www-data bootstrap/cache storage
 
-if grep -Eq '^APP_KEY=[[:space:]]*$' .env; then
+if [ "${APP_ENV:-local}" != "production" ] && grep -Eq '^APP_KEY=[[:space:]]*$' .env; then
     php artisan key:generate --force --no-interaction
+fi
+
+if [ "${APP_ENV:-local}" = "production" ]; then
+    php artisan security:check-config --accounts --no-interaction
 fi
 
 # The file cache is bind-mounted with the application and can outlive a

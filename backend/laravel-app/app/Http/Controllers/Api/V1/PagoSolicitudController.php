@@ -99,6 +99,7 @@ class PagoSolicitudController extends Controller
             ->whereHas('soporte', fn ($q) => $q->where('solicitud_certificacion_id', $solicitud))->firstOrFail();
         abort_unless(Storage::disk('local')->exists($evidencia->archivo_path), 404);
         if (! hash_equals($evidencia->sha256, hash_file('sha256', Storage::disk('local')->path($evidencia->archivo_path)))) {
+            \App\Services\SecurityEvents::record('file_integrity_failure', ['comprobante_id' => $evidencia->id]);
             return $this->errorResponse('El comprobante no pudo verificarse.', null, 409, 'COMPROBANTE_INTEGRIDAD_INVALIDA');
         }
         app(RegistrarAuditoriaAction::class)->execute(accion: 'comprobante_consultado', modelo: 'PagoComprobante', modeloId: $comprobante, actorId: $actor->id);

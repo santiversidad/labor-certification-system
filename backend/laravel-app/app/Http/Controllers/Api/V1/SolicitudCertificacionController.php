@@ -68,7 +68,7 @@ class SolicitudCertificacionController extends Controller
         } catch (DomainException $exception) {
             $code = preg_match('/^[A-Z_]+$/', $exception->getMessage()) ? $exception->getMessage() : 'CERTIFICATE_SOURCE_CONFLICT';
 
-            return $this->errorResponse($exception->getMessage(), null, 409, $code);
+            return $this->errorResponse($code, null, 409, $code);
         } catch (\Throwable) {
             return $this->errorResponse(
                 'No fue posible completar la expedición automática. El cupo no fue consumido; intente nuevamente.',

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
 import { ProtectedRoute } from '../../../components/guards/ProtectedRoute';
 import { RoleRoute } from '../../../components/guards/RoleRoute';
 import { authStorage } from '../../../lib/auth/authStorage';
@@ -20,6 +21,18 @@ vi.mock('../../funcionarios/services/funcionarios.service', () => ({
 vi.mock('../../cargos/services/cargos.service', () => ({
   cargosService: { options: vi.fn() },
 }));
+
+it('un 401 anónimo no borra consultas públicas después de cerrar sesión', async () => {
+  vi.clearAllMocks();
+  authStorage.clearSession();
+  const client = new QueryClient();
+  client.setQueryData(['validacion-publica', 'synthetic'], { valido: false });
+  vi.mocked(authService.me).mockRejectedValue({ response: { status: 401 } });
+  function Status() { return <p>{useAuth().isValidating ? 'Validando' : 'Sesión anónima validada'}</p>; }
+  render(<QueryClientProvider client={client}><AuthProvider><Status /></AuthProvider></QueryClientProvider>);
+  expect(await screen.findByText('Sesión anónima validada')).toBeInTheDocument();
+  expect(client.getQueryData(['validacion-publica', 'synthetic'])).toEqual({ valido: false });
+});
 
 const admin: User = {
   id: 1,
@@ -69,7 +82,15 @@ describe('revalidación de identidad', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    authStorage.setSession({ token: 'token-prueba', user: admin });
+    authStorage.setSession({ user: admin });
+  });
+
+  it('StrictMode comparte bootstrap para evitar respuestas 401/cookie obsoletas después de login', async () => {
+    vi.mocked(authService.me).mockResolvedValue({ success: true, data: admin });
+    const client = new QueryClient();
+    render(<StrictMode><QueryClientProvider client={client}><AuthProvider><LogoutButton /></AuthProvider></QueryClientProvider></StrictMode>);
+    await waitFor(() => expect(authStorage.getUser()?.id).toBe(admin.id));
+    expect(authService.me).toHaveBeenCalledTimes(1);
   });
 
   it('reemplaza el admin cacheado por el funcionario real sin disparar queries administrativas', async () => {

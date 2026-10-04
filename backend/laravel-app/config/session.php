@@ -32,7 +32,7 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 30),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
@@ -47,7 +47,7 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    'encrypt' => env('SESSION_ENCRYPT', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
@@ -229,5 +229,12 @@ return [
     */
 
     'serialization' => 'json',
+
+    // Serialize requests sharing a cookie: concurrent setup or stale /me must
+    // not overwrite MFA/session state. Laravel's cache locks provide this boundary.
+    'block' => true,
+    'block_store' => env('SESSION_BLOCK_STORE'),
+    'block_lock_seconds' => 120,
+    'block_wait_seconds' => 15,
 
 ];

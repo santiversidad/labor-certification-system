@@ -204,7 +204,7 @@ class FaseCAutoservicioTest extends TestCase
     {
         [$user, $funcionario] = $this->crearFuncionarioDirecto('100200307');
         $funcionario->update(['estado' => EstadoFuncionarioEnum::Retirado]);
-        $this->solicitar($user)->assertForbidden()->assertJsonPath('code', 'INACTIVE_EMPLOYEE');
+        $this->solicitar($user)->assertUnauthorized()->assertJsonPath('code', 'SESSION_REVOKED');
 
         $this->actingAs($this->admin, 'sanctum')->patchJson('/api/v1/configuracion/certificaciones', [
             'requiere_pago_certificado' => true,
@@ -324,16 +324,18 @@ class FaseCAutoservicioTest extends TestCase
         $documento = '100200315';
         $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/funcionarios', $this->datosFuncionario($documento))->assertCreated();
         Auth::forgetGuards();
+        Auth::shouldUse('web'); // Start a real browser request after the synthetic actingAs administrator.
         $login = $this->postJson('/api/v1/auth/login', ['cedula' => $documento, 'password' => $documento])
             ->assertOk()->assertJsonPath('data.user.must_change_password', true);
-        $token = $login->json('data.token');
+        $login->assertJsonMissingPath('data.token');
+        $this->withHeader('Origin', 'http://localhost:3200');
         Auth::forgetGuards();
-        $this->withToken($token)->putJson('/api/v1/auth/change-password', [
+        $this->putJson('/api/v1/auth/change-password', [
             'current_password' => $documento, 'password' => 'OtraClaveNueva2026',
             'password_confirmation' => 'OtraClaveNueva2026',
         ])->assertOk();
         Auth::forgetGuards();
-        $this->withToken($token)->getJson('/api/v1/mi-certificacion/disponibilidad')->assertOk();
+        $this->getJson('/api/v1/mi-certificacion/disponibilidad')->assertOk();
         $this->flushHeaders();
         Auth::forgetGuards();
         $this->postJson('/api/v1/auth/login', ['cedula' => $documento, 'password' => $documento])->assertUnprocessable();

@@ -29,6 +29,10 @@ class PagoSolicitudService
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($archivo->getRealPath());
         $extensiones = ['application/pdf' => ['pdf'], 'image/jpeg' => ['jpg', 'jpeg'], 'image/png' => ['png']];
         if (! $archivo->isValid() || ! isset($extensiones[$mime])
+            || $archivo->getSize() <= 0 || strlen($archivo->getClientOriginalName()) > 180
+            || preg_match('/\.(php\d*|phtml|phar|exe|js|html|svg)\./i', $archivo->getClientOriginalName())
+            || (str_starts_with((string) $mime, 'image/') && @getimagesize($archivo->getRealPath()) === false)
+            || ($mime === 'application/pdf' && ! str_starts_with((string) file_get_contents($archivo->getRealPath(), false, null, 0, 5), '%PDF-'))
             || ! in_array(strtolower($archivo->getClientOriginalExtension()), $extensiones[$mime], true)
             || $archivo->getSize() > config('payments.receipt_max_kb') * 1024) {
             throw ValidationException::withMessages(['archivo' => ['Adjunte un PDF, JPG/JPEG o PNG válido dentro del tamaño permitido.']]);
@@ -104,6 +108,7 @@ class PagoSolicitudService
                 throw new DomainException('COMPROBANTE_REQUERIDO');
             }
             if (! hash_equals($evidencia->sha256, hash_file('sha256', Storage::disk('local')->path($evidencia->archivo_path)))) {
+                SecurityEvents::record('file_integrity_failure', ['comprobante_id' => $evidencia->id]);
                 throw new DomainException('COMPROBANTE_INTEGRIDAD_INVALIDA');
             }
             $evidencia->update([
@@ -127,6 +132,7 @@ class PagoSolicitudService
                 accion: $confirmar ? 'pago_confirmado' : 'pago_rechazado', modelo: 'SolicitudCertificacion',
                 modeloId: $id, actorId: $actor->id, metadata: ['comprobante_id' => $evidencia->id, 'motivo' => $confirmar ? null : trim($motivo)],
             );
+            SecurityEvents::record($confirmar ? 'payment_confirmed' : 'payment_rejected', ['user_id' => $actor->id, 'comprobante_id' => $evidencia->id]);
         });
         if ($confirmar) {
             $this->expedirConfirmada($id, $actor);

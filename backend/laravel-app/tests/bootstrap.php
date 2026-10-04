@@ -9,6 +9,9 @@ require dirname(__DIR__).'/vendor/autoload.php';
 putenv('CACHE_STORE=array');
 $_ENV['CACHE_STORE'] = 'array';
 $_SERVER['CACHE_STORE'] = 'array';
+putenv('HASH_DRIVER=bcrypt');
+$_ENV['HASH_DRIVER'] = 'bcrypt';
+$_SERVER['HASH_DRIVER'] = 'bcrypt';
 
 // Never let RefreshDatabase invoke destructive migrations, even in the test suite.
 // Prepare the existing *_test database with `php artisan migrate` before running tests.

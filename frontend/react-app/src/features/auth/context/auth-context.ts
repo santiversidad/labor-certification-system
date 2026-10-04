@@ -4,7 +4,6 @@ import type { Session, User } from '../../../types/common.types';
 export type AuthContextValue = {
   session: Session | null;
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isValidating: boolean;
   validationError: boolean;

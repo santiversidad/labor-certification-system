@@ -4,39 +4,25 @@ import { authStorage } from '../auth/authStorage';
 
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
-  headers: {
-    Accept: 'application/json',
-  },
+  withCredentials: true,
+  withXSRFToken: true,
+  headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
 });
 
-// Adjunta automáticamente el token Bearer en cada petición
-apiClient.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
+export async function initializeCsrf() {
+  const url = new URL(env.apiBaseUrl, window.location.origin);
+  await apiClient.get(url.origin + '/sanctum/csrf-cookie');
+}
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-// Maneja sesiones expiradas: si el backend responde 401, limpia la sesión
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const path = window.location.pathname;
-
-      // No purgar la sesión durante el propio login (evita bucle)
-      if (!path.includes('/login')) {
-        authStorage.clearSession();
-
-        // Redirigir al login solo si el usuario estaba en una zona privada
-        if (path.startsWith('/app') || path.startsWith('/admin')) {
-          window.location.href = '/login';
-        }
-      }
+apiClient.interceptors.response.use((response) => response, (error) => {
+  if (error.response?.status === 401) {
+    authStorage.clearSession();
+    window.dispatchEvent(new Event('auth-session-expired'));
+    const path = window.location.pathname;
+    if (path.startsWith('/app') || path.startsWith('/admin') || path.startsWith('/seguridad') || path === '/cambiar-contrasena') {
+      window.location.replace('/login?sesion=expirada');
     }
-    return Promise.reject(error);
-  },
-);
+  }
+  // 403 leaves identity and caches intact (authorization failures are not logout).
+  return Promise.reject(error);
+});

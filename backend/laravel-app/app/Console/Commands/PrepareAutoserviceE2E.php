@@ -33,12 +33,14 @@ class PrepareAutoserviceE2E extends Command
                 'estado' => true, 'must_change_password' => false,
             ]);
             $admin->assignRole('admin');
+            $this->mfaFixture($admin);
             foreach (['E2E-SECRETARIA', 'E2E-SECRETARIA-2'] as $documento) {
                 $secretaria = User::firstOrCreate(['username' => strtolower($documento)], [
                     'tipo_cuenta' => 'backoffice', 'documento' => null, 'name' => 'Secretaría ficticia pagos E2E', 'password' => Hash::make('E2ESecretaria2026'),
                     'estado' => true, 'must_change_password' => false,
                 ]);
                 $secretaria->assignRole('secretario');
+                $this->mfaFixture($secretaria);
             }
             $cargo = Cargo::firstOrCreate(['codigo' => 'E2E', 'grado' => '01'], [
                 'denominacion' => 'Profesional E2E', 'nivel' => 'Profesional',
@@ -106,5 +108,17 @@ class PrepareAutoserviceE2E extends Command
         $this->info('Fixtures sintéticos preparados en la base E2E aislada; no se eliminaron registros.');
 
         return self::SUCCESS;
+    }
+
+    private function mfaFixture(User $user): void
+    {
+        // Synthetic, exclusively behind the existing testing + exact E2E database guard.
+        // Larger fixture pool lets preexisting regressions authenticate without TOTP sleeps.
+        $codes = array_map(fn ($index) => hash_hmac('sha256', $user->username.':'.$index, 'e2e-only-fixture-seed'), range(0, 511));
+        $user->forceFill(['password' => str_contains($user->username, 'secretaria') ? 'E2ESecretaria2026' : 'E2EAdminClave2026',
+            'estado' => true, 'must_change_password' => false, 'mfa_secret' => 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+            'mfa_confirmed_at' => now(), 'mfa_last_step' => null,
+            'mfa_recovery_hashes' => array_map(fn ($code) => hash('sha256', $code), $codes)])->save();
+        $user->revokeAuthentication();
     }
 }

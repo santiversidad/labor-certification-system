@@ -10,11 +10,14 @@ export const domainErrorMessages: Record<string, string> = {
   MANUAL_VERSION_NO_VIGENTE: 'El Manual asignado no está publicado o no es aplicable. Talento Humano debe revisarlo.',
   PAGO_NO_CONFIRMADO: 'El pago requerido aún no está confirmado. Complete el pago o espere su confirmación antes de continuar.',
   PASSWORD_CHANGE_REQUIRED: 'Por seguridad, debe crear una nueva contraseña antes de continuar.',
+  REAUTH_REQUIRED: 'Confirme su identidad en Seguridad de la cuenta y vuelva a intentar la acción.',
+  MFA_REQUIRED: 'Complete la autenticación en dos pasos.',
+  CSRF_REJECTED: 'La sesión de seguridad expiró. Actualice la página e intente nuevamente.',
 };
 
 function safeMessage(message: string): string {
   if (domainErrorMessages[message]) return domainErrorMessages[message];
-  if (/SQLSTATE|stack trace|exception|laravel|\/var\/www/i.test(message)) {
+  if (/SQLSTATE|stack trace|exception|laravel|\/var\/www|[a-z]:\\|App\\|Illuminate\\/i.test(message)) {
     return 'No fue posible completar la operación. Intente nuevamente o contacte a soporte.';
   }
   return message;

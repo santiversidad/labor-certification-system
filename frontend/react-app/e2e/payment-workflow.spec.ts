@@ -1,20 +1,14 @@
+import { apiSession, browserSession, sessionHeaders } from './security-session';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 
 const api = 'http://e2e-api:8280/api/v1';
 const evidence = 'test-results/regression-phase27';
 const receipt = { name: 'comprobante-ficticio.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% Comprobante SINTETICO sin pago real.\n') };
-const headers = (token: string) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json' });
+const headers = sessionHeaders;
 
-async function apiLogin(request: APIRequestContext, cedula: string, password: string) {
-  const r = await request.post(`${api}/auth/login`, { data: { cedula, password } }); expect(r.status()).toBe(200); return (await r.json()).data.token as string;
-}
-async function login(page: Page, cedula: string, password: string) {
-  await page.goto('/login'); await page.getByLabel('Usuario', { exact: true }).fill(cedula); await page.getByLabel('Contraseña', { exact: true }).fill(password);
-  const response = page.waitForResponse((r) => r.url().endsWith('/auth/login') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Ingresar', exact: true }).click(); const r = await response; expect(r.status()).toBe(200); const token = (await r.json()).data.token as string;
-  await expect(page).toHaveURL(/\/(app\/inicio|admin\/dashboard)$/); return token;
-}
+async function apiLogin(request: APIRequestContext, username: string, password: string) { return (await apiSession(request, username, password)).token; }
+async function login(page: Page, username: string, password: string) { const result = await browserSession(page, username, password); await expect(page).toHaveURL(/\/(app\/inicio|admin\/dashboard)$/); return result.token; }
 async function employee(request: APIRequestContext, admin: string, suffix: string) {
   const documento = `P27${Date.now()}${suffix}`.slice(0, 20);
   const cargos = await (await request.get(`${api}/cargos?per_page=100`, { headers: headers(admin) })).json();
@@ -115,6 +109,7 @@ test.describe('Fase 2.7 pago real con evidencia ficticia', () => {
     await expect(page.getByText('Comprobante ficticio ilegible', { exact: true })).toBeVisible(); await capture(page, '09-pago-rechazado-funcionario');
     await page.getByLabel('Comprobante de pago').setInputFiles(receipt); await capture(page, '10-reemplazar-comprobante'); await upload(page);
     await login(page, 'E2E-SECRETARIA', 'E2ESecretaria2026'); await page.goto(`/admin/pagos/${id}`); await confirm(page);
+    u.token = await apiLogin(page.request, u.documento, 'E2EPagoClave2026'); // Switching this browser invalidated its former employee cookie.
     const final = await (await page.request.get(`${api}/solicitudes/${id}`, { headers: headers(u.token) })).json();
     expect(final.data.id).toBe(id); expect(final.data.pago_soporte.comprobantes.map((c: { estado: string }) => c.estado)).toEqual(['rechazado', 'confirmado']);
     expect((await page.request.get(`http://e2e-api:8280${fileUrl}`, { headers: headers(u.token) })).status()).toBe(200);

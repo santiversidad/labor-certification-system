@@ -31,13 +31,13 @@ export function ChangePasswordPage() {
     <div>
       <p className="eyebrow">Primer ingreso</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-text">Cambie su contraseña temporal</h1>
-      <Alert className="mt-6" title="Cambio obligatorio de contraseña" variant="warning">Antes de continuar debe definir una contraseña personal. Use al menos 12 caracteres, mayúsculas, minúsculas y números. No use su número de cédula.</Alert>
+      <Alert className="mt-6" title="Cambio obligatorio de contraseña" variant="warning">Antes de continuar defina una contraseña personal de {user.tipo_cuenta === 'backoffice' && !user.mfa_enabled ? '15' : '12'} a 128 caracteres. Puede utilizar una frase con espacios. No use su cédula ni una contraseña común.</Alert>
         <form className="mt-6 space-y-4" onSubmit={(event) => {
           event.preventDefault();
           mutation.mutate({ current_password: currentPassword, password, password_confirmation: confirmation });
         }}>
-          <Input label="Contraseña temporal" onChange={(event) => setCurrentPassword(event.target.value)} type="password" value={currentPassword} />
-          <Input label="Nueva contraseña" onChange={(event) => setPassword(event.target.value)} type="password" value={password} />
+          <Input autoComplete="current-password" maxLength={128} label="Contraseña temporal" onChange={(event) => setCurrentPassword(event.target.value)} type="password" value={currentPassword} />
+          <Input autoComplete="new-password" maxLength={128} label="Nueva contraseña" onChange={(event) => setPassword(event.target.value)} type="password" value={password} />
           <Input label="Confirmar nueva contraseña" onChange={(event) => setConfirmation(event.target.value)} type="password" value={confirmation} />
           {mutation.isError ? <Alert title="No fue posible cambiar la contraseña" variant="error">{getErrorMessage(mutation.error)}</Alert> : null}
           <Button className="w-full" disabled={mutation.isPending} icon={<KeyRound size={17} />} type="submit">

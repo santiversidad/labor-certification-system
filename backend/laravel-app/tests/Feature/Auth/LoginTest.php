@@ -38,7 +38,7 @@ class LoginTest extends TestCase
                 'success',
                 'message',
                 'data' => [
-                    'token',
+                    'status',
                     'user' => ['id', 'documento', 'roles'],
                 ],
             ])
@@ -85,7 +85,7 @@ class LoginTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertForbidden()
+        $response->assertUnprocessable()
             ->assertJson(['success' => false]);
     }
 

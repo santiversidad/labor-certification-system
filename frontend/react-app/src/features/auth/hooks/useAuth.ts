@@ -24,8 +24,7 @@ export function useAuth() {
   const storedAuth = {
     session,
     user: session?.user ?? null,
-    token: session?.token ?? null,
-    isAuthenticated: Boolean(session?.token && session.user),
+    isAuthenticated: Boolean(session?.user),
     isValidating: false,
     validationError: false,
     logout: authStorage.clearSession,

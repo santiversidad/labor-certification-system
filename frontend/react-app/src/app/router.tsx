@@ -11,6 +11,8 @@ import { PublicLayout } from '../components/layout/PublicLayout';
 const BackofficeUsersPage = lazy(() => import('../features/backoffice/BackofficeUsersPage').then((module) => ({ default: module.BackofficeUsersPage })));
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
 const ChangePasswordPage = lazy(() => import('../features/auth/pages/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
+const MfaPage = lazy(() => import('../features/auth/pages/MfaPage').then((module) => ({ default: module.MfaPage })));
+const SecurityPage = lazy(() => import('../features/auth/pages/SecurityPage').then((module) => ({ default: module.SecurityPage })));
 const ValidarCertificadoPage = lazy(() => import('../features/validacion-publica/pages/ValidarCertificadoPage').then((module) => ({ default: module.ValidarCertificadoPage })));
 const FuncionarioDashboardPage = lazy(() => import('../features/dashboard/pages/FuncionarioDashboardPage').then((module) => ({ default: module.FuncionarioDashboardPage })));
 const SolicitudCertificadoPage = lazy(() => import('../features/solicitudes/pages/SolicitudCertificadoPage').then((module) => ({ default: module.SolicitudCertificadoPage })));
@@ -42,6 +44,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: screen(LoginPage) },
       { path: '/cambiar-contrasena', element: <ProtectedRoute>{screen(ChangePasswordPage)}</ProtectedRoute> },
+      { path: '/seguridad/mfa', element: <ProtectedRoute>{screen(MfaPage)}</ProtectedRoute> },
     ],
   },
   { element: <PublicLayout />, children: [{ path: '/validar-certificado/:token?', element: screen(ValidarCertificadoPage) }] },
@@ -65,6 +68,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate replace to="/admin/dashboard" /> },
       { path: 'dashboard', element: screen(AdminDashboardPage) },
+      { path: 'seguridad', element: screen(SecurityPage) },
       { path: 'pagos', element: <RoleRoute allowedRoles={['secretario']}>{screen(PaymentReviewPage)}</RoleRoute> },
       { path: 'pagos/:id', element: <RoleRoute allowedRoles={['secretario']}>{screen(PaymentReviewDetailPage)}</RoleRoute> },
       { path: 'funcionarios', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionariosPage)}</RoleRoute> },

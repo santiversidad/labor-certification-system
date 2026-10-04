@@ -1,28 +1,16 @@
+import { apiSession, browserSession, captureBrowserSession, completeMfa, sessionHeaders } from './security-session';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
 const api = 'http://e2e-api:8280/api/v1';
 const evidence = 'evidence/identity-phase28';
-const headers = (token: string) => ({ Authorization: 'Bearer ' + token, Accept: 'application/json' });
+const headers = sessionHeaders;
 const personalPassword = 'PersonalIdentityClave2026';
 let employeeUsername = '';
 let secretaryUsername = '';
 
-async function apiLogin(request: APIRequestContext, username: string, password: string) {
-  const response = await request.post(api + '/auth/login', { data: { username, password } });
-  expect(response.status()).toBe(200);
-  return (await response.json()).data as { token: string; user: { id: number; tipo_cuenta: string; username: string } };
-}
-async function login(page: Page, username: string, password: string) {
-  await page.goto('/login');
-  await page.getByLabel('Usuario', { exact: true }).fill(username);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
-  const response = page.waitForResponse((r) => r.url().endsWith('/auth/login') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
-  const result = await response;
-  expect(result.status()).toBe(200);
-  return (await result.json()).data as { token: string; user: { id: number } };
-}
+async function apiLogin(request: APIRequestContext, username: string, password: string) { return apiSession(request, username, password); }
+async function login(page: Page, username: string, password: string) { return browserSession(page, username, password); }
 async function capture(page: Page, name: string) {
   // Wait for actual content before capturing, including auth and lazy-route boundaries.
   await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
@@ -53,6 +41,10 @@ async function changeTemporary(page: Page, temporary: string) {
   await page.getByLabel('Nueva contraseña', { exact: true }).fill(personalPassword);
   await page.getByLabel('Confirmar nueva contraseña', { exact: true }).fill(personalPassword);
   await page.getByRole('button', { name: 'Guardar y continuar' }).click();
+  await expect(page).toHaveURL(/\/seguridad\/mfa/);
+  const me = await page.request.get('http://e2e-web:3200/api/v1/auth/me', { headers: { Origin: 'http://e2e-web:3200', Accept: 'application/json' } });
+  await completeMfa(page, (await me.json()).data.username);
+  await captureBrowserSession(page);
   await expect(page).toHaveURL(/\/admin\/dashboard/);
 }
 
@@ -144,7 +136,7 @@ test.describe.serial('Fase 2.8 identidades independientes', () => {
       const session = await login(secretary, secretaryUsername, temporary);
       await expect(secretary).toHaveURL(/\/cambiar-contrasena/);
       await capture(secretary, '05-cambio-password-obligatorio');
-      expect((await secretary.request.get(api + '/secretaria/pagos', { headers: headers(session.token) })).status()).toBe(403);
+      expect((await secretary.request.get(api + '/secretaria/pagos', { headers: headers(session.token) })).status()).toBe(401); // No authenticated guard before MFA.
       await changeTemporary(secretary, temporary);
       await secretary.goto('/admin/pagos'); await expect(secretary.getByRole('heading', { name: 'Validación de pagos' })).toBeVisible();
     } finally { await context.close(); }
@@ -187,7 +179,7 @@ test.describe.serial('Fase 2.8 identidades independientes', () => {
       await secretary.getByLabel('Usuario', { exact: true }).fill(secretaryUsername);
       await secretary.getByLabel('Contraseña', { exact: true }).fill(personalPassword);
       await secretary.getByRole('button', { name: 'Ingresar', exact: true }).click();
-      await expect(secretary.getByRole('alert')).toContainText('inactiva'); await capture(secretary, '09-usuario-desactivado');
+      await expect(secretary.getByRole('alert')).toContainText('Los datos suministrados no son válidos.'); await capture(secretary, '09-usuario-desactivado');
       await row.getByRole('button', { name: 'Reactivar acceso' }).click(); await capture(page, '10-reactivar');
       await page.getByRole('button', { name: 'Confirmar cambio' }).click();
       await expect(page.getByLabel('Contraseña temporal generada')).toBeVisible();
@@ -214,8 +206,12 @@ test.describe.serial('Fase 2.8 identidades independientes', () => {
 
   test('G: último administrador y autodesactivación se protegen en servidor y UI', async ({ page }) => {
     const session = await login(page, 'e2e-admin', 'E2EAdminClave2026');
-    const listing = await (await page.request.get(api + '/admin/usuarios-internos?role=admin', { headers: headers(session.token) })).json();
-    const admins = listing.data as Array<{ id: number }>;
+    const admins: Array<{ id: number }> = [];
+    let lastPage = 1;
+    for (let current = 1; current <= lastPage; current++) {
+      const listing = await (await page.request.get(`${api}/admin/usuarios-internos?role=admin&estado=1&page=${current}`, { headers: headers(session.token) })).json();
+      admins.push(...listing.data); lastPage = listing.meta.last_page;
+    }
     expect(admins.length).toBeGreaterThan(1);
     expect((await page.request.post(api + '/admin/usuarios-internos/' + session.user.id + '/desactivar', {
       headers: headers(session.token), data: { motivo: 'Self test' },

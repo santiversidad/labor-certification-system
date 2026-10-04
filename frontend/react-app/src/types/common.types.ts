@@ -17,6 +17,8 @@ export type User = {
   telefono?: string | null;
   estado: boolean;
   must_change_password: boolean;
+  mfa_enabled?: boolean;
+  mfa_pending?: boolean;
   password_changed_at?: string | null;
   roles: Role[];
   permisos: string[];
@@ -25,6 +27,5 @@ export type User = {
 };
 
 export type Session = {
-  token: string;
   user: User;
 };

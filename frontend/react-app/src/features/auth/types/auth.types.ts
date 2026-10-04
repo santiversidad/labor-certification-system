@@ -6,7 +6,7 @@ export type LoginCredentials = {
 };
 
 export type LoginResponse = {
-  token: string;
+  status: 'AUTHENTICATED' | 'PASSWORD_CHANGE_REQUIRED' | 'MFA_REQUIRED' | 'MFA_ENROLLMENT_REQUIRED';
   user: User;
 };
 

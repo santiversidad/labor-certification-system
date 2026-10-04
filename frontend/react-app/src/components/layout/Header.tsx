@@ -1,5 +1,5 @@
 import { LogOut, Menu } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { roleLabels } from '../../config/roles';
 import { getPrimaryRole } from '../../lib/auth/permissions';
@@ -27,6 +27,7 @@ export function Header({ onMenuClick, variant = 'app' }: { onMenuClick?: () => v
   return (
     <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 border-b border-border bg-surface/95 px-4 backdrop-blur sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
+        {variant === 'admin' ? <Link className="text-sm text-primary" to="/admin/seguridad">Seguridad</Link> : null}
         {variant === 'admin' ? <Button aria-label="Abrir menú" className="lg:hidden" icon={<Menu size={18} />} onClick={onMenuClick} type="button" variant="secondary" /> : <Brand compact to="/app/inicio" />}
         {variant === 'admin' ? <div className="hidden min-w-0 sm:block"><p className="text-sm font-bold text-text">Administración</p><p className="text-xs text-muted">Certificaciones laborales</p></div> : null}
       </div>

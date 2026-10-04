@@ -6,13 +6,13 @@ import { LoadingState } from '../feedback/LoadingState';
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const { isAuthenticated, isValidating, token, user, validationError } = useAuth();
+  const { isAuthenticated, isValidating, user, validationError } = useAuth();
 
   if (isValidating) {
     return <LoadingState label="Validando sesión..." />;
   }
 
-  if (token && validationError) {
+  if (validationError) {
     return <ErrorState message="No fue posible validar la sesión. Intente nuevamente." />;
   }
 
@@ -22,6 +22,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (user?.must_change_password && location.pathname !== '/cambiar-contrasena') {
     return <Navigate replace to="/cambiar-contrasena" />;
+  }
+  if (!user?.must_change_password && user?.mfa_pending && location.pathname !== '/seguridad/mfa') {
+    return <Navigate replace to="/seguridad/mfa" />;
   }
 
   return <>{children}</>;

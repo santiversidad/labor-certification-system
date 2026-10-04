@@ -9,6 +9,7 @@ class PagoSoporteResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $canSeeReviewer = $request->user()?->isBackofficeAccount() && $request->user()->can('pagos.ver');
         return [
             'id' => $this->id,
             'solicitud_id' => $this->solicitud_certificacion_id,
@@ -19,10 +20,10 @@ class PagoSoporteResource extends JsonResource
             'validado_at' => $this->validado_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'comprobantes' => $this->whenLoaded('comprobantes', fn () => PagoComprobanteResource::collection($this->comprobantes)),
-            'validado_por' => $this->whenLoaded('validadoPor', fn () => [
+            'validado_por' => $this->when($canSeeReviewer, fn () => $this->whenLoaded('validadoPor', fn () => [
                 'id' => $this->validadoPor?->id,
                 'name' => $this->validadoPor?->name,
-            ]),
+            ])),
             'funcionario' => $this->whenLoaded('funcionario', fn () => [
                 'id' => $this->funcionario->id,
                 'nombres' => $this->funcionario->nombres,

@@ -1,0 +1,26 @@
+# Deployment template, not installed in CT. Serve built SPA and proxy API on one origin.
+# Define API_UPSTREAM as an internal allowlisted upstream at deploy time.
+server {
+    listen 80;
+    server_name _;
+    root /srv/frontend;
+    server_tokens off;
+    access_log off;
+    client_max_body_size 6m;
+    if ($request_method !~ ^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$) { return 405; }
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    # HSTS must be set at the institutional HTTPS terminator, never HTTP CT.
+    location / { try_files $uri $uri/ /index.html; }
+    location ~ ^/(api/|sanctum/) {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_hide_header Content-Security-Policy;
+    }
+    location ~ /\. { deny all; }
+}

@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { authStorage } from '../../../lib/auth/authStorage';
 import type { Session, User } from '../../../types/common.types';
 import { authService } from '../services/auth.service';
@@ -7,79 +7,41 @@ import { AuthContext, type AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [storedSession, setStoredSession] = useState<Session | null>(() => authStorage.getSession());
-  const token = storedSession?.token ?? null;
-  const queryKey = useMemo(() => ['auth', 'me', token] as const, [token]);
-  const identity = useQuery({
-    queryKey,
-    queryFn: authService.me,
-    enabled: Boolean(token),
-    retry: false,
-    refetchOnWindowFocus: false,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const [session, setSession] = useState<Session | null>(() => authStorage.getSession());
+  const [isValidating, setValidating] = useState(true);
+  const [validationError, setValidationError] = useState(false);
+  // StrictMode replays effects; share the request so an obsolete anonymous /me
+  // cannot issue a late cookie/401 after the user starts authenticating.
+  const bootstrap = useRef<ReturnType<typeof authService.me> | null>(null);
 
   useEffect(() => {
-    const syncSession = () => {
-      const nextSession = authStorage.getSession();
-      setStoredSession((currentSession) => {
-        if (currentSession && !nextSession) queryClient.clear();
-        return nextSession;
-      });
-    };
-    window.addEventListener('auth-session-changed', syncSession);
-    window.addEventListener('storage', syncSession);
-
-    return () => {
-      window.removeEventListener('auth-session-changed', syncSession);
-      window.removeEventListener('storage', syncSession);
-    };
-  }, [queryClient]);
-
-  useEffect(() => {
-    if (!token || !identity.data?.data) return;
-
-    const verifiedSession = { token, user: identity.data.data };
-    authStorage.setSession(verifiedSession);
-  }, [identity.data, token]);
-
-  useEffect(() => {
-    const status = (identity.error as { response?: { status?: number } } | null)?.response?.status;
-    if (status === 401) {
+    let live = true;
+    let changed = false;
+    authStorage.removeLegacySession();
+    const sync = () => {
+      changed = true;
       queryClient.clear();
-      authStorage.clearSession();
-    }
-  }, [identity.error, queryClient]);
-
-  const logout = useCallback(() => {
-    queryClient.clear();
-    setStoredSession(null);
-    authStorage.clearSession();
+      setSession(authStorage.getSession());
+      setValidating(false);
+      setValidationError(false);
+    };
+    window.addEventListener('auth-session-changed', sync);
+    bootstrap.current ??= authService.me();
+    void bootstrap.current.then((response) => {
+      if (live && !changed) authStorage.setSession({ user: response.data });
+    }).catch((error: { response?: { status?: number } }) => {
+      if (live && !changed) {
+        if (error.response?.status === 401) authStorage.clearSession();
+        else setValidationError(true);
+      }
+    }).finally(() => { if (live) setValidating(false); });
+    return () => { live = false; window.removeEventListener('auth-session-changed', sync); };
   }, [queryClient]);
 
-  const updateUser = useCallback((user: User) => {
-    if (!token) return;
-    const session = { token, user };
-    queryClient.setQueryData(queryKey, { success: true, data: user });
-    setStoredSession(session);
-    authStorage.setSession(session);
-  }, [queryClient, queryKey, token]);
-
-  const verifiedUser = identity.data?.data ?? null;
-  const value = useMemo<AuthContextValue>(() => {
-    const session = token && verifiedUser ? { token, user: verifiedUser } : null;
-
-    return {
-      session,
-      user: verifiedUser,
-      token,
-      isAuthenticated: Boolean(session),
-      isValidating: Boolean(token && identity.isPending),
-      validationError: Boolean(token && identity.isError),
-      logout,
-      updateUser,
-    };
-  }, [identity.isError, identity.isPending, logout, token, updateUser, verifiedUser]);
-
+  const logout = useCallback(() => { queryClient.clear(); authStorage.clearSession(); }, [queryClient]);
+  const updateUser = useCallback((user: User) => { authStorage.setSession({ user }); }, []);
+  const value = useMemo<AuthContextValue>(() => ({
+    session, user: session?.user ?? null, isAuthenticated: Boolean(session), isValidating, validationError, logout, updateUser,
+  }), [session, isValidating, validationError, logout, updateUser]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

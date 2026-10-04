@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { browserSession, captureBrowserSession, sessionHeaders } from './security-session';
 
 const output = 'evidence/certificate-types-phase2';
 
@@ -9,10 +10,7 @@ async function capture(page: Page, name: string) {
 }
 
 async function login(page: Page, documento: string, password: string) {
-  await page.goto('/login');
-  await page.getByLabel('Usuario', { exact: true }).fill(documento);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+  await browserSession(page, documento, password);
 }
 
 test('evidencia visual real de Fase 2', async ({ page }) => {
@@ -57,9 +55,9 @@ test('evidencia visual real de Fase 2', async ({ page }) => {
 
   await page.goto('/app/solicitudes/nueva/sencillo');
   await expect(page.getByRole('heading', { name: 'Certificado laboral sencillo' })).toBeVisible();
-  const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clv_session')!));
+  const session = { token: await captureBrowserSession(page) };
   const request = await page.request.post('http://e2e-api:8280/api/v1/solicitudes', {
-    headers: { Authorization: `Bearer ${session.token}`, Accept: 'application/json' },
+    headers: sessionHeaders(session.token),
     data: { tipo_certificado: 'sencillo' },
   });
   expect(request.status()).toBe(201);

@@ -28,6 +28,8 @@ export function isFuncionario(user: User | null): boolean {
 }
 
 export function getHomePath(user: User | null): string {
+  if (user?.must_change_password) return '/cambiar-contrasena';
+  if (user?.mfa_pending) return '/seguridad/mfa';
   if (isAdmin(user)) {
     return '/admin/dashboard';
   }

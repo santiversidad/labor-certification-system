@@ -134,7 +134,8 @@ class AuthorizationRegressionTest extends TestCase
         ])->assertOk();
         Auth::forgetGuards();
 
-        return $response->json('data.token');
+        $response->assertJsonMissingPath('data.token');
+        return $user->fresh()->createToken('cli-regression', ['*'])->plainTextToken;
     }
 
     private function crearFuncionario(): User

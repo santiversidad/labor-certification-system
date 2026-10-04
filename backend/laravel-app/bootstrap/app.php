@@ -26,16 +26,32 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(null);
-        $middleware->validateCsrfTokens(except: ['api/*']);
-        $middleware->api(prepend: [EnsureFrontendRequestsAreStateful::class]);
+        $middleware->statefulApi();
+        $middleware->web(replace: [\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class => \App\Http\Middleware\EnforceCsrfToken::class]);
+        $middleware->prepend(\App\Http\Middleware\BrowserBoundary::class);
+        $middleware->prepend(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->trustProxies(at: array_filter(explode(',', env('TRUSTED_PROXIES', ''))));
         $middleware->alias([
+            'auth.principal' => \App\Http\Middleware\ResolveAuthenticationPrincipal::class,
+            'mfa' => \App\Http\Middleware\RequireMfa::class,
+            'auth.recent' => \App\Http\Middleware\RequireRecentAuthentication::class,
             'password.changed' => EnsurePasswordChanged::class,
             'identity.current' => EnsureCurrentIdentity::class,
             'context.funcionario' => RequireFuncionarioContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*'));
+        $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'code', 'recovery_code', 'mfa_secret']);
+        $exceptions->report(function (Throwable $e) {
+            // Framework exception messages may embed SQL bindings or request secrets.
+            \Illuminate\Support\Facades\Log::error('Application exception', ['type' => $e::class, 'code' => (string) $e->getCode()]);
+            return false;
+        });
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, Request $request) {
+            \App\Services\SecurityEvents::record('csrf_rejected');
+            return response()->json(['success' => false, 'code' => 'CSRF_REJECTED', 'message' => 'La sesión de seguridad expiró. Actualice la página.'], 419);
+        });
+        $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*', 'login', 'logout', 'sanctum/*'));
 
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*')) {
@@ -44,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->render(function (AuthorizationException $e, Request $request) {
             if ($request->is('api/*')) {
+                \App\Services\SecurityEvents::record('forbidden_access', ['user_id' => $request->user()?->id]);
                 return response()->json(['success' => false, 'message' => 'No tiene permisos para realizar esta acción.'], 403);
             }
         });
@@ -72,7 +89,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'message' => 'La operación no cumple las reglas de versionado del Manual.',
-                    'code' => $e->getMessage(),
+                    'code' => preg_match('/^[A-Z_]{3,80}$/', $e->getMessage()) ? $e->getMessage() : 'DOMAIN_CONFLICT',
                 ], 409);
             }
         });

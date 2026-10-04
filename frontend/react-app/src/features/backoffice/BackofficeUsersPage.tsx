@@ -12,7 +12,7 @@ import { getErrorMessage, getValidationErrors } from '../../lib/utils/errors';
 import type { User } from '../../types/common.types';
 
 const endpoint = '/admin/usuarios-internos';
-type Action = 'create' | 'edit' | 'deactivate' | 'reactivate' | 'reset' | 'role';
+type Action = 'create' | 'edit' | 'deactivate' | 'reactivate' | 'reset' | 'role' | 'mfa';
 type Selection = { action: Action; user?: User };
 type Result = { success: boolean; data: { user: User; temporary_password: string | null } };
 const roleLabel = (user: User) => user.roles.includes('admin') ? 'Administrador' : 'Secretaría';
@@ -20,6 +20,7 @@ const dateLabel = (value?: string | null) => value ? new Date(value).toLocaleStr
 const actionTitles: Record<Action, string> = {
   create: 'Crear usuario interno', edit: 'Editar usuario interno', deactivate: 'Desactivar acceso',
   reactivate: 'Reactivar acceso', reset: 'Restablecer contraseña', role: 'Cambiar rol',
+  mfa: 'Restablecer MFA',
 };
 
 export function BackofficeUsersPage() {
@@ -64,6 +65,7 @@ export function BackofficeUsersPage() {
             <Button variant="secondary" onClick={() => select('role', user)}>Cambiar rol</Button>
             <Button variant="secondary" onClick={() => select(user.estado ? 'deactivate' : 'reactivate', user)}>{user.estado ? 'Desactivar acceso' : 'Reactivar acceso'}</Button>
             <Button variant="secondary" onClick={() => select('reset', user)}>Restablecer contraseña</Button>
+            <Button variant="secondary" onClick={() => select('mfa', user)}>Restablecer MFA</Button>
           </div> },
         ]}
         pagination={query.data?.meta ? { currentPage: query.data.meta.current_page, lastPage: query.data.meta.last_page, total: query.data.meta.total, onPageChange: setPage } : undefined} />
@@ -115,9 +117,10 @@ function AccountAction({ selection, onClose, onSuccess }: { selection: Selection
       } else if (action === 'edit') {
         await apiClient.patch(endpoint + '/' + user!.id, { name, email: email || null });
       } else {
-        const path = { deactivate: 'desactivar', reactivate: 'reactivar', reset: 'reset-password', role: 'cambiar-rol' }[action];
+        const path = { deactivate: 'desactivar', reactivate: 'reactivar', reset: 'reset-password', role: 'cambiar-rol', mfa: 'reset-mfa' }[action];
         const payload = action === 'deactivate' ? { motivo } : action === 'role' ? { role } : {};
-        password = (await apiClient.post<Result>(endpoint + '/' + user!.id + '/' + path, payload)).data.data.temporary_password;
+        const result = await apiClient.post<Result>(endpoint + '/' + user!.id + '/' + path, payload);
+        password = result.data.data?.temporary_password ?? null;
       }
       onSuccess(password);
     } catch (failure) {
@@ -137,6 +140,7 @@ function AccountAction({ selection, onClose, onSuccess }: { selection: Selection
       {action === 'deactivate' ? <><Alert variant="warning">Esta acción cerrará las sesiones activas de este usuario y le impedirá ingresar.</Alert><label className="block space-y-1.5 text-sm font-semibold">Motivo de desactivación<textarea className="field-control" maxLength={1000} minLength={3} required value={motivo} onChange={(event) => setMotivo(event.target.value)} /></label></> : null}
       {action === 'reset' || action === 'reactivate' ? <Alert variant="warning">Se generará una nueva contraseña temporal y se cerrarán las sesiones anteriores. El usuario deberá ingresar y cambiarla.</Alert> : null}
       {action === 'role' ? <Alert variant="warning">El cambio de rol cerrará las sesiones activas. El usuario deberá ingresar nuevamente.</Alert> : null}
+      {action === 'mfa' ? <Alert variant="warning">Verifique la identidad de esta persona por el procedimiento institucional. Se revocarán sus sesiones y deberá configurar un nuevo autenticador. Otro administrador debe realizar esta acción.</Alert> : null}
       {error ? <Alert variant="error">{error}</Alert> : null}
       <div className="flex flex-wrap gap-3">
         <Button disabled={pending} type="submit">{pending ? 'Guardando…' : action === 'create' ? 'Crear cuenta' : 'Confirmar cambio'}</Button>

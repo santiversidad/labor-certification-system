@@ -1,3 +1,4 @@
+import { browserSession, captureBrowserSession, sessionHeaders } from './security-session';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -6,17 +7,9 @@ const api = 'http://e2e-api:8280/api/v1';
 const employeePassword = 'MiClaveNueva2026';
 let simpleEmployee = '';
 let functionsEmployee = '';
+let incompleteEmployee = '';
 
-async function login(page: Page, documento: string, password: string) {
-  await page.goto('/login');
-  await page.getByLabel('Usuario', { exact: true }).fill(documento);
-  await page.getByLabel('Contraseña', { exact: true }).fill(password);
-  const loginResponse = page.waitForResponse((response) => response.url().endsWith('/api/v1/auth/login') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
-  const response = await loginResponse;
-  expect(response.status()).toBe(200);
-  return (await response.json()).data;
-}
+async function login(page: Page, username: string, password: string) { return browserSession(page, username, password); }
 
 async function logout(page: Page) {
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
@@ -24,15 +17,21 @@ async function logout(page: Page) {
   expect(await page.evaluate(() => localStorage.getItem('clv_session'))).toBeNull();
 }
 
-async function createEmployee(page: Page, suffix: string) {
+async function createEmployee(page: Page, suffix: string, cargoLabel = 'Profesional E2E · E2E/01') {
   const documento = `92${Date.now()}${suffix.length}`;
   await page.goto('/admin/funcionarios/nuevo');
   await page.getByLabel('Número de cédula').fill(documento);
   await page.getByLabel('Nombres', { exact: true }).fill('Persona');
   await page.getByLabel('Apellidos', { exact: true }).fill(`Ficticia ${suffix}`);
   await page.getByLabel('Dependencia', { exact: true }).fill('Talento Humano E2E');
-  await page.locator('select[name="cargo_id"]').selectOption({ label: 'Profesional E2E · E2E/01' });
+  await page.locator('select[name="cargo_id"]').selectOption({ label: cargoLabel });
   await page.getByLabel('Fecha de vinculación').fill('2024-01-15');
+  if (cargoLabel.includes('Incompleto')) {
+    const ficha = page.getByLabel('Ficha del Manual de Funciones');
+    const option = ficha.locator('option').filter({ hasText: 'E2E-INC-001' });
+    await expect(option).toHaveCount(1);
+    await ficha.selectOption((await option.getAttribute('value'))!);
+  }
   await expect(page.getByLabel('Ficha del Manual de Funciones')).toHaveValue(/\d+/);
   const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/funcionarios') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Guardar funcionario' }).click();
@@ -84,7 +83,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
   test('administración revalida identidad, conserva 36 permisos y navega sin módulo salarial', async ({ page }) => {
     const session = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
     expect(session.user.permisos).toHaveLength(36);
-    const me = await page.request.get(`${api}/auth/me`, { headers: { Authorization: `Bearer ${session.token}`, Accept: 'application/json' } });
+    const me = await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(session.token) });
     expect(me.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/dashboard/);
     await expect(page.getByText(/rangos salariales|salario/i)).toHaveCount(0);
@@ -158,8 +157,8 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     expect(body.data.certificado.snapshot_datos.manual_funciones.funciones[0].descripcion).toBe('Atender pruebas sintéticas.');
     expect(JSON.stringify(body)).not.toMatch(/salario|requiere_salario/i);
     expect(body.data.descarga_url).toMatch(/^\/api\/v1\/mi-certificacion\/descargar\/[a-f0-9]{64}$/);
-    const session = await page.evaluate(() => JSON.parse(localStorage.getItem('clv_session')!));
-    const pdf = await page.request.get(`http://e2e-api:8280${body.data.descarga_url}`, { headers: { Authorization: `Bearer ${session.token}` } });
+    const session = { token: await captureBrowserSession(page) };
+    const pdf = await page.request.get(`http://e2e-api:8280${body.data.descarga_url}`, { headers: sessionHeaders(session.token) });
     expect(pdf.status()).toBe(200);
     const bytes = await pdf.body();
     expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
@@ -172,7 +171,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
 
   test('la cuota bloquea el mismo tipo y permite el tipo contrario', async ({ page }) => {
     const session = await login(page, simpleEmployee, employeePassword);
-    const headers = { Authorization: `Bearer ${session.token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+    const headers = sessionHeaders(session.token);
     const duplicate = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'sencillo' } });
     expect(duplicate.status()).toBe(409);
     expect((await duplicate.json()).code).toBe('MONTHLY_CERTIFICATE_LIMIT');
@@ -194,10 +193,10 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
 
   test('logout funcionario y nuevo login admin no reutilizan identidad ni disponibilidad', async ({ page }) => {
     const employeeSession = await login(page, functionsEmployee, employeePassword);
-    expect((await page.request.get(`${api}/auth/me`, { headers: { Authorization: `Bearer ${employeeSession.token}` } })).status()).toBe(200);
+    expect((await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(employeeSession.token) })).status()).toBe(200);
     await expect(page).toHaveURL(/\/app\/inicio/);
     await logout(page);
-    expect((await page.request.get(`${api}/auth/me`, { headers: { Authorization: `Bearer ${employeeSession.token}` } })).status()).toBe(401);
+    expect((await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(employeeSession.token) })).status()).toBe(401);
     const adminSession = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
     expect(adminSession.user.roles).toContain('admin');
     expect(adminSession.user.permisos).toHaveLength(36);
@@ -205,8 +204,12 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
   });
 
   test('ficha incompleta permite sencillo y rechaza únicamente funciones', async ({ page }) => {
-    const session = await login(page, 'E2E-INCOMPLETE', 'E2EIncomplete2026');
-    const headers = { Authorization: `Bearer ${session.token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+    await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    incompleteEmployee = await createEmployee(page, 'Incompleto', 'Profesional Incompleto E2E · E2I/01');
+    await logout(page);
+    await completeFirstLogin(page, incompleteEmployee);
+    const session = { token: await captureBrowserSession(page) };
+    const headers = sessionHeaders(session.token);
     const simple = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'sencillo' } });
     expect(simple.status()).toBe(201);
     await page.goto('/app/solicitudes/nueva/funciones');
@@ -223,7 +226,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
 
   test('las pantallas críticas conservan navegación y contenido en 360 y 768 px', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await login(page, 'E2E-INCOMPLETE', 'E2EIncomplete2026');
+    await login(page, incompleteEmployee, employeePassword);
     await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
     await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
     await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);

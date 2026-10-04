@@ -51,6 +51,11 @@ return [
     */
 
     'channels' => [
+        'security' => [
+            'driver' => 'daily', 'path' => storage_path('logs/security.log'),
+            'level' => 'info', 'days' => (int) env('SECURITY_LOG_DAYS', 30),
+            'permission' => 0600,
+        ],
 
         'stack' => [
             'driver' => 'stack',

@@ -209,6 +209,7 @@ class BackofficeIdentityService
 
     private function record(string $event, User $target, ?User $actor, array $metadata): void
     {
+        SecurityEvents::record($event, ['user_id' => $actor?->id, 'target_user_id' => $target->id]);
         $this->audit->execute(accion: $event, modelo: 'User', modeloId: $target->id,
             descripcion: 'Ciclo de vida de cuenta interna.', metadata: $metadata + ['target_user_id' => $target->id],
             actorId: $actor?->id);

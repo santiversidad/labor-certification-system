@@ -54,6 +54,7 @@ COPY --from=composer:2.9 /usr/bin/composer /usr/local/bin/composer
 COPY --from=backend-dependencies --chown=www-data:www-data /app ./
 COPY --from=backend-assets --chown=www-data:www-data /app/public/build ./public/build
 COPY docker/php/entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY docker/php/security.ini /usr/local/etc/php/conf.d/zz-security.ini
 
 RUN chmod +x /usr/local/bin/docker-entrypoint
 

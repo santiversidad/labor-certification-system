@@ -24,6 +24,8 @@ class UserResource extends JsonResource
             'telefono' => $this->telefono,
             'estado' => $this->estado,
             'must_change_password' => (bool) $this->must_change_password,
+            'mfa_enabled' => (bool) $this->mfa_confirmed_at,
+            'mfa_pending' => $request->hasSession() && (bool) $request->session()->get('pending_auth'),
             'password_changed_at' => $this->password_changed_at?->toISOString(),
             'roles' => $this->getRoleNames(),
             'permisos' => $this->getAllPermissions()->pluck('name'),

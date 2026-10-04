@@ -57,8 +57,10 @@ class BackofficeIdentityLifecycleTest extends TestCase
     private function login(User $user, string $password = 'PruebaClaveNueva2026'): string
     {
         Auth::forgetGuards();
-        $token = $this->postJson('/api/v1/auth/login', ['username' => strtoupper($user->username), 'password' => $password])
-            ->assertOk()->json('data.token');
+        $this->postJson('/api/v1/auth/login', ['username' => strtoupper($user->username), 'password' => $password])
+            ->assertOk()->assertJsonMissingPath('data.token');
+        // Preserve non-browser token revocation regressions using explicit test-only issuance.
+        $token = $user->fresh()->createToken('cli-regression', ['*'])->plainTextToken;
         Auth::forgetGuards();
 
         return $token;
@@ -157,7 +159,7 @@ class BackofficeIdentityLifecycleTest extends TestCase
         $user = User::factory()->create(['password' => 'EmployeeClave2026']);
         $user->assignRole('funcionario');
         $this->postJson('/api/v1/auth/login', ['username' => $user->username, 'password' => 'EmployeeClave2026'])
-            ->assertForbidden()->assertJsonPath('code', 'ACCOUNT_CONTEXT_MISMATCH');
+            ->assertUnprocessable()->assertJsonValidationErrors('username');
     }
 
     public function test_database_rejects_missing_employee_even_when_model_is_bypassed(): void
@@ -232,7 +234,7 @@ class BackofficeIdentityLifecycleTest extends TestCase
         $this->assertSame($target->id, $history->fresh()->user_id);
         $this->tokenGet($token, 'auth/me')->assertUnauthorized();
         $this->postJson('/api/v1/auth/login', ['username' => $target->username, 'password' => 'PruebaClaveNueva2026'])
-            ->assertForbidden()->assertJsonPath('code', 'BACKOFFICE_USER_INACTIVE');
+            ->assertUnprocessable()->assertJsonValidationErrors('username');
         $response = $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/admin/usuarios-internos/'.$target->id.'/reactivar')->assertOk();
         $this->tokenGet($token, 'auth/me')->assertUnauthorized();
         $this->postJson('/api/v1/auth/login', ['username' => $target->username, 'password' => 'PruebaClaveNueva2026'])->assertUnprocessable();

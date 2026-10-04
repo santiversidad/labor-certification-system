@@ -38,6 +38,22 @@ class CertificatePdfTest extends TestCase
         $this->assertStringStartsWith('%PDF-', $this->service()->generarDesdeSnapshot($this->snapshot()));
     }
 
+    public function test_url_and_html_in_employee_data_cannot_become_remote_pdf_resources(): void
+    {
+        $snapshot = $this->snapshot();
+        $payload = '<img src="http://127.0.0.1:9/synthetic-security-resource" onerror="alert(1)">';
+        $snapshot['funcionario']['nombres'] = $payload;
+        $html = $this->service()->renderHtml($snapshot);
+        $this->assertStringContainsString(e($payload), $html);
+        $this->assertStringNotContainsString($payload, $html);
+        $options = (new \ReflectionMethod(CertificadoPdfService::class, 'options'))->invoke($this->service());
+        $this->assertFalse($options->getIsRemoteEnabled());
+        $this->assertFalse($options->getIsPhpEnabled());
+        [$allowed] = $options->validateRemoteUri('http://127.0.0.1:9/synthetic-security-resource');
+        $this->assertFalse($allowed); // Validation only: no network request is issued.
+        $this->assertStringStartsWith('%PDF-', $this->service()->generarDesdeSnapshot($snapshot));
+    }
+
     public function test_sencillo_no_imprime_funciones_aunque_se_inyecte_manual(): void
     {
         $snapshot = $this->snapshot();

@@ -40,7 +40,7 @@ export type DisponibilidadCertificacion = {
 
 export type ComprobantePago = {
   id: number; version: number; nombre_original: string; mime_type: string; size_bytes: number;
-  sha256: string; estado: 'en_revision' | 'rechazado' | 'confirmado'; referencia?: string | null;
+  estado: 'en_revision' | 'rechazado' | 'confirmado'; referencia?: string | null;
   observacion_funcionario?: string | null; motivo_rechazo?: string | null;
   revisado_at?: string | null; created_at?: string;
   revisor?: { id: number; name: string } | null; archivo_url: string;

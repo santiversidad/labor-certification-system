@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\ManualFuncionController;
 use App\Http\Controllers\Api\V1\MiCertificacionController;
+use App\Http\Controllers\Api\V1\MfaController;
 use App\Http\Controllers\Api\V1\PagoSolicitudController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\ParametroCertificacionController;
@@ -19,46 +20,52 @@ use App\Http\Controllers\Api\V1\ValidacionPublicaController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
-    Route::get('validar-certificado/{token}', [ValidacionPublicaController::class, 'show'])->name('validar-certificado.show');
-    Route::get('certificados/validar/{token}', [ValidacionPublicaController::class, 'show'])->name('certificados.validar.show');
+    Route::get('validar-certificado/{token}', [ValidacionPublicaController::class, 'show'])->middleware('throttle:public-validation')->name('validar-certificado.show');
+    Route::get('certificados/validar/{token}', [ValidacionPublicaController::class, 'show'])->middleware('throttle:public-validation')->name('certificados.validar.show');
 
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
-        Route::middleware(['auth:sanctum', 'identity.current'])->group(function () {
+        Route::middleware(['auth.principal', 'identity.current'])->group(function () {
             // Estas son las únicas operaciones permitidas mientras must_change_password=true.
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('me', [AuthController::class, 'me'])->name('me');
-            Route::put('change-password', [AuthController::class, 'changePassword'])->name('change-password');
+            Route::put('change-password', [AuthController::class, 'changePassword'])->middleware('throttle:password-change')->name('change-password');
+            Route::post('mfa/setup', [MfaController::class, 'setup'])->middleware(['password.changed', 'throttle:mfa-setup']);
+            Route::post('mfa/confirm', [MfaController::class, 'confirm'])->middleware(['password.changed', 'throttle:mfa']);
+            Route::post('mfa/verify', [MfaController::class, 'verify'])->middleware(['password.changed', 'throttle:mfa']);
         });
     });
 
-    Route::middleware(['auth:sanctum', 'identity.current', 'password.changed'])->group(function () {
+    Route::middleware(['auth:sanctum', 'identity.current', 'password.changed', 'mfa', 'throttle:authenticated'])->group(function () {
+        Route::post('auth/reauthenticate', [MfaController::class, 'reauthenticate'])->middleware('throttle:reauth');
+        Route::post('auth/mfa/recovery-codes', [MfaController::class, 'recovery'])->middleware(['auth.recent', 'throttle:security-action']);
         Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)->middleware('context.funcionario')->name('mi-certificacion.disponibilidad');
         Route::get('mi-certificacion/descargar/{token}', [MiCertificacionController::class, 'descargar'])->middleware('context.funcionario')->name('mi-certificacion.descargar');
         Route::get('solicitudes/{solicitud}/certificado', [MiCertificacionController::class, 'descargarSolicitud'])->middleware('context.funcionario')->name('mi-certificacion.solicitud.descargar');
-        Route::post('solicitudes/{solicitud}/pago/comprobantes', [PagoSolicitudController::class, 'cargar'])->middleware('context.funcionario')->name('solicitudes.pago.cargar');
+        Route::post('solicitudes/{solicitud}/pago/comprobantes', [PagoSolicitudController::class, 'cargar'])->middleware(['context.funcionario', 'throttle:payment-upload'])->name('solicitudes.pago.cargar');
         Route::get('solicitudes/{solicitud}/pago/comprobantes/{comprobante}', [PagoSolicitudController::class, 'archivo'])->name('solicitudes.pago.archivo');
-        Route::prefix('admin/usuarios-internos')->group(function () {
+        Route::prefix('admin/usuarios-internos')->middleware('throttle:provisioning')->group(function () {
             $controller = BackofficeUserController::class;
             Route::get('/', [$controller, 'index']);
             Route::post('/', [$controller, 'store']);
             Route::get('/{user}', [$controller, 'show']);
             Route::patch('/{user}', [$controller, 'update']);
-            Route::post('/{user}/desactivar', [$controller, 'deactivate']);
+            Route::post('/{user}/desactivar', [$controller, 'deactivate'])->middleware('auth.recent');
             Route::post('/{user}/reactivar', [$controller, 'reactivate']);
-            Route::post('/{user}/reset-password', [$controller, 'resetPassword']);
-            Route::post('/{user}/cambiar-rol', [$controller, 'changeRole']);
+            Route::post('/{user}/reset-password', [$controller, 'resetPassword'])->middleware(['auth.recent', 'throttle:security-action']);
+            Route::post('/{user}/cambiar-rol', [$controller, 'changeRole'])->middleware('auth.recent');
+            Route::post('/{user}/reset-mfa', [MfaController::class, 'reset'])->middleware(['auth.recent', 'throttle:security-action']);
         });
         Route::prefix('secretaria/pagos')->name('secretaria.pagos.')->group(function () {
             Route::get('/', [PagoSolicitudController::class, 'index'])->name('index');
             Route::get('/{solicitud}', [PagoSolicitudController::class, 'show'])->name('show');
-            Route::post('/{solicitud}/confirmar', [PagoSolicitudController::class, 'confirmar'])->name('confirmar');
-            Route::post('/{solicitud}/rechazar', [PagoSolicitudController::class, 'rechazar'])->name('rechazar');
+            Route::post('/{solicitud}/confirmar', [PagoSolicitudController::class, 'confirmar'])->middleware('throttle:payment-review')->name('confirmar');
+            Route::post('/{solicitud}/rechazar', [PagoSolicitudController::class, 'rechazar'])->middleware('throttle:payment-review')->name('rechazar');
         });
 
         Route::prefix('configuracion/certificaciones')->name('configuracion.certificaciones.')->group(function () {
             Route::get('/', [ParametroCertificacionController::class, 'show'])->name('show');
-            Route::patch('/', [ParametroCertificacionController::class, 'update'])->name('update');
+            Route::patch('/', [ParametroCertificacionController::class, 'update'])->middleware('auth.recent')->name('update');
         });
 
         Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
@@ -94,7 +101,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
             Route::get('/', [SolicitudCertificacionController::class, 'index'])->name('index');
-            Route::post('/', [SolicitudCertificacionController::class, 'store'])->middleware('context.funcionario')->name('store');
+            Route::post('/', [SolicitudCertificacionController::class, 'store'])->middleware(['context.funcionario', 'throttle:certificate-generation'])->name('store');
             Route::get('/{solicitud}', [SolicitudCertificacionController::class, 'show'])->name('show');
 
             // Compatibilidad de rutas: el flujo manual responde 410 y no altera estados.
