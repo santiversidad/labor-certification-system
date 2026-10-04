@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { mkdir, readFile } from 'node:fs/promises';
 
 const api = 'http://e2e-api:8280/api/v1';
-const evidence = 'evidence/payment-phase27';
+const evidence = 'test-results/regression-phase27';
 const receipt = { name: 'comprobante-ficticio.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% Comprobante SINTETICO sin pago real.\n') };
 const headers = (token: string) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json' });
 
@@ -10,7 +10,7 @@ async function apiLogin(request: APIRequestContext, cedula: string, password: st
   const r = await request.post(`${api}/auth/login`, { data: { cedula, password } }); expect(r.status()).toBe(200); return (await r.json()).data.token as string;
 }
 async function login(page: Page, cedula: string, password: string) {
-  await page.goto('/login'); await page.getByLabel('Cédula', { exact: true }).fill(cedula); await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.goto('/login'); await page.getByLabel('Usuario', { exact: true }).fill(cedula); await page.getByLabel('Contraseña', { exact: true }).fill(password);
   const response = page.waitForResponse((r) => r.url().endsWith('/auth/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click(); const r = await response; expect(r.status()).toBe(200); const token = (await r.json()).data.token as string;
   await expect(page).toHaveURL(/\/(app\/inicio|admin\/dashboard)$/); return token;

@@ -13,7 +13,7 @@ import { paymentWorkflowService } from './services/paymentWorkflow.service';
 import { solicitudesService } from '../solicitudes/services/solicitudes.service';
 import type { ComprobantePago, SolicitudEstado, SolicitudPago } from '../solicitudes/types/solicitud.types';
 
-const auth = vi.hoisted(() => ({ user: { roles: ['secretario'], permisos: ['pagos.ver', 'pagos.validar', 'pagos.rechazar'] } }));
+const auth = vi.hoisted(() => ({ user: { tipo_cuenta: 'backoffice', roles: ['secretario'], permisos: ['pagos.ver', 'pagos.validar', 'pagos.rechazar'] } }));
 vi.mock('../auth/hooks/useAuth', () => ({ useAuth: () => auth }));
 vi.mock('./services/paymentWorkflow.service', () => ({ paymentWorkflowService: { list: vi.fn(), detail: vi.fn(), confirm: vi.fn(), reject: vi.fn(), upload: vi.fn(), download: vi.fn() } }));
 vi.mock('../solicitudes/services/solicitudes.service', () => ({ solicitudesService: { getById: vi.fn(), disponibilidad: vi.fn(), create: vi.fn() } }));

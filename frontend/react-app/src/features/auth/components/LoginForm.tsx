@@ -17,9 +17,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: import.meta.env.DEV
-      ? { cedula: '000000003', password: 'password' }
-      : { cedula: '', password: '' },
+    defaultValues: { username: '', password: '' },
   });
 
   const loginMutation = useMutation({
@@ -35,10 +33,10 @@ export function LoginForm() {
       <div className="mb-7">
         <p className="eyebrow">Acceso seguro</p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em] text-text">Iniciar sesión</h1>
-        <p className="mt-2 text-sm leading-6 text-muted">Ingrese con las credenciales asignadas por Talento Humano.</p>
+        <p className="mt-2 text-sm leading-6 text-muted">Los funcionarios ingresan con su número de documento. Los usuarios internos utilizan su usuario institucional.</p>
       </div>
       <form className="space-y-5" noValidate onSubmit={handleSubmit((values) => loginMutation.mutate(values))}>
-        <Input autoComplete="username" error={errors.cedula?.message} inputMode="numeric" label="Cédula" {...register('cedula')} />
+        <Input autoComplete="username" error={errors.username?.message} label="Usuario" {...register('username')} />
         <div className="relative">
           <Input autoComplete="current-password" error={errors.password?.message} label="Contraseña" type={showPassword ? 'text' : 'password'} {...register('password')} />
           <button aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} className="absolute right-2 top-[34px] rounded p-2 text-muted hover:bg-surface-muted hover:text-text" onClick={() => setShowPassword((value) => !value)} type="button">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
@@ -49,12 +47,7 @@ export function LoginForm() {
         </Button>
       </form>
       <p className="mt-5 flex items-center justify-center gap-2 text-xs text-muted"><ShieldCheck size={15} /> Sus datos viajan mediante una conexión segura.</p>
-      {import.meta.env.DEV ? (
-        <details className="mt-6 rounded-md border border-dashed border-border bg-surface-muted/50 p-3 text-xs text-muted" data-testid="demo-credentials">
-          <summary className="cursor-pointer font-semibold text-text">Usuarios de desarrollo</summary>
-          <div className="mt-2 space-y-1"><p><strong>000000003</strong> / password — Funcionario</p><p><strong>000000001</strong> / password — Administrador</p></div>
-        </details>
-      ) : null}
+
     </div>
   );
 }

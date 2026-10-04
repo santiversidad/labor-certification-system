@@ -6,24 +6,25 @@ export function hasAnyRole(user: User | null, allowedRoles: Role[]): boolean {
     return false;
   }
 
-  return user.roles.some((role) => allowedRoles.includes(role));
+  return user.roles.length === 1 && user.roles.some((role) => allowedRoles.includes(role)
+    && (role === 'funcionario' ? user.tipo_cuenta === 'funcionario' : user.tipo_cuenta === 'backoffice'));
 }
 
 export function isAdmin(user: User | null): boolean {
-  return Boolean(user?.roles.includes('admin'));
+  return hasAnyRole(user, ['admin']);
 }
 
 // Admin y secretario comparten el panel de gestión /admin
 export function isGestorRole(user: User | null): boolean {
-  return Boolean(user?.roles.some((r) => r === 'admin' || r === 'secretario'));
+  return hasAnyRole(user, ['admin', 'secretario']);
 }
 
 export function isSecretary(user: User | null): boolean {
-  return Boolean(user?.roles.includes('secretario'));
+  return hasAnyRole(user, ['secretario']);
 }
 
 export function isFuncionario(user: User | null): boolean {
-  return Boolean(user?.roles.includes('funcionario'));
+  return hasAnyRole(user, ['funcionario']);
 }
 
 export function getHomePath(user: User | null): string {

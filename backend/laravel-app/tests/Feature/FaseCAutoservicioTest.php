@@ -40,7 +40,7 @@ class FaseCAutoservicioTest extends TestCase
         Storage::fake('local');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-08-30 03:00:00', 'America/Bogota'));
 
-        $this->admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $this->admin = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $this->admin->assignRole(RoleEnum::Admin->value);
         $this->cargo = Cargo::create([
             'codigo' => '219', 'grado' => '02', 'denominacion' => 'Profesional Universitario',
@@ -102,7 +102,7 @@ class FaseCAutoservicioTest extends TestCase
         $usuariosAntes = User::count();
 
         $this->actingAs($this->admin, 'sanctum')
-            ->postJson('/api/v1/funcionarios', $this->datosFuncionario($this->admin->documento))
+            ->postJson('/api/v1/funcionarios', $this->datosFuncionario(''))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('numero_documento');
 
@@ -212,7 +212,7 @@ class FaseCAutoservicioTest extends TestCase
             ->assertJsonPath('data.requiere_pago_certificado', true);
         $this->assertDatabaseHas('audit_logs', ['accion' => 'configurar_pago_certificado']);
 
-        $secretario = User::factory()->create(['must_change_password' => false]);
+        $secretario = User::factory()->backoffice()->create(['must_change_password' => false]);
         $secretario->assignRole(RoleEnum::Secretario->value);
         $this->actingAs($secretario, 'sanctum')->patchJson('/api/v1/configuracion/certificaciones', [
             'requiere_pago_certificado' => false,
@@ -351,7 +351,7 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertSame(0, $user->tokens()->count());
         $this->assertDatabaseCount('certificados', 1);
         $this->assertDatabaseCount('solicitudes_certificacion', 1);
-        $this->solicitar($user->fresh(), 'funciones')->assertForbidden();
+        $this->solicitar($user->fresh(), 'funciones')->assertUnauthorized();
     }
 
     private function solicitar(User $user, string $tipo = 'sencillo')

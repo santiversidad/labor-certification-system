@@ -35,7 +35,7 @@ class AuthorizationRegressionTest extends TestCase
     public function test_auth_me_identifica_admin_secretario_y_funcionario(): void
     {
         foreach ([RoleEnum::Admin, RoleEnum::Secretario, RoleEnum::Funcionario] as $role) {
-            $user = User::factory()->create([
+            $user = ($role === RoleEnum::Funcionario ? User::factory() : User::factory()->backoffice())->create([
                 'password' => bcrypt('password'),
                 'must_change_password' => false,
             ]);
@@ -80,7 +80,7 @@ class AuthorizationRegressionTest extends TestCase
 
     public function test_admin_tiene_acceso_a_toda_la_matriz_administrativa(): void
     {
-        $admin = User::factory()->create(['must_change_password' => false]);
+        $admin = User::factory()->backoffice()->create(['must_change_password' => false]);
         $admin->assignRole(RoleEnum::Admin->value);
 
         foreach (self::ADMIN_ENDPOINTS as $endpoint) {
@@ -103,7 +103,7 @@ class AuthorizationRegressionTest extends TestCase
 
     public function test_secretario_conserva_solo_su_matriz_definida(): void
     {
-        $secretario = User::factory()->create(['must_change_password' => false]);
+        $secretario = User::factory()->backoffice()->create(['must_change_password' => false]);
         $secretario->assignRole(RoleEnum::Secretario->value);
 
         foreach ([
@@ -129,7 +129,7 @@ class AuthorizationRegressionTest extends TestCase
     {
         Auth::forgetGuards();
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula' => $user->documento,
+            'username' => $user->username,
             'password' => 'password',
         ])->assertOk();
         Auth::forgetGuards();

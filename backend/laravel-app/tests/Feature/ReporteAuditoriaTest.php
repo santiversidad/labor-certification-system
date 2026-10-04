@@ -16,7 +16,7 @@ class ReporteAuditoriaTest extends TestCase
     public function test_admin_puede_consultar_resumen_reportes(): void
     {
         $this->seed(RolesPermisosSeeder::class);
-        $admin = User::factory()->create(['estado' => true]);
+        $admin = User::factory()->backoffice()->create(['estado' => true]);
         $admin->assignRole(RoleEnum::Admin->value);
 
         $this->actingAs($admin, 'sanctum')
@@ -51,7 +51,7 @@ class ReporteAuditoriaTest extends TestCase
     public function test_admin_puede_filtrar_auditoria(): void
     {
         $this->seed(RolesPermisosSeeder::class);
-        $admin = User::factory()->create(['estado' => true]);
+        $admin = User::factory()->backoffice()->create(['estado' => true]);
         $admin->assignRole(RoleEnum::Admin->value);
 
         AuditLog::create([

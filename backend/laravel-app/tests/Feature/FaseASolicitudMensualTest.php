@@ -147,7 +147,7 @@ class FaseASolicitudMensualTest extends TestCase
 
     public function test_rutas_salariales_fueron_retiradas(): void
     {
-        $admin = User::factory()->create(['estado' => true]);
+        $admin = User::factory()->backoffice()->create(['estado' => true]);
         $admin->assignRole(RoleEnum::Admin->value);
 
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/rangos-salariales')->assertNotFound();

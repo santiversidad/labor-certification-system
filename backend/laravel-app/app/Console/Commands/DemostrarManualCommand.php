@@ -46,7 +46,7 @@ class DemostrarManualCommand extends Command
                     return $user;
                 }
                 $password = Str::random(24);
-                $user = User::create(['documento' => $documento, 'name' => 'Prueba Manual '.$source,
+                $user = User::create(['tipo_cuenta' => 'funcionario', 'documento' => $documento, 'name' => 'Prueba Manual '.$source,
                     'password' => $password, 'estado' => true, 'must_change_password' => false,
                     'password_changed_at' => now(), 'email' => strtolower($documento).'@example.test']);
                 $user->assignRole('funcionario');

@@ -7,6 +7,7 @@ use App\Enums\EstadoFuncionarioEnum;
 use App\Enums\EstadoOrdenPagoEnum;
 use App\Enums\EstadoSolicitudEnum;
 use App\Enums\TipoCertificadoEnum;
+use App\Exceptions\IdentityException;
 use App\Models\OrdenPagoCertificado;
 use App\Models\ParametroSistema;
 use App\Models\SolicitudCertificacion;
@@ -31,6 +32,9 @@ class ExpedirCertificacionService
         $tipo = TipoCertificadoEnum::from($tipoCertificado);
         if ($actor->must_change_password) {
             throw new \DomainException('PASSWORD_CHANGE_REQUIRED');
+        }
+        if (! $actor->isFuncionarioAccount()) {
+            throw new IdentityException('ACCOUNT_CONTEXT_MISMATCH', 'Use su cuenta funcionario.', 403);
         }
         $funcionario = $actor->funcionario;
         if (! $funcionario || $funcionario->estado !== EstadoFuncionarioEnum::Activo || ! $actor->estado) {

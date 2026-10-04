@@ -44,9 +44,9 @@ class FaseBIntegridadDominioTest extends TestCase
         $this->seed(RolesPermisosSeeder::class);
         Storage::fake('local');
 
-        $this->admin = User::factory()->create(['estado' => true]);
+        $this->admin = User::factory()->backoffice()->create(['estado' => true]);
         $this->admin->assignRole(RoleEnum::Admin->value);
-        $this->secretario = User::factory()->create(['estado' => true]);
+        $this->secretario = User::factory()->backoffice()->create(['estado' => true]);
         $this->secretario->assignRole(RoleEnum::Secretario->value);
         $this->funcionarioUser = User::factory()->create(['estado' => true]);
         $this->funcionarioUser->assignRole(RoleEnum::Funcionario->value);

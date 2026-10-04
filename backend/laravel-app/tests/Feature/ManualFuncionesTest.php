@@ -32,7 +32,7 @@ class ManualFuncionesTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolesPermisosSeeder::class);
-        $this->admin = User::factory()->create(['estado' => true]);
+        $this->admin = User::factory()->backoffice()->create(['estado' => true]);
         $this->admin->assignRole(RoleEnum::Admin->value);
         $this->funcionario = User::factory()->create(['estado' => true]);
         $this->funcionario->assignRole(RoleEnum::Funcionario->value);

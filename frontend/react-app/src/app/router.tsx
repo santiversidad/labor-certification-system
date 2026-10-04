@@ -8,6 +8,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import { PublicLayout } from '../components/layout/PublicLayout';
 
+const BackofficeUsersPage = lazy(() => import('../features/backoffice/BackofficeUsersPage').then((module) => ({ default: module.BackofficeUsersPage })));
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
 const ChangePasswordPage = lazy(() => import('../features/auth/pages/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
 const ValidarCertificadoPage = lazy(() => import('../features/validacion-publica/pages/ValidarCertificadoPage').then((module) => ({ default: module.ValidarCertificadoPage })));
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       { path: 'funcionarios/nuevo', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionarioFormPage)}</RoleRoute> },
       { path: 'funcionarios/:id', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionarioDetailPage)}</RoleRoute> },
       { path: 'funcionarios/:id/editar', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionarioFormPage)}</RoleRoute> },
+      { path: 'usuarios-internos', element: <RoleRoute allowedRoles={['admin']}>{screen(BackofficeUsersPage)}</RoleRoute> },
       { path: 'cargos', element: <RoleRoute allowedRoles={['admin']}>{screen(CargosPage)}</RoleRoute> },
       { path: 'manual-funciones', element: <RoleRoute allowedRoles={['admin']}>{screen(ManualesPage)}</RoleRoute> },
       { path: 'certificaciones', element: screen(CertificadosPage) },

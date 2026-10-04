@@ -10,7 +10,7 @@ async function capture(page: Page, name: string) {
 
 async function login(page: Page, documento: string, password: string) {
   await page.goto('/login');
-  await page.getByLabel('Cédula', { exact: true }).fill(documento);
+  await page.getByLabel('Usuario', { exact: true }).fill(documento);
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
 }

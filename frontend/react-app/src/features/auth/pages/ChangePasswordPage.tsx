@@ -31,7 +31,7 @@ export function ChangePasswordPage() {
     <div>
       <p className="eyebrow">Primer ingreso</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-text">Cambie su contraseña temporal</h1>
-      <Alert className="mt-6" title="Cambio obligatorio de contraseña" variant="warning">Antes de solicitar certificaciones debe definir una contraseña personal. Use al menos 12 caracteres, mayúsculas, minúsculas y números. No use su número de cédula.</Alert>
+      <Alert className="mt-6" title="Cambio obligatorio de contraseña" variant="warning">Antes de continuar debe definir una contraseña personal. Use al menos 12 caracteres, mayúsculas, minúsculas y números. No use su número de cédula.</Alert>
         <form className="mt-6 space-y-4" onSubmit={(event) => {
           event.preventDefault();
           mutation.mutate({ current_password: currentPassword, password, password_confirmation: confirmation });

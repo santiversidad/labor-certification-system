@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ActuacionAdministrativaController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BackofficeUserController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\CertificadoController;
 use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
@@ -23,7 +24,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware(['auth:sanctum', 'identity.current'])->group(function () {
             // Estas son las únicas operaciones permitidas mientras must_change_password=true.
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('me', [AuthController::class, 'me'])->name('me');
@@ -31,12 +32,23 @@ Route::prefix('v1')->name('v1.')->group(function () {
         });
     });
 
-    Route::middleware(['auth:sanctum', 'password.changed'])->group(function () {
-        Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)->name('mi-certificacion.disponibilidad');
-        Route::get('mi-certificacion/descargar/{token}', [MiCertificacionController::class, 'descargar'])->name('mi-certificacion.descargar');
-        Route::get('solicitudes/{solicitud}/certificado', [MiCertificacionController::class, 'descargarSolicitud'])->name('mi-certificacion.solicitud.descargar');
-        Route::post('solicitudes/{solicitud}/pago/comprobantes', [PagoSolicitudController::class, 'cargar'])->name('solicitudes.pago.cargar');
+    Route::middleware(['auth:sanctum', 'identity.current', 'password.changed'])->group(function () {
+        Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)->middleware('context.funcionario')->name('mi-certificacion.disponibilidad');
+        Route::get('mi-certificacion/descargar/{token}', [MiCertificacionController::class, 'descargar'])->middleware('context.funcionario')->name('mi-certificacion.descargar');
+        Route::get('solicitudes/{solicitud}/certificado', [MiCertificacionController::class, 'descargarSolicitud'])->middleware('context.funcionario')->name('mi-certificacion.solicitud.descargar');
+        Route::post('solicitudes/{solicitud}/pago/comprobantes', [PagoSolicitudController::class, 'cargar'])->middleware('context.funcionario')->name('solicitudes.pago.cargar');
         Route::get('solicitudes/{solicitud}/pago/comprobantes/{comprobante}', [PagoSolicitudController::class, 'archivo'])->name('solicitudes.pago.archivo');
+        Route::prefix('admin/usuarios-internos')->group(function () {
+            $controller = BackofficeUserController::class;
+            Route::get('/', [$controller, 'index']);
+            Route::post('/', [$controller, 'store']);
+            Route::get('/{user}', [$controller, 'show']);
+            Route::patch('/{user}', [$controller, 'update']);
+            Route::post('/{user}/desactivar', [$controller, 'deactivate']);
+            Route::post('/{user}/reactivar', [$controller, 'reactivate']);
+            Route::post('/{user}/reset-password', [$controller, 'resetPassword']);
+            Route::post('/{user}/cambiar-rol', [$controller, 'changeRole']);
+        });
         Route::prefix('secretaria/pagos')->name('secretaria.pagos.')->group(function () {
             Route::get('/', [PagoSolicitudController::class, 'index'])->name('index');
             Route::get('/{solicitud}', [PagoSolicitudController::class, 'show'])->name('show');
@@ -82,7 +94,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
             Route::get('/', [SolicitudCertificacionController::class, 'index'])->name('index');
-            Route::post('/', [SolicitudCertificacionController::class, 'store'])->name('store');
+            Route::post('/', [SolicitudCertificacionController::class, 'store'])->middleware('context.funcionario')->name('store');
             Route::get('/{solicitud}', [SolicitudCertificacionController::class, 'show'])->name('show');
 
             // Compatibilidad de rutas: el flujo manual responde 410 y no altera estados.

@@ -7,7 +7,7 @@ import { Header } from './Header';
 const logoutLocal = vi.fn();
 vi.mock('../../features/auth/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { id: 1, name: 'Funcionario', documento: '1', roles: ['funcionario'], permissions: [] },
+    user: { id: 1, name: 'Funcionario', documento: '1', username: 'persona.test', tipo_cuenta: 'funcionario', roles: ['funcionario'], permissions: [] },
     logout: logoutLocal,
   }),
 }));

@@ -11,6 +11,9 @@ class DatosEjemploSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment('local', 'testing')) {
+            return;
+        }
         // ─── Cargo de ejemplo ─────────────────────────────────────────────────
         $cargo = Cargo::firstOrCreate(
             ['codigo' => '219', 'grado' => '02'],
@@ -36,7 +39,7 @@ class DatosEjemploSeeder extends Seeder
                     'numero_documento' => '000000003',
                     'nombres' => 'Funcionario',
                     'apellidos' => 'Prueba',
-                    'correo_institucional' => 'funcionario@villavicencio.gov.co',
+                    'correo_institucional' => 'funcionario@example.test',
                     'telefono' => '3001234567',
                     'estado' => 'activo',
                     'fecha_ingreso' => '2020-01-15',

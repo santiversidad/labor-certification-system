@@ -37,7 +37,7 @@ class MiCertificacionController extends Controller
     public function descargarSolicitud(Request $request, int $solicitud)
     {
         $model = SolicitudCertificacion::findOrFail($solicitud);
-        abort_unless($request->user()->hasRole('funcionario') && $request->user()->funcionario?->id === $model->funcionario_id, 403);
+        abort_unless($request->user()->isFuncionarioAccount() && $request->user()->funcionario?->id === $model->funcionario_id, 403);
         if ($model->estado !== EstadoSolicitudEnum::Generada) {
             return $this->errorResponse('El certificado todavía no está generado.', null, 409, 'CERTIFICADO_NO_GENERADO');
         }

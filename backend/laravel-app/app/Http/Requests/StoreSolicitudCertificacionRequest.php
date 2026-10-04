@@ -24,7 +24,7 @@ class StoreSolicitudCertificacionRequest extends FormRequest
     public function authorize(): bool
     {
         // Solo usuarios con permiso de crear solicitudes
-        return $this->user()->can('solicitudes.crear') && $this->user()->hasRole('funcionario');
+        return $this->user()->can('solicitudes.crear') && $this->user()->isFuncionarioAccount();
     }
 
     public function rules(): array

@@ -9,7 +9,7 @@ let functionsEmployee = '';
 
 async function login(page: Page, documento: string, password: string) {
   await page.goto('/login');
-  await page.getByLabel('Cédula', { exact: true }).fill(documento);
+  await page.getByLabel('Usuario', { exact: true }).fill(documento);
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   const loginResponse = page.waitForResponse((response) => response.url().endsWith('/api/v1/auth/login') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();

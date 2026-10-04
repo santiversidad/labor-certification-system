@@ -19,7 +19,9 @@ $result = DB::transaction(function () {
     $suffix = bin2hex(random_bytes(4));
     $result = ['users' => [], 'employees' => []];
     foreach (['admin' => 'admin', 'secretaria' => 'secretario', 'off' => 'funcionario', 'on' => 'funcionario', 'incomplete' => 'funcionario'] as $label => $role) {
-        $user = User::create(['documento' => 'P27CT-'.$suffix.'-'.substr($label, 0, 3), 'name' => 'Prueba ficticia CT pago '.$label,
+        $identity = 'p27ct-'.$suffix.'-'.substr($label, 0, 3);
+        $user = User::create(['tipo_cuenta' => $role === 'funcionario' ? 'funcionario' : 'backoffice',
+            'username' => $identity, 'documento' => $role === 'funcionario' ? $identity : null, 'name' => 'Prueba ficticia CT pago '.$label,
             'password' => Hash::make(bin2hex(random_bytes(24))), 'estado' => true, 'must_change_password' => false]);
         $user->assignRole($role);
         $result['users'][$label] = ['id' => $user->id, 'token' => $user->createToken('phase27-ct-smoke')->plainTextToken];

@@ -28,14 +28,14 @@ class PrepareAutoserviceE2E extends Command
         }
         $this->call('db:seed', ['--class' => RolesPermisosSeeder::class, '--force' => true]);
         DB::transaction(function () {
-            $admin = User::firstOrCreate(['documento' => 'E2E-ADMIN'], [
-                'name' => 'Administrador ficticio E2E', 'password' => Hash::make('E2EAdminClave2026'),
+            $admin = User::firstOrCreate(['username' => 'e2e-admin'], [
+                'tipo_cuenta' => 'backoffice', 'documento' => null, 'name' => 'Administrador ficticio E2E', 'password' => Hash::make('E2EAdminClave2026'),
                 'estado' => true, 'must_change_password' => false,
             ]);
             $admin->assignRole('admin');
             foreach (['E2E-SECRETARIA', 'E2E-SECRETARIA-2'] as $documento) {
-                $secretaria = User::firstOrCreate(['documento' => $documento], [
-                    'name' => 'Secretaría ficticia pagos E2E', 'password' => Hash::make('E2ESecretaria2026'),
+                $secretaria = User::firstOrCreate(['username' => strtolower($documento)], [
+                    'tipo_cuenta' => 'backoffice', 'documento' => null, 'name' => 'Secretaría ficticia pagos E2E', 'password' => Hash::make('E2ESecretaria2026'),
                     'estado' => true, 'must_change_password' => false,
                 ]);
                 $secretaria->assignRole('secretario');
@@ -82,7 +82,7 @@ class PrepareAutoserviceE2E extends Command
                 $versionIncompleta->update(['estado' => 'publicado']);
             }
             $incompleteUser = User::firstOrCreate(['documento' => 'E2E-INCOMPLETE'], [
-                'name' => 'Funcionario ficha incompleta E2E', 'password' => Hash::make('E2EIncomplete2026'),
+                'tipo_cuenta' => 'funcionario', 'name' => 'Funcionario ficha incompleta E2E', 'password' => Hash::make('E2EIncomplete2026'),
                 'estado' => true, 'must_change_password' => false,
             ]);
             $incompleteUser->assignRole('funcionario');

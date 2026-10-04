@@ -6,7 +6,14 @@ export type ID = number;
 export type User = {
   id: ID;
   name: string;
-  documento: string;
+  documento: string | null;
+  username: string;
+  tipo_cuenta: 'funcionario' | 'backoffice' | 'legacy';
+  funcionario_id?: number | null;
+  email?: string | null;
+  last_login_at?: string | null;
+  desactivado_at?: string | null;
+  motivo_desactivacion?: string | null;
   telefono?: string | null;
   estado: boolean;
   must_change_password: boolean;

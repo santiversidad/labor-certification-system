@@ -39,7 +39,7 @@ class SnapshotCertificadoTest extends TestCase
         Storage::fake('local');
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-08-30 09:00:00', 'America/Bogota'));
 
-        $this->secretario = User::factory()->create(['estado' => true]);
+        $this->secretario = User::factory()->backoffice()->create(['estado' => true]);
         $this->secretario->assignRole(RoleEnum::Secretario->value);
         $this->funcionarioUser = User::factory()->create(['estado' => true]);
         $this->funcionarioUser->assignRole(RoleEnum::Funcionario->value);

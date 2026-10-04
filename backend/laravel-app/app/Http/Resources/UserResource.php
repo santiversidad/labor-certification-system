@@ -12,14 +12,22 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'documento' => $this->documento,   // cédula — identificador principal
+            'documento' => $this->documento,
+            'username' => $this->username,
+            'tipo_cuenta' => $this->tipo_cuenta,
+            'email' => $this->email,
+            'funcionario_id' => $this->tipo_cuenta === 'funcionario' ? $this->funcionario?->id : null,
+            'last_login_at' => $this->last_login_at?->toISOString(),
+            'desactivado_at' => $this->desactivado_at?->toISOString(),
+            'desactivado_por' => $this->desactivado_por,
+            'motivo_desactivacion' => $this->motivo_desactivacion,   // cédula — identificador principal
             'telefono' => $this->telefono,
             'estado' => $this->estado,
             'must_change_password' => (bool) $this->must_change_password,
             'password_changed_at' => $this->password_changed_at?->toISOString(),
             'roles' => $this->getRoleNames(),
             'permisos' => $this->getAllPermissions()->pluck('name'),
-            'funcionario' => $this->when(! $this->must_change_password && $this->relationLoaded('funcionario'),
+            'funcionario' => $this->when($this->tipo_cuenta === 'funcionario' && ! $this->must_change_password && $this->relationLoaded('funcionario'),
                 fn () => new FuncionarioResource($this->funcionario)),
             'created_at' => $this->created_at?->toISOString(),
         ];

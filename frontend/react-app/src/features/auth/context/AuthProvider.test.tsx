@@ -24,7 +24,7 @@ vi.mock('../../cargos/services/cargos.service', () => ({
 const admin: User = {
   id: 1,
   name: 'Admin cacheado',
-  documento: '1',
+  documento: '1', username: 'persona.test', tipo_cuenta: 'backoffice',
   estado: true,
   must_change_password: false,
   roles: ['admin'],
@@ -34,7 +34,7 @@ const funcionario: User = {
   ...admin,
   id: 2,
   name: 'Funcionario real',
-  documento: '2',
+  documento: '2', username: '2', tipo_cuenta: 'funcionario',
   roles: ['funcionario'],
   permisos: ['solicitudes.crear'],
 };

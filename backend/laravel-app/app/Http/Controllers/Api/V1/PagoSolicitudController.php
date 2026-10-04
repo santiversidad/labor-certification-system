@@ -47,7 +47,7 @@ class PagoSolicitudController extends Controller
     public function cargar(Request $request, int $solicitud)
     {
         $model = SolicitudCertificacion::findOrFail($solicitud);
-        abort_unless($request->user()->hasRole('funcionario') && $request->user()->can('pagos.cargar')
+        abort_unless($request->user()->isFuncionarioAccount() && $request->user()->can('pagos.cargar')
             && $request->user()->funcionario?->id === $model->funcionario_id, 403);
         $datos = $request->validate([
             'archivo' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:'.config('payments.receipt_max_kb')],
@@ -93,8 +93,8 @@ class PagoSolicitudController extends Controller
     {
         $model = SolicitudCertificacion::findOrFail($solicitud);
         $actor = $request->user();
-        $titular = $actor->hasRole('funcionario') && $actor->can('pagos.cargar') && $actor->funcionario?->id === $model->funcionario_id;
-        abort_unless($titular || (! $actor->hasRole('funcionario') && $actor->can('pagos.ver')), 403);
+        $titular = $actor->isFuncionarioAccount() && $actor->can('pagos.cargar') && $actor->funcionario?->id === $model->funcionario_id;
+        abort_unless($titular || (! $actor->isFuncionarioAccount() && $actor->can('pagos.ver')), 403);
         $evidencia = PagoComprobante::whereKey($comprobante)
             ->whereHas('soporte', fn ($q) => $q->where('solicitud_certificacion_id', $solicitud))->firstOrFail();
         abort_unless(Storage::disk('local')->exists($evidencia->archivo_path), 404);
@@ -109,7 +109,7 @@ class PagoSolicitudController extends Controller
 
     private function autorizarSecretaria(Request $request, string $permiso): void
     {
-        abort_unless($request->user()->hasRole('secretario') && ! $request->user()->hasRole('funcionario') && $request->user()->can($permiso), 403);
+        abort_unless($request->user()->hasRole('secretario') && ! $request->user()->isFuncionarioAccount() && $request->user()->can($permiso), 403);
     }
 
     private function payload(SolicitudCertificacion $s): array

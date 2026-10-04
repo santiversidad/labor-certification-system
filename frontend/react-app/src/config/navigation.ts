@@ -20,6 +20,7 @@ export const adminNavigation: NavigationItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: Gauge, roles: ['admin', 'secretario'] },
   { label: 'Validación de pagos', path: '/admin/pagos', icon: ScrollText, roles: ['secretario'] },
   { label: 'Funcionarios', path: '/admin/funcionarios', icon: Users, roles: ['admin'] },
+  { label: 'Usuarios internos', path: '/admin/usuarios-internos', icon: Users, roles: ['admin'] },
   { label: 'Cargos', path: '/admin/cargos', icon: BriefcaseBusiness, roles: ['admin'] },
   { label: 'Manual de Funciones', path: '/admin/manual-funciones', icon: BookOpenCheck, roles: ['admin'] },
   { label: 'Certificaciones', path: '/admin/certificaciones', icon: BadgeCheck, roles: ['admin', 'secretario'] },

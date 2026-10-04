@@ -25,6 +25,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'tipo_cuenta' => 'funcionario',
             'name' => fake('es_CO')->name(),
             // La cédula es el identificador único de autenticación
             'documento' => fake()->unique()->numerify('##########'),
@@ -34,6 +35,14 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             // email es opcional; se omite por defecto en tests
         ];
+    }
+
+    public function backoffice(): static
+    {
+        return $this->state(fn () => [
+            'tipo_cuenta' => 'backoffice', 'documento' => null,
+            'username' => 'persona.test.'.Str::lower(Str::random(12)),
+        ]);
     }
 
     /** Estado para usuario inactivo. */

@@ -32,10 +32,10 @@ class SolicitudCertificacionTest extends TestCase
         parent::setUp();
         $this->seed(RolesPermisosSeeder::class);
 
-        $this->admin = User::factory()->create(['estado' => true]);
+        $this->admin = User::factory()->backoffice()->create(['estado' => true]);
         $this->admin->assignRole(RoleEnum::Admin->value);
 
-        $this->secretario = User::factory()->create(['estado' => true]);
+        $this->secretario = User::factory()->backoffice()->create(['estado' => true]);
         $this->secretario->assignRole(RoleEnum::Secretario->value);
 
         $cargo = Cargo::create([

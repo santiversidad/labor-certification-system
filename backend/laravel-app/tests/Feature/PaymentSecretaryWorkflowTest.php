@@ -41,9 +41,9 @@ class PaymentSecretaryWorkflowTest extends TestCase
         $cargo = Cargo::create(['codigo' => 'P27', 'grado' => '01', 'denominacion' => 'Cargo ficticio', 'nivel' => 'Profesional', 'estado' => true]);
         $this->titular = $this->empleado($cargo, 'PAGO-1');
         $this->otro = $this->empleado($cargo, 'PAGO-2');
-        $this->secretaria = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $this->secretaria = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $this->secretaria->assignRole('secretario');
-        $this->admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $this->admin = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $this->admin->assignRole('admin');
         ParametroSistema::create(['clave' => 'requiere_pago_certificado', 'valor' => 'true', 'tipo' => 'boolean']);
     }

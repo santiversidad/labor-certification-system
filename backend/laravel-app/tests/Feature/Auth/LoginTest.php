@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Enums\RoleEnum;
+use App\Models\Funcionario;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,15 +21,15 @@ class LoginTest extends TestCase
 
     public function test_usuario_puede_iniciar_sesion_con_cedula_y_password_correctos(): void
     {
-        $user = User::factory()->create([
-            'documento' => '12345678',
+        $user = User::factory()->backoffice()->create([
+            'username' => 'admin.test',
             'password' => bcrypt('password'),
             'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Admin->value);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula' => '12345678',
+            'username' => 'ADMIN.TEST',
             'password' => 'password',
         ]);
 
@@ -102,6 +103,8 @@ class LoginTest extends TestCase
             'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Funcionario->value);
+        Funcionario::create(['user_id' => $user->id, 'numero_documento' => $user->documento,
+            'nombres' => 'Persona', 'apellidos' => 'Test', 'estado' => 'activo']);
 
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/auth/me')
@@ -112,7 +115,8 @@ class LoginTest extends TestCase
 
     public function test_usuario_puede_cerrar_sesion(): void
     {
-        $user = User::factory()->create(['estado' => true]);
+        $user = User::factory()->backoffice()->create(['estado' => true]);
+        $user->assignRole('admin');
 
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/auth/logout')

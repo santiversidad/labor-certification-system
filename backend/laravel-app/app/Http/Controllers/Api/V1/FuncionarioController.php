@@ -66,7 +66,7 @@ class FuncionarioController extends Controller
             $nombre = trim($data['nombres'].' '.$data['apellidos']);
 
             $user = User::create([
-                'name' => $nombre,
+                'name' => $nombre, 'tipo_cuenta' => 'funcionario',
                 'documento' => $data['numero_documento'],
                 'password' => Hash::make($data['numero_documento']),
                 'telefono' => $data['telefono'] ?? null,
@@ -155,7 +155,7 @@ class FuncionarioController extends Controller
                 'estado' => $estado,
             ]);
             if (! $estado) {
-                $model->user?->tokens()->delete();
+                $model->user?->revokeAuthentication();
             }
 
             if ($ficha && $cargoNuevo === $cargoAnterior && $vigente && ! $vigente->manual_cargo_version_id) {
@@ -214,7 +214,7 @@ class FuncionarioController extends Controller
                 'must_change_password' => true,
                 'password_changed_at' => null,
             ]);
-            $model->user->tokens()->delete();
+            $model->user->revokeAuthentication();
         });
 
         $this->registrarAuditoria->execute(

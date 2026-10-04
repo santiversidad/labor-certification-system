@@ -11,7 +11,7 @@ import { authService } from '../services/auth.service';
 import { ChangePasswordPage } from './ChangePasswordPage';
 
 vi.mock('../services/auth.service', () => ({ authService: { login: vi.fn(), changePassword: vi.fn() } }));
-const user: User = { id: 1, name: 'Ana', documento: '123456', estado: true, must_change_password: true, roles: ['funcionario'], permisos: [] };
+const user: User = { id: 1, name: 'Ana', documento: '123456', username: '123456', tipo_cuenta: 'funcionario', estado: true, must_change_password: true, roles: ['funcionario'], permisos: [] };
 
 function setup(path: string) {
   return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -27,6 +27,8 @@ beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); });
 it('primer login redirige sin mostrar dashboard', async () => {
   vi.mocked(authService.login).mockResolvedValue({ success: true, data: { token: 'token', user } });
   setup('/login');
+  await userEvent.type(screen.getByLabelText('Usuario'), '123456');
+  await userEvent.type(screen.getByLabelText('Contraseña', { exact: true }), '123456');
   await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
   expect(await screen.findByText('Cambie su contraseña temporal')).toBeInTheDocument();
   expect(screen.queryByText('Dashboard habilitado')).not.toBeInTheDocument();

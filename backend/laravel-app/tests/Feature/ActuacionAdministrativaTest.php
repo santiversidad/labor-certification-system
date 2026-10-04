@@ -18,7 +18,7 @@ class ActuacionAdministrativaTest extends TestCase
     public function test_admin_puede_crear_actuacion_administrativa(): void
     {
         $this->seed(RolesPermisosSeeder::class);
-        $admin = User::factory()->create(['estado' => true]);
+        $admin = User::factory()->backoffice()->create(['estado' => true]);
         $admin->assignRole(RoleEnum::Admin->value);
 
         $funcionario = Funcionario::create([

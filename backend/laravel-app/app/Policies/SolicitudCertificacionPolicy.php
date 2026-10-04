@@ -15,18 +15,18 @@ class SolicitudCertificacionPolicy
 
     public function view(User $user, SolicitudCertificacion $solicitud): bool
     {
-        if ($user->can('solicitudes.ver') && ! $user->hasRole('funcionario')) {
+        if ($user->can('solicitudes.ver') && ! $user->isFuncionarioAccount()) {
             return true;
         }
 
         return $user->can('solicitudes.ver')
-            && $user->hasRole('funcionario')
+            && $user->isFuncionarioAccount()
             && $user->funcionario?->id === $solicitud->funcionario_id;
     }
 
     public function create(User $user): bool
     {
-        return $user->can('solicitudes.crear') && $user->hasRole('funcionario');
+        return $user->can('solicitudes.crear') && $user->isFuncionarioAccount();
     }
 
     public function cambiarEstado(User $user, SolicitudCertificacion $solicitud): bool
@@ -54,6 +54,6 @@ class SolicitudCertificacionPolicy
 
     public function generarCertificado(User $user, SolicitudCertificacion $solicitud): bool
     {
-        return $user->can('certificados.generar') && ! $user->hasRole('funcionario');
+        return $user->can('certificados.generar') && ! $user->isFuncionarioAccount();
     }
 }

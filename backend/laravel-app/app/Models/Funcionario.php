@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadoFuncionarioEnum;
+use App\Exceptions\IdentityException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Funcionario extends Model
 {
+    protected static function booted(): void
+    {
+        static::saving(function (Funcionario $employee) {
+            if ($employee->user_id && User::find($employee->user_id)?->tipo_cuenta !== 'funcionario') {
+                throw new IdentityException('ACCOUNT_CONTEXT_MISMATCH', 'Solo una cuenta funcionario admite vínculo laboral.');
+            }
+        });
+    }
+
     protected $table = 'funcionarios';
 
     protected $fillable = [

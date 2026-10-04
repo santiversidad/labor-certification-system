@@ -75,7 +75,9 @@ class ManualImportTest extends TestCase
     private function empleado(string $source, string $numero, bool $demo = false): User
     {
         $ficha = ManualCargoVersion::where('source_id', $source)->firstOrFail();
+        $this->seed(RolesPermisosSeeder::class);
         $user = User::factory()->create(['documento' => $numero, 'estado' => true, 'must_change_password' => false]);
+        $user->assignRole('funcionario');
         $funcionario = Funcionario::create(['user_id' => $user->id, 'tipo_documento' => 'CC',
             'numero_documento' => $numero, 'nombres' => 'Prueba', 'apellidos' => $source,
             'estado' => 'activo', 'fecha_ingreso' => '2020-01-01', 'cargo_id' => $ficha->cargo_id]);
@@ -176,7 +178,7 @@ class ManualImportTest extends TestCase
     {
         $this->seed(RolesPermisosSeeder::class);
         $version = $this->version();
-        $admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $admin = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $admin->assignRole('admin');
         $this->actingAs($admin, 'sanctum')->postJson('/api/v1/manual-funciones/versiones/'.$version->id.'/publicar')
             ->assertConflict()->assertJsonPath('code', 'MANUAL_VIGENCIA_DESDE_REQUERIDA');
@@ -357,7 +359,7 @@ class ManualImportTest extends TestCase
         $u = $this->empleado('MF-0228', 'TEST-MANUAL-HIST');
         $anterior = $u->funcionario->historialCargos()->sole();
         $otra = ManualCargoVersion::where('source_id', 'MF-0229')->sole();
-        $admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $admin = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $admin->assignRole('admin');
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/manual-funciones/fichas?cargo_id='.$otra->cargo_id)
             ->assertOk()->assertJsonCount(2, 'data');
@@ -376,7 +378,7 @@ class ManualImportTest extends TestCase
         $this->seed(RolesPermisosSeeder::class);
         $this->version(true);
         $u = $this->empleado('MF-0228', 'TEST-MANUAL-API');
-        $admin = User::factory()->create(['estado' => true, 'must_change_password' => false]);
+        $admin = User::factory()->backoffice()->create(['estado' => true, 'must_change_password' => false]);
         $admin->assignRole('admin');
         $ficha = ManualCargoVersion::where('source_id', 'MF-0001')->sole();
         $this->actingAs($admin, 'sanctum')->putJson('/api/v1/funcionarios/'.$u->funcionario->id, [

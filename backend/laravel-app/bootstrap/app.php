@@ -1,6 +1,9 @@
 <?php
 
+use App\Exceptions\IdentityException;
+use App\Http\Middleware\EnsureCurrentIdentity;
 use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\RequireFuncionarioContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -25,7 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(null);
         $middleware->validateCsrfTokens(except: ['api/*']);
         $middleware->api(prepend: [EnsureFrontendRequestsAreStateful::class]);
-        $middleware->alias(['password.changed' => EnsurePasswordChanged::class]);
+        $middleware->alias([
+            'password.changed' => EnsurePasswordChanged::class,
+            'identity.current' => EnsureCurrentIdentity::class,
+            'context.funcionario' => RequireFuncionarioContext::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*'));
@@ -54,6 +61,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 422);
             }
         });
+        $exceptions->render(function (IdentityException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['success' => false, 'message' => $e->getMessage(), 'code' => $e->domainCode], $e->status);
+            }
+        });
+        $exceptions->dontReport([IdentityException::class]);
         $exceptions->render(function (DomainException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
