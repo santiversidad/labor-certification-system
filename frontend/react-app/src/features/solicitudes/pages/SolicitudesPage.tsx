@@ -1,79 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
+import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
-import { EmptyState } from '../../../components/ui/EmptyState';
 import { PageHeader } from '../../../components/ui/PageHeader';
-import { SolicitudesTable } from '../components/SolicitudesTable';
+import { Table } from '../../../components/ui/Table';
+import { formatDate } from '../../../lib/formatters/dates';
+import { SolicitudStatusBadge } from '../components/SolicitudStatusBadge';
 import { solicitudesService } from '../services/solicitudes.service';
-import type { SolicitudEstado, TipoCertificado } from '../types/solicitud.types';
+import type { SolicitudCertificacion } from '../types/solicitud.types';
+import { certificateTypeLabel } from '../utils/certificateType';
 
 export function SolicitudesPage() {
-  const [estado, setEstado] = useState<SolicitudEstado | ''>('');
-  const [tipo, setTipo] = useState<TipoCertificado | ''>('');
-  const [fecha, setFecha] = useState('');
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['solicitudes'],
-    queryFn: solicitudesService.list,
-  });
-
-  const filteredSolicitudes = useMemo(() => {
-    const solicitudes = data?.data ?? [];
-
-    return solicitudes.filter((solicitud) => {
-      const matchesEstado = estado ? solicitud.estado === estado : true;
-      const matchesTipo = tipo ? solicitud.tipo_certificado === tipo : true;
-      const matchesFecha = fecha ? (solicitud.created_at ?? '').startsWith(fecha) : true;
-      return matchesEstado && matchesTipo && matchesFecha;
-    });
-  }, [data, estado, fecha, tipo]);
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (isError || !data) {
-    return <ErrorState />;
-  }
-
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Solicitudes para revision" description="Consulte y filtre las solicitudes radicadas antes de revisarlas." />
-      <Card title="Filtros" description="Filtre por estado, tipo de certificado o fecha de solicitud.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-text">Estado</span>
-            <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3" value={estado} onChange={(event) => setEstado(event.target.value as SolicitudEstado | '')}>
-              <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="en_revision">En revision</option>
-              <option value="requiere_pago">Requiere pago</option>
-              <option value="pago_pendiente">Pago pendiente</option>
-              <option value="pago_validado">Pago validado</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
-              <option value="generado">Generado</option>
-              <option value="cancelado">Cancelado</option>
-            </select>
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-text">Tipo</span>
-            <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3" value={tipo} onChange={(event) => setTipo(event.target.value as TipoCertificado | '')}>
-              <option value="">Todos</option>
-              <option value="sencillo">Sencillo</option>
-              <option value="funciones">Funciones</option>
-            </select>
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-text">Fecha</span>
-            <input className="min-h-10 w-full rounded-md border border-border bg-surface px-3" type="date" value={fecha} onChange={(event) => setFecha(event.target.value)} />
-          </label>
-        </div>
-      </Card>
-      <Card title="Solicitudes registradas" description="Listado operativo para revision de solicitudes.">
-        {filteredSolicitudes.length ? <SolicitudesTable solicitudes={filteredSolicitudes} /> : <EmptyState title="Sin solicitudes" description="No hay solicitudes que coincidan con los filtros aplicados." />}
-      </Card>
-    </div>
-  );
+  const [page, setPage] = useState(1);
+  const query = useQuery({ queryKey: ['solicitudes', page], queryFn: () => solicitudesService.listPage(page) });
+  if (query.isError) return <ErrorState />;
+  return <div className="app-page"><PageHeader title="Mis solicitudes" description="Consulte su pago, los comprobantes y la expedición de cada certificado." />
+    <Table<SolicitudCertificacion> loading={query.isLoading} data={query.data?.data ?? []} columns={[
+      { header: 'Radicado', accessor: (s) => <Link className="font-semibold text-primary underline" to={`/app/solicitudes/${s.id}`}>{s.radicado}</Link> },
+      { header: 'Tipo', accessor: (s) => certificateTypeLabel(s.tipo_certificado) },
+      { header: 'Estado', accessor: (s) => <SolicitudStatusBadge estado={s.estado} /> },
+      { header: 'Fecha', accessor: (s) => s.created_at ? formatDate(s.created_at) : '—' },
+    ]} pagination={query.data?.meta ? { currentPage: page, lastPage: query.data.meta.last_page, total: query.data.meta.total, onPageChange: setPage } : undefined} />
+  </div>;
 }

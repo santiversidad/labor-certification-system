@@ -53,7 +53,7 @@ describe('SolicitudConfirmacionPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Pendiente de confirmación de pago')).toBeInTheDocument();
+    expect(screen.getByText('Solicitud creada — Pago pendiente')).toBeInTheDocument();
     expect(screen.getByText(/PAGO-ABC-124/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Descargar PDF' })).not.toBeInTheDocument();
   });

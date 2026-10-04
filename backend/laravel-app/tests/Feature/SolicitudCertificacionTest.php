@@ -77,11 +77,11 @@ class SolicitudCertificacionTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['accion' => 'solicitar_certificacion_autoservicio']);
     }
 
-    public function test_funcionario_no_puede_listar_solicitudes(): void
+    public function test_funcionario_puede_listar_sus_solicitudes(): void
     {
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->getJson('/api/v1/solicitudes')
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_secretario_y_admin_pueden_listar_solicitudes(): void
@@ -127,7 +127,7 @@ class SolicitudCertificacionTest extends TestCase
 
         $this->actingAs($this->secretario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertStatus(422);
+            ->assertStatus(410);
     }
 
     public function test_solicitud_creada_tiene_radicado(): void

@@ -80,7 +80,7 @@ class PagoSoporteTest extends TestCase
 
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", ['archivo' => $archivo])
-            ->assertForbidden()
+            ->assertStatus(410)
             ->assertJsonPath('success', false);
     }
 
@@ -91,7 +91,7 @@ class PagoSoporteTest extends TestCase
 
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", ['archivo' => $archivo])
-            ->assertForbidden();
+            ->assertStatus(410);
     }
 
     public function test_funcionario_no_carga_comprobante_manual_aunque_pago_este_activo(): void
@@ -101,33 +101,33 @@ class PagoSoporteTest extends TestCase
 
         $this->actingAs($this->userFuncionario, 'sanctum')
             ->postJson("/api/v1/solicitudes/{$this->solicitud->id}/soporte-pago", ['archivo' => $archivo])
-            ->assertForbidden();
+            ->assertStatus(410);
 
         $this->assertDatabaseMissing('pagos_soportes', ['solicitud_certificacion_id' => $this->solicitud->id]);
     }
 
-    public function test_secretario_puede_aprobar_pago(): void
+    public function test_ruta_legacy_de_validacion_no_aprueba_solicitud(): void
     {
         $pago = $this->crearPagoCargado();
 
         $this->actingAs($this->secretario, 'sanctum')
             ->patchJson("/api/v1/pagos/{$pago->id}/validar")
-            ->assertOk()
-            ->assertJsonPath('data.estado', EstadoPagoEnum::Aprobado->value);
+            ->assertStatus(410)
+            ->assertJsonPath('code', 'LEGACY_PAYMENT_REVIEW_DISABLED');
 
         $this->assertDatabaseHas('solicitudes_certificacion', [
             'id' => $this->solicitud->id,
-            'estado' => EstadoSolicitudEnum::Aprobada->value,
+            'estado' => EstadoSolicitudEnum::PagoEnRevision->value,
         ]);
     }
 
-    public function test_rechazar_pago_exige_observacion(): void
+    public function test_ruta_legacy_de_rechazo_esta_retirada(): void
     {
         $pago = $this->crearPagoCargado();
 
         $this->actingAs($this->secretario, 'sanctum')
             ->patchJson("/api/v1/pagos/{$pago->id}/rechazar")
-            ->assertStatus(422)
+            ->assertStatus(410)
             ->assertJsonPath('success', false);
     }
 

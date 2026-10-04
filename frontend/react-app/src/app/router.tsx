@@ -14,6 +14,10 @@ const ValidarCertificadoPage = lazy(() => import('../features/validacion-publica
 const FuncionarioDashboardPage = lazy(() => import('../features/dashboard/pages/FuncionarioDashboardPage').then((module) => ({ default: module.FuncionarioDashboardPage })));
 const SolicitudCertificadoPage = lazy(() => import('../features/solicitudes/pages/SolicitudCertificadoPage').then((module) => ({ default: module.SolicitudCertificadoPage })));
 const SolicitudConfirmacionPage = lazy(() => import('../features/solicitudes/pages/SolicitudConfirmacionPage').then((module) => ({ default: module.SolicitudConfirmacionPage })));
+const SolicitudesPage = lazy(() => import('../features/solicitudes/pages/SolicitudesPage').then((module) => ({ default: module.SolicitudesPage })));
+const SolicitudDetailPage = lazy(() => import('../features/solicitudes/pages/SolicitudDetailPage').then((module) => ({ default: module.SolicitudDetailPage })));
+const PaymentReviewPage = lazy(() => import('../features/pagos/pages/PaymentReviewPage').then((module) => ({ default: module.PaymentReviewPage })));
+const PaymentReviewDetailPage = lazy(() => import('../features/pagos/pages/PaymentReviewDetailPage').then((module) => ({ default: module.PaymentReviewDetailPage })));
 const AdminDashboardPage = lazy(() => import('../features/dashboard/pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })));
 const FuncionariosPage = lazy(() => import('../features/funcionarios/pages/FuncionariosPage').then((module) => ({ default: module.FuncionariosPage })));
 const FuncionarioFormPage = lazy(() => import('../features/funcionarios/pages/FuncionarioFormPage').then((module) => ({ default: module.FuncionarioFormPage })));
@@ -50,6 +54,8 @@ export const router = createBrowserRouter([
       { path: 'solicitudes/nueva', element: <Navigate replace to="/app/inicio" /> },
       { path: 'solicitudes/nueva/:tipo', element: screen(SolicitudCertificadoPage) },
       { path: 'solicitudes/confirmacion', element: screen(SolicitudConfirmacionPage) },
+      { path: 'solicitudes', element: screen(SolicitudesPage) },
+      { path: 'solicitudes/:id', element: screen(SolicitudDetailPage) },
     ],
   },
   {
@@ -58,6 +64,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate replace to="/admin/dashboard" /> },
       { path: 'dashboard', element: screen(AdminDashboardPage) },
+      { path: 'pagos', element: <RoleRoute allowedRoles={['secretario']}>{screen(PaymentReviewPage)}</RoleRoute> },
+      { path: 'pagos/:id', element: <RoleRoute allowedRoles={['secretario']}>{screen(PaymentReviewDetailPage)}</RoleRoute> },
       { path: 'funcionarios', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionariosPage)}</RoleRoute> },
       { path: 'funcionarios/nuevo', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionarioFormPage)}</RoleRoute> },
       { path: 'funcionarios/:id', element: <RoleRoute allowedRoles={['admin']}>{screen(FuncionarioDetailPage)}</RoleRoute> },

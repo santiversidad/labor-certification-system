@@ -25,6 +25,7 @@ class SolicitudCertificacionController extends Controller
     {
         $this->authorize('viewAny', SolicitudCertificacion::class);
         $query = SolicitudCertificacion::with(['funcionario.cargo', 'creadoPor', 'revisadoPor', 'certificado', 'ordenPago'])
+            ->when($request->user()->hasRole('funcionario'), fn ($q) => $q->where('funcionario_id', $request->user()->funcionario?->id ?? 0))
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->validated('estado')))
             ->when($request->filled('tipo_certificado'), fn ($q) => $q->where('tipo_certificado', $request->validated('tipo_certificado')))
             ->when($request->filled('funcionario_id'), fn ($q) => $q->where('funcionario_id', $request->validated('funcionario_id')))
@@ -104,7 +105,7 @@ class SolicitudCertificacionController extends Controller
 
     public function show(Request $request, int $solicitud): JsonResponse
     {
-        $model = SolicitudCertificacion::with(['funcionario.cargo', 'creadoPor', 'certificado', 'ordenPago'])->findOrFail($solicitud);
+        $model = SolicitudCertificacion::with(['funcionario.cargo', 'creadoPor', 'certificado', 'ordenPago', 'pagoSoporte.comprobantes.revisor'])->findOrFail($solicitud);
         $this->authorize('view', $model);
 
         return $this->successResponse(new SolicitudCertificacionResource($model));

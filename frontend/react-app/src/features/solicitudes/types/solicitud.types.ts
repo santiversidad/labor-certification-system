@@ -5,7 +5,8 @@ export type TipoCertificado = 'sencillo' | 'funciones';
 export type SolicitudEstado =
   | 'pendiente' | 'en_revision' | 'pendiente_pago' | 'pago_en_revision'
   | 'aprobada' | 'rechazada' | 'certificado_generado' | 'cerrada'
-  | 'generando' | 'generada' | 'fallida';
+  | 'generando' | 'generada' | 'fallida' | 'pago_rechazado' | 'pago_confirmado' | 'expedicion_fallida';
+// Payment state belongs to the request; receipt reviews have their own history.
 
 export type SolicitudCertificacion = {
   id: number;
@@ -20,6 +21,8 @@ export type SolicitudCertificacion = {
   funcionario?: Funcionario;
   certificado?: Certificado | null;
   orden_pago?: { referencia: string; estado: string } | null;
+  pago_soporte?: { comprobantes: ComprobantePago[] } | null;
+  error_expedicion?: string | null;
 };
 
 export type DisponibilidadModalidad = {
@@ -28,9 +31,24 @@ export type DisponibilidadModalidad = {
 };
 
 export type DisponibilidadCertificacion = {
+  requiere_pago?: boolean;
+  comprobante_max_kb?: number;
   periodo: string;
   sencillo: DisponibilidadModalidad;
   funciones: DisponibilidadModalidad;
+};
+
+export type ComprobantePago = {
+  id: number; version: number; nombre_original: string; mime_type: string; size_bytes: number;
+  sha256: string; estado: 'en_revision' | 'rechazado' | 'confirmado'; referencia?: string | null;
+  observacion_funcionario?: string | null; motivo_rechazo?: string | null;
+  revisado_at?: string | null; created_at?: string;
+  revisor?: { id: number; name: string } | null; archivo_url: string;
+};
+
+export type SolicitudPago = Pick<SolicitudCertificacion, 'id' | 'radicado' | 'tipo_certificado' | 'estado' | 'requiere_pago' | 'created_at' | 'motivo_rechazo' | 'error_expedicion'> & {
+  funcionario: { id: number; nombres: string; apellidos: string; documento_parcial: string };
+  comprobantes: ComprobantePago[]; referencia_interna?: string | null; monto?: string | null; comprobante_max_kb: number;
 };
 
 export type ExpedicionCertificacion = {

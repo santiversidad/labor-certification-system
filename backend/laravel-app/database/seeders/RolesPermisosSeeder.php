@@ -87,31 +87,23 @@ class RolesPermisosSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => RoleEnum::Admin->value, 'guard_name' => 'web']);
         $admin->syncPermissions($this->permisos);
 
-        // ─── Secretario: operaciones de revisión y generación ─────────────────
+        // Secretaría valida únicamente el pago; el contenido se expide automáticamente.
         $secretario = Role::firstOrCreate(['name' => RoleEnum::Secretario->value, 'guard_name' => 'web']);
         $secretario->syncPermissions([
-            'funcionarios.ver',
-            'cargos.ver',
             'solicitudes.ver',
-            'solicitudes.editar',
-            'solicitudes.cambiar_estado',
-            'solicitudes.aprobar',
-            'solicitudes.rechazar',
             'pagos.ver',
             'pagos.validar',
             'pagos.rechazar',
             'certificados.ver',
-            'certificados.generar',
             'certificados.descargar',
-            'certificados.anular',
-            'actuaciones.ver',
-            'reportes.ver',
         ]);
 
         // Funcionario: únicamente inicia su propia expedición de autoservicio.
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
             'solicitudes.crear',
+            'solicitudes.ver',
+            'pagos.cargar',
         ]);
 
         // Garantiza que el siguiente proceso lea los IDs recién sincronizados.

@@ -10,7 +10,10 @@ export const solicitudesService = {
     return response.data;
   },
   async list(): Promise<ApiResponse<SolicitudCertificacion[]>> {
-    const response = await apiClient.get<ApiResponse<SolicitudCertificacion[]>>(endpoints.solicitudes);
+    return solicitudesService.listPage(1);
+  },
+  async listPage(page: number): Promise<ApiResponse<SolicitudCertificacion[]>> {
+    const response = await apiClient.get<ApiResponse<SolicitudCertificacion[]>>(endpoints.solicitudes, { params: { page } });
     return response.data;
   },
   async getById(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {

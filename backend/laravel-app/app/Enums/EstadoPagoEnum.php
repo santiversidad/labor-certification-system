@@ -8,6 +8,7 @@ enum EstadoPagoEnum: string
     case Pendiente = 'pendiente';
     case Cargado = 'cargado';
     case Aprobado = 'aprobado';
+    case Confirmado = 'confirmado';
     case Rechazado = 'rechazado';
 
     public function label(): string
@@ -17,6 +18,7 @@ enum EstadoPagoEnum: string
             self::Pendiente => 'Pendiente',
             self::Cargado => 'Cargado',
             self::Aprobado => 'Aprobado',
+            self::Confirmado => 'Pago confirmado',
             self::Rechazado => 'Rechazado',
         };
     }

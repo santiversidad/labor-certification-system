@@ -10,6 +10,9 @@ enum EstadoSolicitudEnum: string
     case EnRevision = 'en_revision';
     case PendientePago = 'pendiente_pago';
     case PagoEnRevision = 'pago_en_revision';
+    case PagoRechazado = 'pago_rechazado';
+    case PagoConfirmado = 'pago_confirmado';
+    case ExpedicionFallida = 'expedicion_fallida';
     case Aprobada = 'aprobada';
     case Rechazada = 'rechazada';
     case CertificadoGenerado = 'certificado_generado';
@@ -25,6 +28,9 @@ enum EstadoSolicitudEnum: string
             self::EnRevision => 'En revision',
             self::PendientePago => 'Pendiente de pago',
             self::PagoEnRevision => 'Pago en revision',
+            self::PagoRechazado => 'Pago rechazado',
+            self::PagoConfirmado => 'Pago confirmado',
+            self::ExpedicionFallida => 'Error de expedición',
             self::Aprobada => 'Aprobada',
             self::Rechazada => 'Rechazada',
             self::CertificadoGenerado => 'Certificado generado',

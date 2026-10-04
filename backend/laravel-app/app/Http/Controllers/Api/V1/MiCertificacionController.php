@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
 use App\Enums\EstadoCertificadoEnum;
+use App\Enums\EstadoSolicitudEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Certificado;
+use App\Models\SolicitudCertificacion;
 use App\Services\VerificarIntegridadCertificadoService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -28,6 +30,25 @@ class MiCertificacionController extends Controller
             ->where('funcionario_id', $funcionario?->id)
             ->where('download_token_expires_at', '>', now())
             ->firstOrFail();
+
+        return $this->entregar($request, $certificado);
+    }
+
+    public function descargarSolicitud(Request $request, int $solicitud)
+    {
+        $model = SolicitudCertificacion::findOrFail($solicitud);
+        abort_unless($request->user()->hasRole('funcionario') && $request->user()->funcionario?->id === $model->funcionario_id, 403);
+        if ($model->estado !== EstadoSolicitudEnum::Generada) {
+            return $this->errorResponse('El certificado todavía no está generado.', null, 409, 'CERTIFICADO_NO_GENERADO');
+        }
+
+        return $this->entregar($request, $model->certificado()->firstOrFail());
+    }
+
+    private function entregar(Request $request, Certificado $certificado)
+    {
+        $funcionario = $request->user()->funcionario;
+        abort_unless($certificado->solicitud->estado === EstadoSolicitudEnum::Generada, 409);
 
         if ($certificado->estado === EstadoCertificadoEnum::Anulado) {
             return $this->errorResponse('El certificado está anulado y no puede descargarse.', null, 409, 'CERTIFICATE_ANNULLED');

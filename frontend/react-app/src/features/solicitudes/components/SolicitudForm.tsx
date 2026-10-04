@@ -17,6 +17,7 @@ export function SolicitudForm({ tipo }: { tipo: TipoCertificado }) {
   const [observaciones, setObservaciones] = useState('');
   const disponibilidadQuery = useQuery({ queryKey: ['disponibilidad-certificacion'], queryFn: solicitudesService.disponibilidad, refetchOnMount: 'always' });
   const estado = disponibilidadQuery.data?.data[tipo];
+  const requierePago = disponibilidadQuery.data?.data.requiere_pago === true;
   const puedeSolicitar = estado?.puede_solicitar === true && !disponibilidadQuery.isFetching;
   const mutation = useMutation({
     mutationFn: solicitudesService.create,
@@ -48,14 +49,14 @@ export function SolicitudForm({ tipo }: { tipo: TipoCertificado }) {
       <div className="mt-6 space-y-5">
         {disponibilidadQuery.isError ? <Alert title="No fue posible consultar la disponibilidad" variant="error">Intente de nuevo antes de generar el certificado.</Alert> : null}
         {estado?.puede_solicitar === false ? <Alert title="Certificado no disponible actualmente" variant="warning">{estado.proxima_fecha_disponible ? <>Próxima disponibilidad: <strong>{formatLongDate(estado.proxima_fecha_disponible)}</strong>.</> : 'La próxima fecha está pendiente de confirmación.'} <Link className="font-semibold text-primary underline focus-visible:outline-2 focus-visible:outline-offset-2" to="/app/inicio">Volver al inicio</Link></Alert> : null}
-        {estado?.puede_solicitar === true ? <Alert title="Antes de generar" variant="info">Al generar este certificado utilizará la disponibilidad de este tipo para el mes actual. El sistema validará su información laboral{tipo === 'funciones' ? ' y la ficha del Manual' : ''}. Si se exige pago, se creará una orden pendiente.</Alert> : null}
+        {estado?.puede_solicitar === true ? <Alert title={requierePago ? 'Este certificado requiere pago' : 'Antes de generar'} variant="info">{requierePago ? 'Este certificado requiere validación de pago por Secretaría antes de su expedición. La solicitud reservará el cupo del tipo para el mes actual.' : <>Al generar este certificado utilizará la disponibilidad de este tipo para el mes actual. El sistema validará su información laboral{tipo === 'funciones' ? ' y la ficha del Manual' : ''}.</>}</Alert> : null}
         <Textarea label="Observaciones (opcional)" maxLength={500} onChange={(event) => setObservaciones(event.target.value)} value={observaciones} />
         {mutation.isError ? <Alert title="No fue posible expedir la certificación" variant="error">{visibleMutationMessage}</Alert> : null}
       </div>
 
       <div className="mt-7 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-between">
         <Button icon={<ArrowLeft aria-hidden="true" size={16} />} onClick={() => navigate('/app/inicio')} type="button" variant="secondary">Volver al inicio</Button>
-        <Button disabled={!puedeSolicitar || mutation.isPending} icon={<Send aria-hidden="true" size={16} />} type="submit">{mutation.isPending ? 'Generando...' : `Generar certificado ${tipo === 'sencillo' ? 'sencillo' : 'con funciones'}`}</Button>
+        <Button disabled={!puedeSolicitar || mutation.isPending} icon={<Send aria-hidden="true" size={16} />} type="submit">{mutation.isPending ? (requierePago ? 'Creando solicitud...' : 'Generando...') : `${requierePago ? 'Crear solicitud' : 'Generar certificado'} ${tipo === 'sencillo' ? 'sencillo' : 'con funciones'}`}</Button>
       </div>
     </form>
   );

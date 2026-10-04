@@ -14,6 +14,7 @@ use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
+use App\Services\GenerarCertificadoService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,9 +71,7 @@ class SnapshotCertificadoTest extends TestCase
     public function test_snapshot_funciones_contiene_manual_y_nunca_salario(): void
     {
         $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
 
         $certificado = Certificado::firstOrFail();
         $snapshot = $certificado->snapshot_datos;
@@ -87,9 +86,7 @@ class SnapshotCertificadoTest extends TestCase
     public function test_snapshot_sencillo_no_contiene_manual_funciones_ni_salario(): void
     {
         $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Sencillo);
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
 
         $certificado = Certificado::firstOrFail();
         $snapshot = $certificado->snapshot_datos;
@@ -103,9 +100,7 @@ class SnapshotCertificadoTest extends TestCase
     public function test_snapshot_emitido_permanece_inmutable(): void
     {
         $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
 
         $this->expectException(\DomainException::class);
         Certificado::firstOrFail()->update(['snapshot_datos' => ['alterado' => true]]);
@@ -114,9 +109,7 @@ class SnapshotCertificadoTest extends TestCase
     public function test_descarga_existente_conserva_snapshot_y_pdf_tras_cambiar_datos_vivos(): void
     {
         $solicitud = $this->crearSolicitud(TipoCertificadoEnum::Funciones);
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
 
         $certificado = Certificado::firstOrFail();
         $snapshot = $certificado->snapshot_datos;

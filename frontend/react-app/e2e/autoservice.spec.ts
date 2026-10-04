@@ -47,7 +47,7 @@ async function completeFirstLogin(page: Page, documento: string) {
   await page.goto('/app/inicio');
   await expect(page).toHaveURL(/\/cambiar-contrasena/);
   await expect(page.getByText('Cambio obligatorio de contraseña')).toBeVisible();
-  await page.screenshot({ path: 'evidence/ux-feedback-phase26/09-cambio-password-warning.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/regression-phase26/09-cambio-password-warning.png', fullPage: true });
   await page.getByLabel('Contraseña temporal', { exact: true }).fill(documento);
   await page.getByLabel('Nueva contraseña', { exact: true }).fill(employeePassword);
   await page.getByLabel('Confirmar nueva contraseña', { exact: true }).fill(employeePassword);
@@ -80,7 +80,7 @@ async function assertPdfDownload(page: Page, expectedType: 'SENCILLO' | 'CON FUN
 
 test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-  test.beforeAll(async () => { await mkdir('evidence/ux-feedback-phase26', { recursive: true }); });
+  test.beforeAll(async () => { await mkdir('test-results/regression-phase26', { recursive: true }); });
   test('administración revalida identidad, conserva 36 permisos y navega sin módulo salarial', async ({ page }) => {
     const session = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
     expect(session.user.permisos).toHaveLength(36);
@@ -103,7 +103,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     await page.getByLabel('Código de validación').fill('CODIGO-INVALIDO');
     await page.getByRole('button', { name: 'Validar certificado' }).click();
     await expect(page.getByText('Certificado no válido')).toBeVisible();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/10-validacion-error.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/10-validacion-error.png', fullPage: true });
   });
 
   test('admin crea funcionario y el autoservicio sencillo genera y descarga PDF real', async ({ page }) => {
@@ -113,14 +113,14 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     await completeFirstLogin(page, simpleEmployee);
     await expect(page.getByText('Disponibilidad mensual de certificados')).toBeVisible();
     await expect(page.getByText('Disponible ahora')).toHaveCount(2);
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/01-funcionario-disponibilidad-general.png', fullPage: true });
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/02-sencillo-disponible.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/01-funcionario-disponibilidad-general.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/02-sencillo-disponible.png', fullPage: true });
     await page.getByRole('button', { name: 'Solicitar sencillo' }).click();
     await expect(page).toHaveURL(/\/app\/solicitudes\/nueva\/sencillo$/);
     await expect(page.getByRole('heading', { name: 'Certificado laboral sencillo' })).toBeVisible();
     await expect(page.getByRole('radio')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Generar certificado sencillo' })).toBeEnabled();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/05-formulario-sencillo.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/05-formulario-sencillo.png', fullPage: true });
     const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/solicitudes') && response.request().method() === 'POST');
     await page.getByRole('button', { name: 'Generar certificado sencillo' }).click();
     const response = await responsePromise;
@@ -147,7 +147,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
     await expect(page.getByRole('radio')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Generar certificado con funciones' })).toBeEnabled();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/06-formulario-funciones.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/06-formulario-funciones.png', fullPage: true });
     const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/solicitudes') && response.request().method() === 'POST');
     await page.getByRole('button', { name: 'Generar certificado con funciones' }).click();
     const response = await responsePromise;
@@ -181,12 +181,12 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     await expect(page.getByText('Disponible ahora')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Solicitar sencillo' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Solicitar con funciones' })).toBeEnabled();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/03-sencillo-no-disponible.png', fullPage: true });
-    await page.locator('.rb-spotlight-card').first().screenshot({ path: 'evidence/ux-feedback-phase26/04-proxima-fecha-destacada.png' });
+    await page.screenshot({ path: 'test-results/regression-phase26/03-sencillo-no-disponible.png', fullPage: true });
+    await page.locator('.rb-spotlight-card').first().screenshot({ path: 'test-results/regression-phase26/04-proxima-fecha-destacada.png' });
     await page.goto('/app/solicitudes/nueva/sencillo');
     await expect(page.getByText('Certificado no disponible actualmente')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generar certificado sencillo' })).toBeDisabled();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/07-deeplink-no-disponible.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/07-deeplink-no-disponible.png', fullPage: true });
     const opposite = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'funciones' } });
     expect(opposite.status()).toBe(201);
     await logout(page);
@@ -217,7 +217,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     expect(response.status()).toBe(409);
     expect((await response.json()).code).toBe('MANUAL_FICHA_INCOMPLETA');
     await expect(page.getByRole('alert')).toContainText('ficha del Manual de Funciones está incompleta');
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/08-mf0167-warning.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/08-mf0167-warning.png', fullPage: true });
     await expect(page.getByText(/salario/i)).toHaveCount(0);
   });
 
@@ -227,11 +227,11 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
     await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
     await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/11-mobile-dashboard.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/11-mobile-dashboard.png', fullPage: true });
     await page.goto('/app/solicitudes/nueva/funciones');
     await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generar certificado con funciones' })).toBeEnabled();
-    await page.screenshot({ path: 'evidence/ux-feedback-phase26/12-mobile-formulario.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/12-mobile-formulario.png', fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     await page.setViewportSize({ width: 768, height: 900 });
     await page.goto('/app/inicio');

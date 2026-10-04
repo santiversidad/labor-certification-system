@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\ParametroSistema;
 use App\Services\DisponibilidadCertificacionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,10 @@ class DisponibilidadCertificacionController extends Controller
         }
 
         return $this->successResponse(
-            $service->consultar($funcionario->id),
+            $service->consultar($funcionario->id) + [
+                'requiere_pago' => (bool) ParametroSistema::valor('requiere_pago_certificado', false),
+                'comprobante_max_kb' => config('payments.receipt_max_kb'),
+            ],
             'Disponibilidad consultada correctamente.',
         );
     }

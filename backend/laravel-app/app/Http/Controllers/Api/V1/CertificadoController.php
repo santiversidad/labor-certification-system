@@ -9,11 +9,8 @@ use App\Http\Requests\AnularCertificadoRequest;
 use App\Http\Requests\IndexQueryRequest;
 use App\Http\Resources\CertificadoResource;
 use App\Models\Certificado;
-use App\Models\SolicitudCertificacion;
-use App\Services\GenerarCertificadoService;
 use App\Services\VerificarIntegridadCertificadoService;
 use App\Traits\ApiResponse;
-use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +20,6 @@ class CertificadoController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly GenerarCertificadoService $generarCertificadoService,
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
         private readonly VerificarIntegridadCertificadoService $verificarIntegridad,
     ) {}
@@ -41,50 +37,6 @@ class CertificadoController extends Controller
             CertificadoResource::collection($certificados)->response()->getData(true),
             'Certificados consultados correctamente.'
         );
-    }
-
-    public function generar(Request $request, int $solicitud): JsonResponse
-    {
-        $solicitudModel = SolicitudCertificacion::with(['funcionario.cargo', 'pagoSoporte', 'certificado'])
-            ->findOrFail($solicitud);
-
-        $this->authorize('generarCertificado', $solicitudModel);
-
-        try {
-            $resultado = $this->generarCertificadoService->generar($solicitudModel, $request->user());
-        } catch (DomainException $exception) {
-            $this->registrarAuditoria->execute(
-                accion: 'generar_certificado_fallido',
-                modelo: 'SolicitudCertificacion',
-                modeloId: $solicitudModel->id,
-                descripcion: 'La generación legada se detuvo por una inconsistencia de fuentes.',
-                metadata: ['motivo' => $exception->getMessage()],
-            );
-
-            $code = preg_match('/^[A-Z_]+$/', $exception->getMessage()) ? $exception->getMessage() : 'CERTIFICATE_SOURCE_CONFLICT';
-
-            return $this->errorResponse($exception->getMessage(), null, 409, $code);
-        }
-        /** @var Certificado $certificado */
-        $certificado = $resultado['certificado'];
-
-        $this->registrarAuditoria->execute(
-            accion: 'generar_certificado',
-            modelo: 'Certificado',
-            modeloId: $certificado->id,
-            descripcion: "Certificado {$certificado->codigo_unico} generado para solicitud {$solicitudModel->radicado}.",
-            metadata: [
-                'solicitud_id' => $solicitudModel->id,
-                'snapshot_schema_version' => $certificado->snapshot_schema_version,
-                'estado_nuevo' => $certificado->estado->value,
-            ],
-        );
-
-        return $this->createdResponse([
-            'certificado' => new CertificadoResource($certificado),
-            'token' => $resultado['token'],
-            'url_validacion' => $resultado['url_validacion'],
-        ], 'Certificado generado correctamente.');
     }
 
     public function show(Request $request, int $certificado): JsonResponse

@@ -24,7 +24,7 @@ export function AdminDashboardPage() {
   const configuracion = useQuery({ queryKey: ['dashboard-configuracion'], queryFn: configuracionService.get, enabled: isAdmin });
 
   if (!isAdmin) {
-    return <div className="app-page"><PageHeader eyebrow="Consulta institucional" title="Administración" description="La expedición es automática y no requiere aprobación de secretaría." /><section className="surface-section p-6"><h2 className="font-bold text-text">Flujo automático</h2><p className="mt-2 text-sm leading-6 text-muted">Secretaría no aprueba solicitudes, no valida comprobantes y no genera documentos manualmente.</p><Link className="mt-5 inline-flex font-semibold text-primary hover:underline" to="/admin/certificaciones">Consultar certificaciones</Link></section></div>;
+    return <div className="app-page"><PageHeader eyebrow="Consulta institucional" title="Administración" description="Secretaría valida los pagos de las solicitudes que requieren cobro." /><section className="surface-section p-6"><h2 className="font-bold text-text">Flujo automático</h2><p className="mt-2 text-sm leading-6 text-muted">Revise el comprobante y confirme o rechace el pago. Al confirmarlo, el sistema expide automáticamente el certificado.</p><Link className="mt-5 inline-flex font-semibold text-primary hover:underline" to="/admin/pagos">Validación de pagos</Link></section></div>;
   }
 
   const hasError = funcionarios.isError || certificados.isError || solicitudes.isError || manuales.isError || configuracion.isError;

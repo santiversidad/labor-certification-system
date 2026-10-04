@@ -35,7 +35,7 @@ class GenerarCertificadoService
             throw new \DomainException('PASSWORD_CHANGE_REQUIRED');
         }
 
-        if (! in_array($solicitud->estado, [EstadoSolicitudEnum::Aprobada, EstadoSolicitudEnum::Generando], true)) {
+        if (! in_array($solicitud->estado, [EstadoSolicitudEnum::Aprobada, EstadoSolicitudEnum::Generando, EstadoSolicitudEnum::PagoConfirmado, EstadoSolicitudEnum::ExpedicionFallida], true)) {
             throw ValidationException::withMessages([
                 'solicitud' => ['La solicitud no está lista para expedición automática.'],
             ]);
@@ -94,7 +94,7 @@ class GenerarCertificadoService
 
                 $this->tokenValidacionService->crearParaCertificado($certificado, $generadoPor, $tokenValidacionPlano);
                 $bloqueada->update([
-                    'estado' => $bloqueada->estado === EstadoSolicitudEnum::Generando
+                    'estado' => in_array($bloqueada->estado, [EstadoSolicitudEnum::Generando, EstadoSolicitudEnum::PagoConfirmado, EstadoSolicitudEnum::ExpedicionFallida], true)
                         ? EstadoSolicitudEnum::Generada
                         : EstadoSolicitudEnum::CertificadoGenerado,
                 ]);

@@ -3,18 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
-use App\Actions\ValidarPagoAction;
-use App\Enums\EstadoPagoEnum;
-use App\Enums\EstadoSolicitudEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IndexQueryRequest;
-use App\Http\Requests\StorePagoSoporteRequest;
 use App\Http\Requests\ValidarPagoRequest;
 use App\Http\Resources\PagoSoporteResource;
 use App\Models\PagoSoporte;
-use App\Models\ParametroSistema;
-use App\Models\SolicitudCertificacion;
-use App\Services\PagoSoporteService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,8 +20,6 @@ class PagoSoporteController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly PagoSoporteService $pagoSoporteService,
-        private readonly ValidarPagoAction $validarPagoAction,
         private readonly RegistrarAuditoriaAction $registrarAuditoria,
     ) {}
 
@@ -94,119 +85,24 @@ class PagoSoporteController extends Controller
         );
     }
 
-    public function cargar(StorePagoSoporteRequest $request, int $solicitud): JsonResponse
+    public function cargar(Request $request, int $solicitud): JsonResponse
     {
-        if (! ParametroSistema::valor('requiere_pago_certificado', false)) {
-            return $this->errorResponse(
-                'El modulo de pagos esta desactivado. No se requiere soporte de pago en este momento.',
-                null,
-                422
-            );
-        }
-
-        $solicitudModel = SolicitudCertificacion::findOrFail($solicitud);
-
-        if ($request->user()->funcionario?->id !== $solicitudModel->funcionario_id) {
-            return $this->forbiddenResponse('Solo el funcionario titular puede cargar el soporte de pago.');
-        }
-
-        if (! $solicitudModel->requiere_pago || $solicitudModel->estado !== EstadoSolicitudEnum::PendientePago) {
-            return $this->errorResponse(
-                "La solicitud debe estar en estado 'pendiente_pago' y requerir pago para cargar un soporte.",
-                null,
-                422
-            );
-        }
-
-        $pago = $this->pagoSoporteService->cargar(
-            solicitud: $solicitudModel,
-            archivo: $request->file('archivo'),
-            funcionario: $request->user(),
-            observaciones: $request->observaciones,
-        );
-
-        $this->registrarAuditoria->execute(
-            accion: 'cargar_soporte_pago',
-            modelo: 'PagoSoporte',
-            modeloId: $pago->id,
-            descripcion: "Soporte de pago cargado para solicitud {$solicitudModel->radicado}.",
-        );
-
-        return $this->createdResponse(
-            new PagoSoporteResource($pago->load('solicitud', 'funcionario')),
-            'Soporte de pago cargado correctamente. Quedo en revision.'
-        );
+        return $this->errorResponse('Utilice la carga versionada de comprobantes de pago.', null, 410, 'LEGACY_PAYMENT_UPLOAD_DISABLED');
     }
 
     public function validar(ValidarPagoRequest $request, int $pago): JsonResponse
     {
-        $pagoModel = PagoSoporte::with('solicitud')->findOrFail($pago);
-        $this->authorize('validar', $pagoModel);
+        $model = PagoSoporte::findOrFail($pago);
+        $this->authorize('validar', $model);
 
-        if (! in_array($pagoModel->estado, [EstadoPagoEnum::Pendiente, EstadoPagoEnum::Cargado], true)) {
-            return $this->errorResponse(
-                "Solo se pueden aprobar soportes pendientes o cargados. Estado actual: '{$pagoModel->estado->value}'.",
-                null,
-                422
-            );
-        }
-
-        $this->validarPagoAction->aprobar(
-            pago: $pagoModel,
-            validador: $request->user(),
-            observaciones: $request->observaciones,
-        );
-
-        $this->registrarAuditoria->execute(
-            accion: 'aprobar_pago',
-            modelo: 'PagoSoporte',
-            modeloId: $pagoModel->id,
-            descripcion: "Soporte de pago ID {$pago} aprobado.",
-        );
-
-        return $this->successResponse(
-            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud', 'funcionario')),
-            'Pago aprobado correctamente. La solicitud quedo aprobada.'
-        );
+        return $this->errorResponse('Utilice la validación de pagos de Secretaría.', null, 410, 'LEGACY_PAYMENT_REVIEW_DISABLED');
     }
 
     public function rechazar(ValidarPagoRequest $request, int $pago): JsonResponse
     {
-        $pagoModel = PagoSoporte::with('solicitud')->findOrFail($pago);
-        $this->authorize('rechazar', $pagoModel);
+        $model = PagoSoporte::findOrFail($pago);
+        $this->authorize('rechazar', $model);
 
-        if (! in_array($pagoModel->estado, [EstadoPagoEnum::Pendiente, EstadoPagoEnum::Cargado], true)) {
-            return $this->errorResponse(
-                "Solo se pueden rechazar soportes pendientes o cargados. Estado actual: '{$pagoModel->estado->value}'.",
-                null,
-                422
-            );
-        }
-
-        if (! $request->filled('observaciones')) {
-            return $this->errorResponse(
-                'Debe indicar el motivo del rechazo en el campo observaciones.',
-                ['observaciones' => ['El motivo del rechazo es obligatorio.']],
-                422
-            );
-        }
-
-        $this->validarPagoAction->rechazar(
-            pago: $pagoModel,
-            validador: $request->user(),
-            observaciones: $request->observaciones,
-        );
-
-        $this->registrarAuditoria->execute(
-            accion: 'rechazar_pago',
-            modelo: 'PagoSoporte',
-            modeloId: $pagoModel->id,
-            descripcion: "Soporte de pago ID {$pago} rechazado.",
-        );
-
-        return $this->successResponse(
-            new PagoSoporteResource($pagoModel->fresh('validadoPor', 'solicitud', 'funcionario')),
-            'Soporte rechazado. La solicitud regreso a pendiente_pago.'
-        );
+        return $this->errorResponse('Utilice la validación de pagos de Secretaría.', null, 410, 'LEGACY_PAYMENT_REVIEW_DISABLED');
     }
 }

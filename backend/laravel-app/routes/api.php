@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\ManualFuncionController;
 use App\Http\Controllers\Api\V1\MiCertificacionController;
+use App\Http\Controllers\Api\V1\PagoSolicitudController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\ParametroCertificacionController;
 use App\Http\Controllers\Api\V1\ReporteController;
@@ -33,6 +34,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware(['auth:sanctum', 'password.changed'])->group(function () {
         Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)->name('mi-certificacion.disponibilidad');
         Route::get('mi-certificacion/descargar/{token}', [MiCertificacionController::class, 'descargar'])->name('mi-certificacion.descargar');
+        Route::get('solicitudes/{solicitud}/certificado', [MiCertificacionController::class, 'descargarSolicitud'])->name('mi-certificacion.solicitud.descargar');
+        Route::post('solicitudes/{solicitud}/pago/comprobantes', [PagoSolicitudController::class, 'cargar'])->name('solicitudes.pago.cargar');
+        Route::get('solicitudes/{solicitud}/pago/comprobantes/{comprobante}', [PagoSolicitudController::class, 'archivo'])->name('solicitudes.pago.archivo');
+        Route::prefix('secretaria/pagos')->name('secretaria.pagos.')->group(function () {
+            Route::get('/', [PagoSolicitudController::class, 'index'])->name('index');
+            Route::get('/{solicitud}', [PagoSolicitudController::class, 'show'])->name('show');
+            Route::post('/{solicitud}/confirmar', [PagoSolicitudController::class, 'confirmar'])->name('confirmar');
+            Route::post('/{solicitud}/rechazar', [PagoSolicitudController::class, 'rechazar'])->name('rechazar');
+        });
 
         Route::prefix('configuracion/certificaciones')->name('configuracion.certificaciones.')->group(function () {
             Route::get('/', [ParametroCertificacionController::class, 'show'])->name('show');
@@ -81,7 +91,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::patch('/{solicitud}/rechazar', [SolicitudCertificacionController::class, 'legacyManualFlow'])->name('rechazar');
             Route::patch('/{solicitud}/marcar-pago', [SolicitudCertificacionController::class, 'legacyManualFlow'])->name('marcarPago');
             Route::post('/{solicitud}/soporte-pago', [PagoSoporteController::class, 'cargar'])->name('soporte-pago.cargar');
-            Route::post('/{solicitud}/generar-certificado', [CertificadoController::class, 'generar'])->name('generar-certificado');
+            Route::post('/{solicitud}/generar-certificado', [SolicitudCertificacionController::class, 'legacyManualFlow'])->name('generar-certificado');
         });
 
         // Consulta histórica de soportes permanece solo para registros legados; no recibe nuevas cargas.

@@ -96,7 +96,7 @@ class ExpedirCertificacionService
                         'referencia' => 'OPC-'.now()->format('Ymd').'-'.strtoupper(bin2hex(random_bytes(5))),
                         'estado' => EstadoOrdenPagoEnum::Pendiente,
                         'moneda' => 'COP',
-                        'metadata' => ['integracion' => 'pendiente_proveedor'],
+                        'metadata' => ['integracion' => 'validacion_secretaria'],
                     ]);
                 } else {
                     $resultadoGeneracion = $this->generarCertificado->generar($solicitud, $actor);

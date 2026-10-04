@@ -35,7 +35,7 @@ export function SolicitudConfirmacionPage() {
         {generada ? <CheckCircle aria-hidden="true" className="shrink-0 text-success" size={36} /> : <Hourglass aria-hidden="true" className="shrink-0 text-warning" size={36} />}
         <div className="min-w-0 flex-1">
           <p className="eyebrow">Resultado de la solicitud</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-text">{generada ? 'Certificación generada correctamente' : 'Pendiente de confirmación de pago'}</h1>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-text">{generada ? 'Certificación generada correctamente' : 'Solicitud creada — Pago pendiente'}</h1>
           <Alert className="mt-4" title={generada ? 'Documento listo para descargar' : 'Qué sucede ahora'} variant={generada ? 'success' : 'warning'}>{generada ? 'Descárguelo ahora; el enlace inmediato tiene vigencia limitada.' : 'La certificación se generará cuando se confirme el pago.'}</Alert>
           <dl className="mt-6 divide-y divide-border rounded-lg border border-border text-sm">
             <ResultRow label="Radicado" value={resultado.solicitud.radicado} />
@@ -43,10 +43,11 @@ export function SolicitudConfirmacionPage() {
             <ResultRow label="Tipo" value={certificateTypeLabel(resultado.solicitud.tipo_certificado)} />
             <div className="grid gap-1 px-4 py-3 sm:grid-cols-[120px_1fr]"><dt className="text-muted">Estado</dt><dd><Badge tone={generada ? 'green' : 'gold'}>{generada ? 'Disponible' : 'Requiere pago'}</Badge></dd></div>
           </dl>
-          {resultado.orden_pago ? <p className="mt-4 rounded-lg bg-surface-muted p-3 text-sm text-text">Referencia de pago: <strong>{resultado.orden_pago.referencia}</strong></p> : null}
+          {resultado.orden_pago ? <p className="mt-4 rounded-lg bg-surface-muted p-3 text-sm text-text">Referencia interna de solicitud: <strong>{resultado.orden_pago.referencia}</strong></p> : null}
           {error ? <Alert className="mt-4" title="No fue posible descargar" variant="error">{error}</Alert> : null}
           <div className="mt-7 flex flex-wrap gap-3">
             {generada ? <Button disabled={downloading} icon={<Download size={17} />} onClick={descargar} type="button">{downloading ? 'Descargando…' : 'Descargar PDF'}</Button> : null}
+            {!generada ? <Link className="font-semibold text-primary underline" to={`/app/solicitudes/${resultado.solicitud.id}`}>Adjuntar comprobante y consultar estado</Link> : null}
             <Link to="/app/inicio"><Button icon={<Home size={17} />} type="button" variant="secondary">Volver al inicio</Button></Link>
           </div>
         </div>

@@ -18,9 +18,10 @@ class PagoSoporteResource extends JsonResource
             'observaciones' => $this->observaciones,
             'validado_at' => $this->validado_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
+            'comprobantes' => $this->whenLoaded('comprobantes', fn () => PagoComprobanteResource::collection($this->comprobantes)),
             'validado_por' => $this->whenLoaded('validadoPor', fn () => [
-                'id' => $this->validadoPor->id,
-                'name' => $this->validadoPor->name,
+                'id' => $this->validadoPor?->id,
+                'name' => $this->validadoPor?->name,
             ]),
             'funcionario' => $this->whenLoaded('funcionario', fn () => [
                 'id' => $this->funcionario->id,

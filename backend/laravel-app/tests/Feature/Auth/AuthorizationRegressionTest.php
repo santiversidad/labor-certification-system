@@ -92,7 +92,7 @@ class AuthorizationRegressionTest extends TestCase
     {
         $funcionario = $this->crearFuncionario();
 
-        foreach (self::ADMIN_ENDPOINTS as $endpoint) {
+        foreach (array_diff(self::ADMIN_ENDPOINTS, ['/api/v1/solicitudes']) as $endpoint) {
             $this->actingAs($funcionario, 'sanctum')->getJson($endpoint)->assertForbidden();
         }
 
@@ -107,16 +107,17 @@ class AuthorizationRegressionTest extends TestCase
         $secretario->assignRole(RoleEnum::Secretario->value);
 
         foreach ([
-            '/api/v1/funcionarios',
-            '/api/v1/cargos',
             '/api/v1/solicitudes',
             '/api/v1/certificados',
-            '/api/v1/reportes',
+            '/api/v1/secretaria/pagos',
         ] as $endpoint) {
             $this->actingAs($secretario, 'sanctum')->getJson($endpoint)->assertOk();
         }
 
         foreach ([
+            '/api/v1/funcionarios',
+            '/api/v1/cargos',
+            '/api/v1/reportes',
             '/api/v1/configuracion/certificaciones',
             '/api/v1/manual-funciones/estado',
         ] as $endpoint) {

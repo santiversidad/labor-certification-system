@@ -15,6 +15,8 @@ use App\Models\FuncionarioCargo;
 use App\Models\PagoSoporte;
 use App\Models\SolicitudCertificacion;
 use App\Models\User;
+use App\Services\ExpedirCertificacionService;
+use App\Services\GenerarCertificadoService;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,28 +128,22 @@ class FaseBIntegridadDominioTest extends TestCase
 
     public function test_generacion_sencilla_falla_si_no_hay_asignacion_vigente(): void
     {
-        $solicitud = $this->solicitudAprobada();
-
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertConflict()
-            ->assertJsonPath('code', 'ASIGNACION_NO_VIGENTE');
-
+        try {
+            app(ExpedirCertificacionService::class)->expedir($this->funcionarioUser, 'sencillo', null);
+            $this->fail('Debe rechazar la ausencia de asignación.');
+        } catch (\DomainException $error) {
+            $this->assertSame('ASIGNACION_NO_VIGENTE', $error->getMessage());
+        }
         $this->assertDatabaseCount('certificados', 0);
-        $this->assertDatabaseHas('audit_logs', ['accion' => 'generar_certificado_fallido']);
+        $this->assertDatabaseHas('audit_logs', ['accion' => 'generacion_certificado_fallida']);
     }
 
     public function test_generacion_sencilla_falla_si_hay_asignaciones_ambiguas(): void
     {
         $this->asignarCargo('2020-01-01');
         $this->asignarCargo('2021-01-01');
-
-        $solicitud = $this->solicitudAprobada();
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertConflict();
-
-        $this->assertDatabaseCount('certificados', 0);
+        $this->expectException(\DomainException::class);
+        app(ExpedirCertificacionService::class)->expedir($this->funcionarioUser, 'sencillo', null);
     }
 
     public function test_generacion_sencilla_no_exige_ficha_manual(): void
@@ -160,20 +156,15 @@ class FaseBIntegridadDominioTest extends TestCase
             'es_cargo_base' => true,
             'fecha_inicio' => '2020-01-01',
         ]);
-        $sencillo = $this->solicitudAprobada();
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$sencillo->id}/generar-certificado")
-            ->assertCreated()
-            ->assertJsonPath('data.certificado.snapshot_schema_version', 3);
+        $resultado = app(ExpedirCertificacionService::class)->expedir($this->funcionarioUser, 'sencillo', null);
+        $this->assertSame(3, $resultado['certificado']->snapshot_schema_version);
     }
 
     public function test_snapshot_emitido_no_puede_modificarse(): void
     {
         ManualFixture::vincular($this->funcionario);
         $solicitud = $this->solicitudAprobada();
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
 
         $certificado = Certificado::firstOrFail();
         $this->expectException(\DomainException::class);

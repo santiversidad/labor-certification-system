@@ -12,11 +12,13 @@ export type NavigationItem = {
 // Rutas del funcionario (portal personal)
 export const appNavigation: NavigationItem[] = [
   { label: 'Certificaciones laborales', path: '/app/inicio', icon: BadgeCheck, roles: ['funcionario'] },
+  { label: 'Mis solicitudes', path: '/app/solicitudes', icon: ScrollText, roles: ['funcionario'] },
 ];
 
 // El rol secretario conserva únicamente consulta operativa; no expone aprobaciones manuales.
 export const adminNavigation: NavigationItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: Gauge, roles: ['admin', 'secretario'] },
+  { label: 'Validación de pagos', path: '/admin/pagos', icon: ScrollText, roles: ['secretario'] },
   { label: 'Funcionarios', path: '/admin/funcionarios', icon: Users, roles: ['admin'] },
   { label: 'Cargos', path: '/admin/cargos', icon: BriefcaseBusiness, roles: ['admin'] },
   { label: 'Manual de Funciones', path: '/admin/manual-funciones', icon: BookOpenCheck, roles: ['admin'] },

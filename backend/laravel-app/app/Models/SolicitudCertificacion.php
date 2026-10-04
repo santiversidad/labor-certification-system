@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SolicitudCertificacion extends Model
 {
@@ -26,6 +27,7 @@ class SolicitudCertificacion extends Model
         'created_by',
         'reviewed_by',
         'reviewed_at',
+        'error_expedicion',
     ];
 
     // ─── Eventos ─────────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ class SolicitudCertificacion extends Model
 
             if (empty($solicitud->radicado)) {
                 $anio = now()->year;
+                // Serialize the existing annual counter across employees and certificate types.
+                DB::select('SELECT pg_advisory_xact_lock(hashtextextended(CAST(? AS text), 0))', ["radicado:{$anio}"]);
                 $consecutivo = static::whereYear('created_at', $anio)->count() + 1;
                 $solicitud->radicado = sprintf('CL-%d-%06d', $anio, $consecutivo);
             }
@@ -57,6 +61,10 @@ class SolicitudCertificacion extends Model
             EstadoSolicitudEnum::EnRevision->value,
             EstadoSolicitudEnum::PendientePago->value,
             EstadoSolicitudEnum::PagoEnRevision->value,
+            EstadoSolicitudEnum::PagoRechazado->value,
+            EstadoSolicitudEnum::PagoConfirmado->value,
+            EstadoSolicitudEnum::ExpedicionFallida->value,
+            EstadoSolicitudEnum::Generada->value,
             EstadoSolicitudEnum::Aprobada->value,
         ];
     }

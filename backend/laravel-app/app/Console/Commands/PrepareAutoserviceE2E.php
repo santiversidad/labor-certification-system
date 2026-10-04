@@ -33,6 +33,13 @@ class PrepareAutoserviceE2E extends Command
                 'estado' => true, 'must_change_password' => false,
             ]);
             $admin->assignRole('admin');
+            foreach (['E2E-SECRETARIA', 'E2E-SECRETARIA-2'] as $documento) {
+                $secretaria = User::firstOrCreate(['documento' => $documento], [
+                    'name' => 'Secretaría ficticia pagos E2E', 'password' => Hash::make('E2ESecretaria2026'),
+                    'estado' => true, 'must_change_password' => false,
+                ]);
+                $secretaria->assignRole('secretario');
+            }
             $cargo = Cargo::firstOrCreate(['codigo' => 'E2E', 'grado' => '01'], [
                 'denominacion' => 'Profesional E2E', 'nivel' => 'Profesional',
                 'dependencia' => 'Talento Humano E2E', 'estado' => true,

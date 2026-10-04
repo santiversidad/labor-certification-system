@@ -15,6 +15,8 @@ use App\Models\PagoSoporte;
 use App\Models\SolicitudCertificacion;
 use App\Models\TokenValidacion;
 use App\Models\User;
+use App\Services\ExpedirCertificacionService;
+use App\Services\GenerarCertificadoService;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -67,24 +69,14 @@ class CertificadoValidacionTest extends TestCase
         ManualFixture::vincular($this->funcionario);
     }
 
-    public function test_secretario_puede_generar_certificado_de_solicitud_aprobada(): void
+    public function test_autoservicio_genera_certificado_y_token_para_su_titular(): void
     {
-        $solicitud = $this->crearSolicitudAprobada();
-
-        $response = $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado");
-
-        $response->assertCreated()
-            ->assertJsonPath('success', true)
-            ->assertJsonStructure(['data' => ['certificado', 'token', 'url_validacion']]);
-
+        $resultado = app(ExpedirCertificacionService::class)->expedir($this->funcionarioUser, 'sencillo', null);
+        $this->assertSame('generada', $resultado['estado']);
         $this->assertDatabaseCount('certificados', 1);
         $this->assertDatabaseCount('tokens_validacion', 1);
-        $this->assertDatabaseHas('solicitudes_certificacion', [
-            'id' => $solicitud->id,
-            'estado' => EstadoSolicitudEnum::CertificadoGenerado->value,
-        ]);
-        $this->assertDatabaseHas('audit_logs', ['accion' => 'generar_certificado']);
+        $this->assertDatabaseHas('solicitudes_certificacion', ['estado' => 'generada']);
+        $this->assertDatabaseHas('audit_logs', ['accion' => 'generar_certificado_autoservicio']);
     }
 
     public function test_no_genera_certificado_si_pago_requerido_no_esta_aprobado(): void
@@ -99,9 +91,9 @@ class CertificadoValidacionTest extends TestCase
             'estado' => EstadoPagoEnum::Cargado,
         ]);
 
-        $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertStatus(409)->assertJsonPath('code', 'PAGO_NO_CONFIRMADO');
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('PAGO_NO_CONFIRMADO');
+        app(GenerarCertificadoService::class)->generar($solicitud, $this->funcionarioUser);
     }
 
     public function test_token_valido_retorna_certificado_valido_y_no_expone_salario(): void
@@ -226,13 +218,7 @@ class CertificadoValidacionTest extends TestCase
 
     private function generarCertificadoYToken(): string
     {
-        $solicitud = $this->crearSolicitudAprobada();
-
-        $response = $this->actingAs($this->secretario, 'sanctum')
-            ->postJson("/api/v1/solicitudes/{$solicitud->id}/generar-certificado")
-            ->assertCreated();
-
-        return $response->json('data.token');
+        return app(ExpedirCertificacionService::class)->expedir($this->funcionarioUser, 'sencillo', null)['token'];
     }
 
     private function crearSolicitudAprobada(array $overrides = []): SolicitudCertificacion

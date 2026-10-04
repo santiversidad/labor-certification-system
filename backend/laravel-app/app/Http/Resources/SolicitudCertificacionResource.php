@@ -21,6 +21,7 @@ class SolicitudCertificacionResource extends JsonResource
             'reviewed_at' => $this->reviewed_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            'error_expedicion' => $this->error_expedicion,
 
             // Relaciones opcionales (se incluyen solo si fueron cargadas)
             'funcionario' => $this->whenLoaded('funcionario',
@@ -28,16 +29,14 @@ class SolicitudCertificacionResource extends JsonResource
             ),
             'creado_por' => $this->whenLoaded('creadoPor', function () {
                 return [
-                    'id' => $this->creadoPor->id,
-                    'name' => $this->creadoPor->name,
-                    'documento' => $this->creadoPor->documento,
+                    'id' => $this->creadoPor?->id,
+                    'name' => $this->creadoPor?->name,
                 ];
             }),
             'revisado_por' => $this->whenLoaded('revisadoPor', function () {
                 return [
-                    'id' => $this->revisadoPor->id,
-                    'name' => $this->revisadoPor->name,
-                    'documento' => $this->revisadoPor->documento,
+                    'id' => $this->revisadoPor?->id,
+                    'name' => $this->revisadoPor?->name,
                 ];
             }),
             'pago_soporte' => $this->whenLoaded('pagoSoporte',
