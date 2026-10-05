@@ -28,6 +28,19 @@ it('genera columnas dinámicas, conserva ceros y muestra número de cargos por a
   expect(screen.getByText(`${new Date().getFullYear()} · Pendiente de registrar`)).toBeVisible();
 });
 it('busca en servidor por código, grado o denominación', async () => { setup(); await screen.findByText('Profesional sintético'); await userEvent.type(screen.getByLabelText('Buscar por código, grado o denominación'), '099'); await userEvent.click(screen.getByRole('button', { name: 'Buscar' })); await waitFor(() => expect(salaryScaleService.list).toHaveBeenLastCalledWith('099', 1)); });
+it('conserva filas sin vinculación al catálogo y permite consultar sus salarios', async () => {
+  const data = table();
+  data.filas[0].valores.forEach((item) => { item.cargo_id = null; });
+  vi.mocked(salaryScaleService.list).mockResolvedValue(data);
+  setup();
+  const row = (await screen.findByText('Profesional sintético')).closest('tr')!;
+  expect(within(row).getAllByText('Sin vinculación al catálogo')).toHaveLength(2);
+  expect(within(row).getAllByText(/\$\s+1\.000\.001/)).toHaveLength(2);
+  expect(within(row).getByText('N.º cargos: 2')).toBeVisible();
+  expect(within(row).getByText('N.º cargos: 3')).toBeVisible();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+});
 it('crea desde base sin porcentaje con valores pendientes y no ejecuta cálculo', async () => { await createDialog(); await userEvent.click(screen.getByRole('button', { name: 'Crear borrador' })); await waitFor(() => expect(salaryScaleService.create).toHaveBeenCalledWith({ anio: 2026, fuente: 'Ejercicio sintético', vigencia_base_id: 2, base_revision: 3 })); expect(salaryScaleService.preview).not.toHaveBeenCalled(); expect(await screen.findByText(/Cambio guardado/)).toBeVisible(); });
 it('previsualiza con el servidor y exige confirmar antes de generar', async () => {
   await createDialog(); await userEvent.type(screen.getByLabelText('Porcentaje de aumento (%) · opcional'), '7,00');

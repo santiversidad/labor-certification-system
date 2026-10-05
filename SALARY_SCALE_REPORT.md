@@ -2,6 +2,8 @@
 
 Fecha de trabajo: 2026-10-05. Repositorio canónico `C:\Users\mondr\source\labor-certification-recovery`.
 
+Este reporte conserva la evidencia de implementación del commit `c751327`. La carga posterior autorizada de 2024/2025 está documentada en [SALARY_SCALE_IMPORT_REVIEW.md](SALARY_SCALE_IMPORT_REVIEW.md): 100 ítems en CT dev, ambos años en borrador, 96 relaciones y 4 pendientes institucionales con FK nula. Los estados «pendiente de transcripción / 0 ítems» que aparecen abajo corresponden al cierre original del módulo. 2026 sigue ausente; acto y fecha jurídica sin registrar.
+
 ## Baseline y rama
 
 Precheck limpio en `fix/manual-profile-ambiguity-ux`, HEAD `18d9a2764e612accf1b5eae8e68ea5860a62f327` (UX del Manual completada). Se creó `feat/salary-scale-management`. Sin reset, clean, checkout destructivo ni push. Mensaje de commit: `feat(salary-scale): add administrative salary scale management`. El usuario autorizó explícitamente el commit con la excepción de auditoría documentada abajo.

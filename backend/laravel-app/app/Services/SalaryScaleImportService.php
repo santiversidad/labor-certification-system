@@ -13,9 +13,16 @@ class SalaryScaleImportService
 {
     public const HEADERS = ['anio', 'codigo', 'grado', 'denominacion', 'numero_cargos', 'asignacion_basica_mensual'];
 
+    // Reviewed on 2026-10-05 for the 2024/2025 source only. Never normalize source fields.
+    private const REVIEWED_CARGO_MAPPINGS = [
+        ['codigo' => '290', 'grado' => '10', 'fuente' => 'Comandante de Tránsito', 'catalogo' => 'Comandante de Transito', 'motivo' => 'Equivalencia revisada: diferencia exclusiva de tilde.'],
+        ['codigo' => '233', 'grado' => '09', 'fuente' => 'Inspector de Policía Urbano 1ra Categoria', 'catalogo' => 'Inspector de Policía Urbano Primera Categoría', 'motivo' => 'Equivalencia revisada: abreviatura y ortografía.'],
+        ['codigo' => '438', 'grado' => '12', 'fuente' => 'Secretario Ejecutivo del Despacho del alcalde', 'catalogo' => 'Secretario Ejecutivo del Despacho del Alcalde', 'motivo' => 'Equivalencia revisada: capitalización.'],
+    ];
+
     public function inspect(string $file): array
     {
-        $summary = ['filas_leidas' => 0, 'validas' => 0, 'duplicadas' => 0, 'sin_cargo_relacionado' => 0, 'errores' => [], 'vigencias' => [], 'filas' => []];
+        $summary = ['filas_leidas' => 0, 'validas' => 0, 'duplicadas' => 0, 'con_cargo_relacionado' => 0, 'sin_cargo_relacionado' => 0, 'ambiguas' => 0, 'mappings_explicitos' => [], 'errores' => [], 'vigencias' => [], 'filas' => []];
         $stream = fopen($file, 'rb');
         if (! $stream) {
             throw ValidationException::withMessages(['file' => 'No se pudo abrir el archivo.']);
@@ -67,9 +74,29 @@ class SalaryScaleImportService
                 }
                 $seen[$key] = true;
                 $matches = Cargo::where('codigo', $entry['codigo'])->where('grado', $entry['grado'])->where('denominacion', $entry['denominacion'])->get();
+                $mapping = null;
+                if ($matches->isEmpty() && in_array($entry['anio'], ['2024', '2025'], true)) {
+                    foreach (self::REVIEWED_CARGO_MAPPINGS as $reviewed) {
+                        if ($entry['codigo'] === $reviewed['codigo'] && $entry['grado'] === $reviewed['grado'] && $entry['denominacion'] === $reviewed['fuente']) {
+                            $mapping = $reviewed;
+                            $matches = Cargo::where('codigo', $reviewed['codigo'])->where('grado', $reviewed['grado'])->where('denominacion', $reviewed['catalogo'])->get();
+                            break;
+                        }
+                    }
+                }
+                if ($matches->count() > 1) {
+                    $summary['ambiguas']++;
+                    $summary['errores'][] = 'Fila '.$line.': relación ambigua con el catálogo; no se puede seleccionar un cargo automáticamente.';
+                }
                 $entry['cargo_id'] = $matches->count() === 1 ? $matches->sole()->id : null;
                 if ($entry['cargo_id'] === null) {
                     $summary['sin_cargo_relacionado']++;
+                } else {
+                    $summary['con_cargo_relacionado']++;
+                    if ($mapping !== null) {
+                        $summary['mappings_explicitos'][] = ['anio' => (int) $entry['anio'], 'codigo' => $entry['codigo'], 'grado' => $entry['grado'],
+                            'denominacion_fuente' => $entry['denominacion'], 'denominacion_catalogo' => $mapping['catalogo'], 'cargo_id' => $entry['cargo_id'], 'motivo' => $mapping['motivo']];
+                    }
                 }
                 $entry['anio'] = (int) $entry['anio'];
                 $entry['numero_cargos'] = $entry['numero_cargos'] === '' ? null : (int) $entry['numero_cargos'];
@@ -91,8 +118,8 @@ class SalaryScaleImportService
 
     public function import(array $summary, int $actor, string $source): array
     {
-        if ($summary['errores']) {
-            throw ValidationException::withMessages(['file' => $summary['errores']]);
+        if ($summary['errores'] || ($summary['ambiguas'] ?? 0) > 0) {
+            throw ValidationException::withMessages(['file' => $summary['errores'] ?: ['Existe una relación ambigua con el catálogo.']]);
         }
 
         return DB::transaction(function () use ($summary, $actor, $source) {
@@ -126,7 +153,9 @@ class SalaryScaleImportService
                 }
                 $year->increment('revision');
                 app(RegistrarAuditoriaAction::class)->execute('salary_scale_year_imported', 'EscalaSalarialVigencia', $year->id,
-                    'Valores fuente importados en borrador; requieren revisión antes de publicar.', ['anio' => $number, 'cantidad' => count($rows), 'sin_cargo_relacionado' => count(array_filter($rows, fn ($row) => $row['cargo_id'] === null))], $actor);
+                    'Valores fuente importados en borrador; requieren revisión antes de publicar.', ['anio' => $number, 'cantidad' => count($rows),
+                        'sin_cargo_relacionado' => count(array_filter($rows, fn ($row) => $row['cargo_id'] === null)),
+                        'mappings_explicitos' => array_values(array_filter($summary['mappings_explicitos'] ?? [], fn ($mapping) => $mapping['anio'] === $number))], $actor);
                 $created += count($rows);
             }
 

@@ -237,6 +237,121 @@ class SalaryScaleTest extends TestCase
         }
     }
 
+    private function reviewedCatalog(): array
+    {
+        $targets = [
+            ['290', '10', 'Comandante de Transito'],
+            ['233', '09', 'Inspector de Policía Urbano Primera Categoría'],
+            ['438', '12', 'Secretario Ejecutivo del Despacho del Alcalde'],
+            ['202', '09', 'Comisario de Familia'],
+            ['312', '08', 'Inspector de Tránsito y Transporte –'],
+        ];
+        $cargos = [];
+        foreach ($targets as [$code, $grade, $name]) {
+            $cargos[$code] = Cargo::updateOrCreate(['codigo' => $code, 'grado' => $grade], ['denominacion' => $name, 'nivel' => 'Profesional', 'estado' => true]);
+        }
+
+        return $cargos;
+    }
+
+    public function test_reviewed_mappings_import_source_values_and_preserve_pending_rows_without_fk(): void
+    {
+        $cargos = $this->reviewedCatalog();
+        $stream = fopen(database_path('data/salary-scale/salary-scale-2024-2025.csv'), 'rb');
+        fgetcsv($stream, 0, ',', '"', '');
+        $source = [];
+        while (($row = fgetcsv($stream, 0, ',', '"', '')) !== false) {
+            if (in_array($row[1] ?? '', ['290', '233', '438', '202', '312'], true)) {
+                $source[] = $row;
+            }
+        }
+        fclose($stream);
+        $this->assertCount(10, $source);
+        $file = $this->csv(implode("\n", array_map(fn ($row) => implode(',', $row), $source))."\n");
+        try {
+            $summary = app(SalaryScaleImportService::class)->inspect($file);
+            $this->assertSame(10, $summary['validas']);
+            $this->assertSame(6, $summary['con_cargo_relacionado']);
+            $this->assertSame(4, $summary['sin_cargo_relacionado']);
+            $this->assertSame(0, $summary['ambiguas']);
+            $this->assertCount(6, $summary['mappings_explicitos']);
+            $this->assertSame([], $summary['errores']);
+            $this->artisan('salary-scale:import', ['--file' => $file, '--actor-id' => (string) $this->admin->id, '--fuente' => 'Fuente revisada de prueba'])->assertSuccessful();
+            foreach ($source as [$number, $code, $grade, $name, $count, $value]) {
+                $year = EscalaSalarialVigencia::where('anio', $number)->firstOrFail();
+                $item = $year->items()->where('codigo', $code)->where('grado', $grade)->where('denominacion', $name)->sole();
+                $this->assertSame($grade, $item->grado);
+                $this->assertSame($name, $item->denominacion);
+                $this->assertSame((int) $count, $item->numero_cargos);
+                $this->assertSame($value, $item->asignacion_basica_mensual);
+                $this->assertSame(in_array($code, ['202', '312'], true) ? null : $cargos[$code]->id, $item->cargo_id);
+                $this->assertSame('borrador', $year->estado);
+                $this->assertNull($year->acto_administrativo);
+                $this->assertNull($year->fecha_vigencia);
+            }
+            $this->assertFalse(EscalaSalarialVigencia::where('anio', 2026)->exists());
+            foreach (AuditLog::where('accion', 'salary_scale_year_imported')->get() as $audit) {
+                $this->assertCount(3, $audit->metadata['mappings_explicitos']);
+                $this->assertSame(2, $audit->metadata['sin_cargo_relacionado']);
+            }
+            $this->getJson(self::URL.'?q=Comisario')->assertOk()->assertJsonPath('data.filas.0.grado', '13')->assertJsonPath('data.filas.0.valores.0.cargo_id', null)->assertJsonPath('data.filas.0.valores.0.asignacion_basica_mensual', '11284768');
+            $this->getJson(self::URL.'?q=Inspector de Tránsito')->assertOk()->assertJsonPath('data.filas.0.denominacion', 'Inspector de Tránsito')->assertJsonPath('data.filas.0.valores.0.cargo_id', null);
+            $before = AuditLog::count();
+            $this->artisan('salary-scale:import', ['--file' => $file, '--actor-id' => (string) $this->admin->id, '--fuente' => 'Fuente revisada de prueba'])->assertSuccessful();
+            $this->assertSame($before, AuditLog::count());
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function test_mapping_never_normalizes_other_names_codes_grades_or_years(): void
+    {
+        $this->reviewedCatalog();
+        $file = $this->csv("2024,290,10,Comandante de tránsito,2,6856521\n2024,290,10,Comandante de Tránsito ,2,6856521\n2024,290,11,Comandante de Tránsito,2,6856521\n2024,291,10,Comandante de Tránsito,2,6856521\n2023,290,10,Comandante de Tránsito,2,6856521\n");
+        try {
+            $summary = app(SalaryScaleImportService::class)->inspect($file);
+            $this->assertSame(5, $summary['validas']);
+            $this->assertSame(0, $summary['con_cargo_relacionado']);
+            $this->assertSame(5, $summary['sin_cargo_relacionado']);
+            $this->assertSame([], $summary['mappings_explicitos']);
+            $this->assertSame([], $summary['errores']);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function test_mapping_requires_its_exact_catalog_target_and_does_not_use_a_fixed_id(): void
+    {
+        $cargos = $this->reviewedCatalog();
+        $cargos['290']->update(['denominacion' => 'Denominación distinta']);
+        $file = $this->csv("2024,290,10,Comandante de Tránsito,2,6856521\n");
+        try {
+            $summary = app(SalaryScaleImportService::class)->inspect($file);
+            $this->assertSame(1, $summary['sin_cargo_relacionado']);
+            $this->assertNull($summary['filas'][0]['cargo_id']);
+            $this->assertSame([], $summary['mappings_explicitos']);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function test_import_refuses_a_summary_flagged_as_ambiguous(): void
+    {
+        $file = $this->csv("2024,099,02,Sin relación,2,1000001\n");
+        try {
+            $summary = app(SalaryScaleImportService::class)->inspect($file);
+            $summary['ambiguas'] = 1;
+            try {
+                app(SalaryScaleImportService::class)->import($summary, $this->admin->id, 'Fuente sintética');
+                $this->fail('Ambiguous import accepted');
+            } catch (ValidationException) {
+                $this->assertSame(0, EscalaSalarialVigencia::count());
+            }
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function test_import_conflict_rolls_back_all_years_and_cannot_overwrite(): void
     {
         $this->base(2025);

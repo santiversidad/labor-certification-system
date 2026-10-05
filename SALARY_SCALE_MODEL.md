@@ -4,9 +4,9 @@ Catálogo exclusivo de administración para consultar y mantener asignaciones b�
 
 ## Fuente y estado de los datos
 
-La fotografía de la tabla institucional 2024/2025 no está disponible en los archivos recibidos ni en el repositorio. El CSV `backend/laravel-app/database/data/salary-scale/salary-scale-2024-2025.csv` es una **plantilla sin cifras**. Falta transcribir y revisar contra la fuente de Dirección de Personal; no se declara cargado ningún año institucional. No hay valores oficiales 2026. La UI muestra el año actual como pendiente cuando todavía no está registrado; las columnas consultan años existentes sin hardcodear 2024/2025/2026.
+El CSV `backend/laravel-app/database/data/salary-scale/salary-scale-2024-2025.csv` conserva la transcripción institucional entregada: 100 filas, 50 combinaciones y 701 cargos por año. El usuario confirmó la revisión contra la fotografía y autorizó tres equivalencias textuales exclusivamente para relacionar cargos; las otras dos combinaciones permanecen pendientes de conciliación y se conservan sin FK. Los resultados de carga y estados están en `SALARY_SCALE_IMPORT_REVIEW.md`. No hay valores oficiales 2026 ni se crea ese año con esta importación. La UI muestra el año actual como pendiente cuando todavía no está registrado; las columnas consultan años existentes sin hardcodear 2024/2025/2026.
 
-La fuente prevista para una futura transcripción revisada es “Tabla salarial entregada por Dirección de Personal”. Acto y fecha son opcionales hasta obtener evidencia. La fuente es obligatoria. Publicar es un estado operativo y no acredita un decreto.
+La fuente es “Tabla salarial entregada por Dirección de Personal”. Acto y fecha permanecen sin registrar hasta obtener evidencia. La fuente es obligatoria. Publicar es un estado operativo y no acredita un decreto. El importador crea borradores, sin publicación automática.
 
 ## Modelo y restricciones
 
@@ -17,9 +17,9 @@ Migración aditiva: `2026_10_05_000002_create_salary_scale_management.php`.
 | `escala_salarial_vigencias` | Año único; estado; porcentaje de referencia; base nullable; fuente; acto/fecha/observaciones nullable; actores de creación/publicación; momento de publicación; revisión; timestamps |
 | `escala_salarial_items` | Vigencia; cargo nullable; código, grado, denominación fuente; cantidad de cargos nullable por año; asignación `decimal(12,0)` nullable; origen; revisión; timestamps |
 
-Código y grado son strings: se conservan los ceros iniciales. La FK a `cargos` se asigna únicamente si código, grado y denominación coinciden exactamente con una fila. Sin coincidencia cierta se conserva la fila fuente con FK null y se reporta para revisión; no se crea ni se interpreta un cargo o ficha del Manual.
+Código y grado son strings: se conservan los ceros iniciales. La FK a `cargos` se asigna si código, grado y denominación coinciden exactamente con una única fila. Como excepción explícitamente revisada para 2024/2025, el importador permite las tres equivalencias cerradas 290/10, 233/09 y 438/12, comprobando también la denominación destino exacta y única. No modifica los campos fuente y registra cada mapping en el resumen y la auditoría. No hay fuzzy matching ni normalización general. Sin coincidencia cierta se conserva la fila fuente con FK null y se reporta para revisión; no se crea ni se interpreta un cargo o ficha del Manual. 202/13 y 312/08 permanecen pendientes sin FK y visibles con «Sin vinculación al catálogo».
 
-El catálogo maestro tiene UNIQUE(código, grado) y no tiene duplicados, pero no se puede confirmar la clave institucional de la fuente salarial ausente. Se usa UNIQUE(vigencia, código, grado, denominación) para bloquear filas idénticas y conservar posibles excepciones sin descartar datos. No se fuerza una FK solo por código/grado cuando la denominación difiere. Antes de importar, revisar el resumen de coincidencias.
+El catálogo maestro tiene UNIQUE(código, grado) y no tiene duplicados. La transcripción revisada contiene 50 combinaciones únicas por año. Se usa UNIQUE(vigencia, código, grado, denominación) para bloquear filas idénticas y conservar posibles excepciones sin descartar datos. No se fuerza una FK solo por código/grado cuando la denominación difiere. Antes de importar, revisar el resumen de coincidencias.
 
 Cantidad de cargos vive en el ítem anual y puede variar. La tabla muestra “N.º cargos” en cada celda anual; no existe una columna común que sustituya la historia. Se omite “Total x Nivel” en esta versión; no se persisten totales manuales ni se infieren niveles de filas sin correspondencia segura.
 
@@ -43,7 +43,7 @@ Política explícita: pesos enteros COP, redondeo half-up (mitades hacia arriba)
 
 `nuevo = intdiv(base * (10000 + puntos_base) + 5000, 10000)`
 
-La multiplicación máxima cabe en int64; no se usa float para persistencia o cálculo. La representación JSON del importe es string. React usa Number únicamente para presentación COP en el rango seguro (<2^53). La fuente ausente impide afirmar que esta política sea una regla institucional verificada; es la política técnica de esta primera versión, documentada y probada. CSV con fracciones o símbolos monetarios se rechaza para revisión, sin redondear una fuente ilegible.
+La multiplicación máxima cabe en int64; no se usa float para persistencia o cálculo. La representación JSON del importe es string. React usa Number únicamente para presentación COP en el rango seguro (<2^53). La transcripción revisada no establece una regla institucional para incrementos futuros; esta es la política técnica de la primera versión, documentada y probada. CSV con fracciones o símbolos monetarios se rechaza para revisión, sin redondear una fuente ilegible.
 
 Origen de ítem: `pendiente`, `manual`, `importado`, `calculado_por_porcentaje`. La vigencia conserva base y porcentaje de referencia incluso si luego se ajustan celdas manualmente. Un segundo cálculo no sobrescribe valores existentes.
 
@@ -77,7 +77,7 @@ Auditoría existente, actores explícitos: creación, cálculo, edición individ
 
 Encabezados exactos: `anio,codigo,grado,denominacion,numero_cargos,asignacion_basica_mensual`. Formato largo, una fila por combinación/año para conservar cantidades históricas. UTF-8 con BOM opcional; códigos/grados numéricos string; moneda positiva entera sin símbolos/separadores; denominación preservada. Máximo preventivo 5 MB / 10.000 filas.
 
-Resumen antes de escribir: leídas, válidas, duplicadas, sin cargo relacionado, errores y vigencias. Dry-run no exige actor y no escribe. Para importar se requiere `--actor-id` de administrador activo con permiso y `--fuente` revisada. Los errores estructurales abortan todo. Archivo idéntico y misma fuente es idempotente sin auditorías duplicadas; diferencias con un año poblado se rechazan, incluso en borrador. No se reemplazan históricos. Ver instrucciones en `database/data/salary-scale/README.md`.
+Resumen antes de escribir: leídas, válidas, duplicadas, con/sin cargo relacionado, ambiguas, mappings explícitos, errores y vigencias. Dry-run no exige actor y no escribe. Para importar se requiere `--actor-id` de administrador activo con permiso y `--fuente` revisada. Los errores estructurales, duplicados y relaciones ambiguas abortan todo; las filas válidas sin relación se preservan con FK nula. Archivo idéntico y misma fuente es idempotente sin auditorías duplicadas; diferencias con un año poblado se rechazan, incluso en borrador. No se reemplazan históricos. Ver instrucciones en `database/data/salary-scale/README.md`.
 
 ## Separación y límites
 

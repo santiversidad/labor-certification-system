@@ -19,7 +19,7 @@ export function SalaryTable({ data, onEdit, onIncrease, onPublish, onDetails }: 
           <span className="block whitespace-nowrap font-semibold tabular-nums">{cop(item.asignacion_basica_mensual)}</span>
           <span className="mt-1 block text-xs text-muted">N.º cargos: {item.numero_cargos ?? 'Pendiente'}</span>
           <span className="block text-xs text-muted">{item.origen_valor === 'calculado_por_porcentaje' ? 'Calculado por porcentaje' : item.origen_valor === 'importado' ? 'Fuente importada' : item.origen_valor === 'manual' ? 'Editado manualmente' : 'Sin valor registrado'}</span>
-          {item.cargo_id === null && <span className="block text-xs text-amber-800">Sin cargo relacionado</span>}
+          {item.cargo_id === null && <span className="block text-xs text-amber-800">Sin vinculación al catálogo</span>}
           {year.estado === 'borrador' && <Button type="button" variant="ghost" onClick={() => onEdit(item, year)} aria-label={`Editar ${row.codigo} grado ${row.grado} ${year.anio}`}>Editar valor</Button>}
         </> : <span className="text-muted">Sin fila en esta vigencia</span>}</td>;
       })}</tr>)}</tbody>
