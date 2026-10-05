@@ -1,0 +1,89 @@
+BEGIN
+ id |           version           |  estado   | vigencia_desde | vigencia_hasta
+----+-----------------------------+-----------+----------------+----------------
+ 10 | Decreto 1000-24/015 de 2023 | publicado |                |
+(1 row)
+
+ fichas | funciones | conocimientos |          digest_fichas
+--------+-----------+---------------+----------------------------------
+    344 |      3115 |          2326 | 2ccdb15add1bedbe5c83aa978cf4fa45
+(1 row)
+
+ source_id |       dependencia        | area_funcional | proposito_principal | conocimientos
+-----------+--------------------------+----------------+---------------------+---------------
+ MF-0167   | Donde se ubique el cargo |                |                     |             8
+(1 row)
+
+ unidades | fichas_con_ambito_concreto
+----------+----------------------------
+       73 |                        335
+(1 row)
+
+                                               unidad                                                | codigo | grado |       denominacion        | perfiles |                        fichas
+-----------------------------------------------------------------------------------------------------+--------+-------+---------------------------+----------+------------------------------------------------------
+ despacho del alcalde                                                                                | 407    | 03    | Auxiliar Administrativo   |        2 | MF-0342, MF-0343
+ despacho del alcalde                                                                                | 407    | 05    | Auxiliar Administrativo   |        2 | MF-0340, MF-0341
+ oficina asesora jurídica                                                                            | 222    | 09    | Profesional Especializado |        2 | MF-0080, MF-0081
+ oficina de contratación                                                                             | 219    | 07    | Profesional Universitario |        2 | MF-0114, MF-0115
+ oficina de la alta consejería para la seguridad ciudadana                                           | 219    | 07    | Profesional Universitario |        3 | MF-0119, MF-0120, MF-0121
+ secretaría de catastro y espacio público                                                            | 219    | 07    | Profesional Universitario |        3 | MF-0123, MF-0124, MF-0125
+ secretaría de catastro y espacio público - dirección de conservación y actualización catastral      | 219    | 07    | Profesional Universitario |        3 | MF-0126, MF-0127, MF-0128
+ secretaría de catastro y espacio público - dirección de conservación y actualización catastral      | 222    | 10    | Profesional Especializado |        2 | MF-0069, MF-0070
+ secretaría de catastro y espacio público - dirección de difusión catastral                          | 219    | 07    | Profesional Universitario |        2 | MF-0129, MF-0130
+ secretaría de catastro y espacio público - dirección de difusión catastral                          | 222    | 10    | Profesional Especializado |        2 | MF-0071, MF-0072
+ secretaría de catastro y espacio público - dirección de gestión del espacio público                 | 222    | 09    | Profesional Especializado |        2 | MF-0084, MF-0085
+ secretaría de competitividad y desarrollo                                                           | 314    | 05    | Técnico Operativo         |        2 | MF-0273, MF-0274
+ secretaría de desarrollo institucional - dirección de personal                                      | 219    | 07    | Profesional Universitario |        5 | MF-0133, MF-0134, MF-0135, MF-0136, MF-0137
+ secretaría de desarrollo institucional - dirección de personal                                      | 222    | 09    | Profesional Especializado |        2 | MF-0086, MF-0087
+ secretaría de desarrollo institucional - dirección de personal                                      | 314    | 05    | Técnico Operativo         |        3 | MF-0277, MF-0278, MF-0279
+ secretaría de desarrollo institucional - dirección de personal                                      | 367    | 05    | Técnico Administrativo    |        3 | MF-0232, MF-0233, MF-0234
+ secretaría de educación - dirección administrativa                                                  | 219    | 07    | Profesional Universitario |        2 | MF-0138, MF-0139
+ secretaría de educación - dirección administrativa                                                  | 314    | 05    | Técnico Operativo         |        2 | MF-0283, MF-0284
+ secretaría de gestión social y participación ciudadana                                              | 219    | 07    | Profesional Universitario |        2 | MF-0143, MF-0144
+ secretaría de gestión social y participación ciudadana - dirección de grupos de especial protección | 219    | 07    | Profesional Universitario |        2 | MF-0141, MF-0142
+ secretaría de gestión social y participación ciudadana - dirección de grupos de especial protección | 314    | 05    | Técnico Operativo         |        2 | MF-0287, MF-0288
+ secretaría de gestión social y participación ciudadana - dirección de participación ciudadana       | 367    | 05    | Técnico Administrativo    |        2 | MF-0238, MF-0239
+ secretaría de gobierno y post conflicto                                                             | 219    | 07    | Profesional Universitario |        2 | MF-0145, MF-0147
+ secretaría de gobierno y post conflicto                                                             | 222    | 09    | Profesional Especializado |        2 | MF-0088, MF-0091
+ secretaría de gobierno y post conflicto - dirección de justicia                                     | 219    | 07    | Profesional Universitario |        6 | MF-0148, MF-0149, MF-0150, MF-0151, MF-0152, MF-0153
+ secretaría de gobierno y post conflicto - dirección de justicia                                     | 222    | 09    | Profesional Especializado |        3 | MF-0089, MF-0090, MF-0092
+ secretaría de gobierno y post conflicto - dirección de justicia                                     | 314    | 03    | Técnico Operativo         |        3 | MF-0321, MF-0322, MF-0323
+ secretaría de gobierno y post conflicto - dirección de justicia                                     | 314    | 05    | Técnico Operativo         |        3 | MF-0289, MF-0290, MF-0291
+ secretaría de hacienda - dirección de impuestos                                                     | 219    | 07    | Profesional Universitario |        2 | MF-0154, MF-0155
+ secretaría de hacienda - dirección de impuestos                                                     | 222    | 09    | Profesional Especializado |        2 | MF-0093, MF-0095
+ secretaría de hacienda - dirección de impuestos                                                     | 222    | 10    | Profesional Especializado |        2 | MF-0076, MF-0077
+ secretaría de hacienda - dirección de impuestos                                                     | 367    | 05    | Técnico Administrativo    |        2 | MF-0241, MF-0242
+ secretaría de hacienda - tesorería                                                                  | 219    | 07    | Profesional Universitario |        2 | MF-0158, MF-0159
+ secretaría de infraestructura - dirección de obras civiles                                          | 219    | 07    | Profesional Universitario |        2 | MF-0160, MF-0161
+ secretaría de movilidad - dirección de servicios de movilidad                                       | 219    | 07    | Profesional Universitario |        2 | MF-0170, MF-0171
+ secretaría de planeación                                                                            | 219    | 07    | Profesional Universitario |        3 | MF-0174, MF-0184, MF-0185
+ secretaría de planeación - dirección de ordenamiento territorial                                    | 219    | 07    | Profesional Universitario |        6 | MF-0177, MF-0178, MF-0179, MF-0180, MF-0181, MF-0182
+ secretaría de planeación - dirección de ordenamiento territorial                                    | 222    | 09    | Profesional Especializado |        2 | MF-0103, MF-0104
+ secretaría de planeación - dirección de ordenamiento territorial                                    | 314    | 05    | Técnico Operativo         |        2 | MF-0306, MF-0307
+ secretaría de planeación - dirección de planeación socioeconómica                                   | 219    | 07    | Profesional Universitario |        2 | MF-0175, MF-0176
+ secretaría de planeación - dirección de planeación socioeconómica                                   | 222    | 09    | Profesional Especializado |        2 | MF-0094, MF-0102
+ secretaría de planeación - dirección de planeación socioeconómica                                   | 314    | 05    | Técnico Operativo         |        2 | MF-0309, MF-0310
+ secretaría de salud - dirección de aseguramiento                                                    | 219    | 07    | Profesional Universitario |        2 | MF-0192, MF-0193
+ secretaría de salud - dirección de salud ambiental                                                  | 314    | 05    | Técnico Operativo         |        2 | MF-0312, MF-0313
+ secretaría de salud - dirección de salud pública                                                    | 219    | 07    | Profesional Universitario |        4 | MF-0188, MF-0189, MF-0190, MF-0191
+ secretaría de salud - dirección de salud pública                                                    | 222    | 09    | Profesional Especializado |        2 | MF-0107, MF-0108
+ secretaría de salud - dirección de salud pública                                                    | 314    | 03    | Técnico Operativo         |        2 | MF-0326, MF-0328
+ secretaría de salud - dirección de salud pública                                                    | 314    | 05    | Técnico Operativo         |        2 | MF-0314, MF-0315
+ secretaría del medio ambiente                                                                       | 219    | 07    | Profesional Universitario |        3 | MF-0194, MF-0195, MF-0196
+ secretaría del medio ambiente                                                                       | 222    | 09    | Profesional Especializado |        2 | MF-0109, MF-0110
+(50 rows)
+
+ source_id |     area_funcional     |       dependencia
+-----------+------------------------+--------------------------
+ MF-0167   |                        | Donde se ubique el cargo
+ MF-0333   | Todas las dependencias | Donde se ubique el cargo
+ MF-0336   | Todas las dependencias | Donde se ubique el cargo
+ MF-0337   | Todas las dependencias | Donde se ubique el cargo
+ MF-0338   | Todas las dependencias | Donde se ubique el cargo
+ MF-0339   | Todas las dependencias | Donde se ubique el cargo
+ MF-0341   | Todas las dependencias | Donde se ubique el cargo
+ MF-0343   | Todas las dependencias | Donde se ubique el cargo
+ MF-0344   | Todas las dependencias | Donde se ubique el cargo
+(9 rows)
+
+COMMIT

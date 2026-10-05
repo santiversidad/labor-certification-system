@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Cargo;
 use App\Models\Funcionario;
-use App\Models\ManualFuncion;
 use App\Models\ManualCargoVersion;
+use App\Models\ManualFuncion;
 use App\Models\User;
 use App\Services\ResolverFuncionesFuncionarioService;
 use App\Services\SeleccionarFichaManualService;
@@ -13,7 +13,6 @@ use App\Services\UnidadesManualService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class DependencyPositionSelectionTest extends TestCase
@@ -21,10 +20,15 @@ class DependencyPositionSelectionTest extends TestCase
     use DatabaseTransactions;
 
     private $version;
+
     private Cargo $cargo;
+
     private ManualCargoVersion $a;
+
     private ManualCargoVersion $b;
+
     private string $unidadA;
+
     private string $unidadB;
 
     protected function setUp(): void
@@ -48,7 +52,9 @@ class DependencyPositionSelectionTest extends TestCase
     {
         $ficha = $this->version->cargos()->create(['cargo_id' => ($cargo ?? $this->cargo)->id, 'source_id' => $source,
             'dependencia' => 'Donde se ubique el cargo', 'area_funcional' => $area, 'proposito_principal' => $completa ? 'Probar '.$area : '']);
-        if ($completa) $ficha->funciones()->create(['orden' => 1, 'descripcion' => 'Función de '.$area]);
+        if ($completa) {
+            $ficha->funciones()->create(['orden' => 1, 'descripcion' => 'Función de '.$area]);
+        }
 
         return $ficha;
     }
@@ -56,6 +62,17 @@ class DependencyPositionSelectionTest extends TestCase
     private function publicar(): void
     {
         $this->version->update(['estado' => 'publicado']);
+    }
+
+    private function publicarAmbiguedadAdicional(): void
+    {
+        // La nueva condición se publica desde un borrador sintético independiente:
+        // nunca se agregan fichas al contenido normativo ya publicado.
+        $manual = ManualFuncion::create(['codigo' => 'DPS-ADICIONAL', 'nombre' => 'Manual sintético adicional']);
+        $this->version = $manual->versiones()->create(['version' => 'DPS-ADICIONAL-1', 'estado' => 'borrador',
+            'vigencia_desde' => '2020-01-01', 'acto_tipo' => 'Prueba', 'acto_numero' => 'DPS-ADICIONAL', 'acto_fecha' => '2020-01-01']);
+        $this->ficha('Unidad A', 'DPS-NUEVA-AMBIGUA');
+        $this->publicar();
     }
 
     private function datos(string $unidad): array
@@ -103,7 +120,20 @@ class DependencyPositionSelectionTest extends TestCase
     {
         $this->ficha('Unidad A', 'DPS-AMBIGUA');
         $this->publicar();
-        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])->assertUnprocessable()->assertJsonValidationErrors('cargo_id');
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])->assertUnprocessable()->assertJsonValidationErrors('cargo_id')->assertJsonPath('code', 'MANUAL_FICHA_AMBIGUA');
+    }
+
+    public function test_resolver_expone_codigos_distintos_sin_candidatos_ni_funciones_completas(): void
+    {
+        $this->publicar();
+        $url = '/api/v1/manual-funciones/dependencias/resolver?fecha=2024-01-15&unidad_organizacional_id='.$this->unidadA.'&cargo_id='.$this->cargo->id;
+        $this->getJson($url)->assertOk()->assertExactJson(['success' => true, 'message' => 'Operación realizada correctamente.', 'data' => ['source_id' => 'DPS-A', 'funciones_count' => 1]]);
+        $this->publicarAmbiguedadAdicional();
+        $response = $this->getJson($url.'&manual_cargo_version_id='.$this->a->id)->assertUnprocessable()
+            ->assertJsonPath('code', 'MANUAL_FICHA_AMBIGUA')->assertJsonValidationErrors('cargo_id');
+        $this->assertSame(['success', 'message', 'errors', 'code'], array_keys($response->json()));
+        $this->getJson(str_replace($this->unidadA, str_repeat('0', 32), $url))->assertUnprocessable()
+            ->assertJsonPath('code', 'MANUAL_FICHA_NO_ENCONTRADA')->assertJsonValidationErrors('cargo_id');
     }
 
     public function test_fecha_de_vinculacion_y_estado_de_version_continuan_aplicando(): void
@@ -139,6 +169,19 @@ class DependencyPositionSelectionTest extends TestCase
         $antes = $asignacion->fichasNormativas()->sole()->getAttributes();
         $this->putJson('/api/v1/funcionarios/'.$id, ['nombres' => 'Actualizado'])->assertOk();
         $this->getJson('/api/v1/funcionarios/'.$id)->assertOk()->assertJsonPath('data.vinculacion_legacy', true)->assertJsonPath('data.unidad_organizacional.id', $this->unidadA);
+        $this->assertSame($antes, $asignacion->fichasNormativas()->sole()->getAttributes());
+        $this->assertSame(1, Funcionario::find($id)->historialCargos()->count());
+    }
+
+    public function test_edicion_personal_conserva_ficha_exacta_aunque_catalogo_sea_ambiguo(): void
+    {
+        $this->publicar();
+        $id = $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertCreated()->json('data.id');
+        $asignacion = Funcionario::find($id)->historialCargos()->sole();
+        $antes = $asignacion->fichasNormativas()->sole()->getAttributes();
+        $this->publicarAmbiguedadAdicional();
+        $this->putJson('/api/v1/funcionarios/'.$id, ['nombres' => 'Actualizado'])->assertOk();
+        $this->getJson('/api/v1/funcionarios/'.$id)->assertOk()->assertJsonPath('data.asignacion_actual.ficha_manual.source_id', 'DPS-A');
         $this->assertSame($antes, $asignacion->fichasNormativas()->sole()->getAttributes());
         $this->assertSame(1, Funcionario::find($id)->historialCargos()->count());
     }

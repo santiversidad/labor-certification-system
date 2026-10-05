@@ -2,19 +2,21 @@
 
 namespace App\Services;
 
+use App\Exceptions\ManualSelectionException;
 use App\Models\ManualCargoVersion;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 class SeleccionarFichaManualService
 {
-    public function porUnidad(string $unidadId, int $cargoId, \Carbon\CarbonInterface $fecha, ?int $fichaId = null): ManualCargoVersion
+    public function porUnidad(string $unidadId, int $cargoId, CarbonInterface $fecha, ?int $fichaId = null): ManualCargoVersion
     {
         $fichas = app(UnidadesManualService::class)->enUnidad($fecha, $unidadId)->where('cargo_id', $cargoId)->with('version')->get();
         if ($fichas->count() !== 1) {
-            throw ValidationException::withMessages(['cargo_id' => $fichas->isEmpty()
+            throw ManualSelectionException::forCargo($fichas->isEmpty() ? 'MANUAL_FICHA_NO_ENCONTRADA' : 'MANUAL_FICHA_AMBIGUA', $fichas->isEmpty()
                 ? 'No hay un perfil aplicable para esta dependencia, cargo y fecha.'
-                : 'Hay varios perfiles para esta dependencia, cargo y fecha. Se requiere revisión administrativa del Manual.']);
+                : 'Hay varios perfiles para esta dependencia, cargo y fecha. Se requiere revisión administrativa del Manual.');
         }
         $ficha = $fichas->sole();
         if ($fichaId !== null && $fichaId !== $ficha->id) {

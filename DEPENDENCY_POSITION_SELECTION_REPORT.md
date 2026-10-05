@@ -73,3 +73,42 @@
 - `frontend/react-app/src/features/funcionarios/services/funcionarios.service.ts`
 - `frontend/react-app/src/features/funcionarios/types/funcionario.types.ts`
 - `scripts/dependency_manual_integrity.sql`
+
+## Ampliación: UX de combinaciones ambiguas (5 de octubre de 2026)
+
+Baseline verificado: árbol limpio, rama `feat/dependency-scoped-position-selection`, commit `3b5fa6e8e070f3eb0f298a69696367e3bd85d2c2`. Trabajo local en `fix/manual-profile-ambiguity-ux`, sin push. Los resultados de las secciones anteriores corresponden a la entrega del baseline.
+
+La causa era local al formulario: cualquier error del resolver mostraba el primer mensaje de validación y un botón fijo «Reintentar resolución». TanStack Query ya tenía `retry: false` para esa consulta. `/dependencias/resolver` y la validación de guardado usaban HTTP 422 y `errors.cargo_id`, pero no devolvían código de dominio para cero/múltiples candidatas.
+
+Se añade únicamente `code` a esas respuestas de validación, conservando HTTP 422, mensaje y errores por campo: `MANUAL_FICHA_AMBIGUA` y `MANUAL_FICHA_NO_ENCONTRADA`, reutilizados del dominio existente. La consulta exitosa conserva su contrato; no se exponen candidatos, IDs de elección ni funciones completas. El backend sigue exigiendo exactamente una ficha y rechazando un ID enviado para forzar la elección.
+
+Texto final de ambigüedad:
+
+> **Este cargo requiere revisión del Manual**
+>
+> El Manual de Funciones contiene más de un perfil aplicable para este cargo, dependencia y fecha. El sistema no puede seleccionar uno automáticamente porque podría asignar funciones incorrectas.
+>
+> Seleccione otro cargo o revise esta situación con la Dirección de Personal antes de registrar la vinculación.
+>
+> No se puede guardar la vinculación hasta validar un perfil único del Manual.
+
+El cargo permanece visible en el catálogo con «Requiere revisión del Manual». «Elegir otro cargo» limpia cargo, búsqueda y perfil mostrado, conserva dependencia y datos personales, y enfoca el selector de cargo. «Cambiar dependencia» limpia dependencia, cargo, búsquedas y perfil mostrado, conserva los datos personales, y enfoca la dependencia. El mensaje usa `role="alert"`, `aria-describedby` en cargo y botón principal, y color informativo institucional. El botón principal está deshabilitado y el submit verifica también el bloqueo. Se maneja la misma condición si el servidor la detecta al guardar después de una consulta exitosa.
+
+La ambigüedad y las condiciones normativas son **no retryable**. Cero resultados muestra «No se encontró un perfil del Manual compatible con este cargo, dependencia y fecha», con acciones para cambiar la selección. «Reintentar» se reserva a fallos técnicos de consulta: red/sin respuesta, timeout, HTTP 5xx, 408 y 429. En ellos se muestra «No pudimos consultar el Manual» y «Revise la conexión o inténtelo nuevamente». Los códigos de dominio tienen prioridad; las demás respuestas 4xx tampoco ofrecen retry. Los errores de validación requeridos ya no muestran reintento de carga de selectores.
+
+La resolución normativa no se delega al usuario. No se ofrece elegir entre fichas y no se prefiere una específica sobre una transversal. La edición personal conserva la relación histórica exacta aunque el catálogo actual sea ambiguo, con unidad persistida o legacy. Se mantiene la regla anterior de fichas incompletas con ámbito fiable; no se cambió su efecto sobre certificados con funciones.
+
+Evidencia segura en [`frontend/react-app/evidence/manual-ambiguity-ux/`](frontend/react-app/evidence/manual-ambiguity-ux/): cinco capturas (`01-ambiguous-position.png`, `02-choose-another-position.png`, `03-resolved-position.png`, `04-network-retry.png`, `05-mobile.png`), logs de pruebas y auditoría de solo lectura. Las capturas usan personas y cuentas sintéticas, sin credenciales ni secretos. Se verificaron foco y ausencia de overflow a 360 y 1440 px. Los nuevos perfiles de prueba se preparan solo detrás del guard de entorno testing/base exacta E2E, desde borradores sintéticos independientes.
+
+Integridad auditada: versión 10 publicada, 344 fichas, 3.115 funciones, 2.326 conocimientos y digest `2ccdb15add1bedbe5c83aa978cf4fa45`, coincidente con baseline. Permanecen los 73 ámbitos, 335 fichas con ámbito concreto, 50 combinaciones ambiguas y ocho perfiles transversales ya documentados. MF-0167 conserva área/propósito vacíos y ocho conocimientos. No se modificó el Manual real ni se cambió ningún conteo sin auditoría.
+
+Autenticación/MFA, pagos/Secretaría, cuotas, tipos de certificado, snapshot, PDF, firma, QR documental y oficialización intactos. **3B.2 no iniciada. NO PUSH.**
+
+Validación de esta ampliación:
+
+- Backend completo: **288 pruebas / 1.698 aserciones**, todas pasan en `scl_certificate_types_test`. La regresión focalizada también pasa: 15 pruebas / 103 aserciones. Incluye resolución única, códigos distintos, payload manipulado, no exposición de funciones/candidatos, históricos exactos y ambigüedad específica/transversal. Se corrigieron dos fixtures nuevos que inicialmente intentaban escribir sobre una versión sintética publicada: ahora crean y publican un borrador independiente, respetando la inmutabilidad existente.
+- Frontend completo: **114 pruebas en 22 archivos**, todas pasan. Incluye explicación accesible, ausencia de retry de dominio, limpieza/foco/conservación de datos, bloqueo de submit directo, retry de red/HTTP técnicos, cero resultados, históricos legacy/con unidad y ambigüedad detectada al guardar.
+- **ESLint, TypeScript y Vite build** pasan. Pint pasa para los cuatro archivos PHP de la entrega.
+- E2E completa: **39 escenarios**, todos pasan (11,3 minutos), en `scl_certificate_types_e2e`. Los dos nuevos recorren ambigüedad real → explicación sin retry → bloqueo → elegir otro cargo con foco → ficha única → guardado 201, y un 503 controlado → retry → respuesta del backend real. La interceptación se limita al fallo técnico de prueba, conforme a las convenciones existentes de Playwright; el caso normativo usa fixtures reales y no mockea el resolver. Se mantienen las regresiones de perfiles transversales, certificados, PDF, pagos, identidad, MFA, CSRF, IDOR y CSP. Log: [`e2e-tests.txt`](frontend/react-app/evidence/manual-ambiguity-ux/e2e-tests.txt).
+- Los dos escenarios nuevos se repitieron con éxito al cerrar las capturas: [`e2e-evidence-tests.txt`](frontend/react-app/evidence/manual-ambiguity-ux/e2e-evidence-tests.txt). La captura fuerza scroll instantáneo al inicio para evitar posiciones intermedias de la cabecera durante el scroll suave. Solo se entregan las capturas de esta mejora; las capturas históricas regeneradas por la suite se restauraron al baseline, que estaba limpio.
+- Logs: [`backend-tests.txt`](frontend/react-app/evidence/manual-ambiguity-ux/backend-tests.txt), [`frontend-tests.txt`](frontend/react-app/evidence/manual-ambiguity-ux/frontend-tests.txt), [`frontend-lint.txt`](frontend/react-app/evidence/manual-ambiguity-ux/frontend-lint.txt), [`frontend-build.txt`](frontend/react-app/evidence/manual-ambiguity-ux/frontend-build.txt), [`manual-integrity.txt`](frontend/react-app/evidence/manual-ambiguity-ux/manual-integrity.txt).

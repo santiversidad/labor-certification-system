@@ -128,6 +128,24 @@ class PrepareAutoserviceE2E extends Command
                 }
                 $scopedVersion->update(['estado' => 'publicado']);
             }
+            $ambiguousCargo = Cargo::firstOrCreate(['codigo' => 'DPM', 'grado' => '02'], [
+                'denominacion' => 'Cargo que requiere revisión E2E', 'nivel' => 'Profesional', 'estado' => true,
+            ]);
+            $ambiguousManual = ManualFuncion::firstOrCreate(['codigo' => 'E2E-AMBIGUEDAD-UX'], ['nombre' => 'Manual sintético de ambigüedad UX']);
+            $ambiguousVersion = $ambiguousManual->versiones()->firstOrCreate(['version' => 'E2E-AMBIGUEDAD-UX-1'], [
+                'estado' => 'borrador', 'acto_tipo' => 'Prueba', 'acto_numero' => 'E2E-AMBIGUEDAD-UX',
+                'acto_fecha' => '2020-01-01', 'vigencia_desde' => '2020-01-01',
+            ]);
+            if ($ambiguousVersion->estado === 'borrador') {
+                foreach ([1, 2] as $index) {
+                    $profile = $ambiguousVersion->cargos()->create(['cargo_id' => $ambiguousCargo->id,
+                        'source_id' => 'E2E-AMBIGUEDAD-UX-'.$index, 'dependencia' => 'Donde se ubique el cargo',
+                        'area_funcional' => 'Dependencia A E2E', 'proposito_principal' => 'Verificar bloqueo de selección ambigua.',
+                    ]);
+                    $profile->funciones()->create(['orden' => 1, 'descripcion' => 'Función sintética de ambigüedad '.$index]);
+                }
+                $ambiguousVersion->update(['estado' => 'publicado']);
+            }
             $globalCargo = Cargo::firstOrCreate(['codigo' => 'DPG', 'grado' => '01'], [
                 'denominacion' => 'Cargo transversal E2E', 'nivel' => 'Profesional', 'estado' => true,
             ]);

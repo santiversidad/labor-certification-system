@@ -1,10 +1,11 @@
-import { useId, type SelectHTMLAttributes } from 'react';
+import { useId, type SelectHTMLAttributes, type Ref } from 'react';
 import { cn } from '../../lib/utils/cn';
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
   hint?: string;
   error?: string;
+  ref?: Ref<HTMLSelectElement>;
 };
 
 export function Select({ className, label, hint, error, id, children, ...props }: SelectProps) {

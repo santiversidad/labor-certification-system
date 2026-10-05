@@ -115,3 +115,79 @@ test('perfil transversal conserva la unidad elegida y no inventa una dependencia
   await expect(page.getByRole('combobox', { name: 'Dependencia', exact: true })).toHaveValue(body.unidad_organizacional.id);
   await expect(page.getByText(/Perfil funcional registrado:/)).toContainText('E2E-TRANSVERSAL-001');
 });
+
+const ambiguityEvidence = 'evidence/manual-ambiguity-ux';
+async function captureAmbiguity(page: Page, file: string) {
+  await mkdir(ambiguityEvidence, { recursive: true });
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.screenshot({ path: `${ambiguityEvidence}/${file}.png`, fullPage: true, animations: 'disabled' });
+}
+async function chooseAmbiguous(page: Page) {
+  await page.goto('/admin/funcionarios/nuevo');
+  await page.getByLabel('Fecha de vinculación').fill('2024-01-15');
+  const unit = page.getByRole('combobox', { name: 'Dependencia', exact: true });
+  await expect(unit.locator('option').filter({ hasText: 'Dependencia A E2E' })).toHaveCount(1);
+  await unit.selectOption({ label: 'Dependencia A E2E' });
+  const position = page.getByRole('combobox', { name: 'Cargo', exact: true });
+  await expect(position).toBeEnabled();
+  await position.selectOption({ label: 'Cargo que requiere revisión E2E · DPM/02 · Requiere revisión del Manual' });
+}
+test('ambigüedad real: explicación, foco, bloqueo y recuperación con cargo único', async ({ page }) => {
+  await browserSession(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+  await chooseAmbiguous(page);
+  await page.getByLabel('Número de cédula').fill(`MA${Date.now()}`);
+  await page.getByLabel('Nombres', { exact: true }).fill('Persona sintética');
+  await page.getByLabel('Apellidos', { exact: true }).fill('Ambigüedad UX');
+  const alert = page.getByRole('alert');
+  await expect(alert).toContainText('Este cargo requiere revisión del Manual');
+  await expect(alert).toContainText('podría asignar funciones incorrectas');
+  await expect(page.getByRole('button', { name: /Reintentar/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
+  await captureAmbiguity(page, '01-ambiguous-position');
+  await page.setViewportSize({ width: 360, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await captureAmbiguity(page, '05-mobile');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const unit = page.getByRole('combobox', { name: 'Dependencia', exact: true });
+  const position = page.getByRole('combobox', { name: 'Cargo', exact: true });
+  const unitId = await unit.inputValue();
+  await page.getByRole('button', { name: 'Elegir otro cargo' }).click();
+  await expect(position).toHaveValue('');
+  await expect(position).toBeFocused();
+  await expect(unit).toHaveValue(unitId);
+  await expect(alert).toHaveCount(0);
+  await expect(page.getByLabel('Nombres', { exact: true })).toHaveValue('Persona sintética');
+  await captureAmbiguity(page, '02-choose-another-position');
+  await position.selectOption({ label: 'Profesional de dependencias E2E · DPE/02' });
+  await expect(page.getByText(/Perfil funcional asociado:/)).toContainText('E2E-UNIDAD-A-DPE');
+  await expect(page.getByRole('button', { name: 'Guardar funcionario' })).toBeEnabled();
+  await captureAmbiguity(page, '03-resolved-position');
+  const submitted = page.waitForResponse((r) => r.url().endsWith('/api/v1/funcionarios') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Guardar funcionario' }).click();
+  const response = await submitted;
+  expect(response.status()).toBe(201);
+  expect((await response.json()).data.asignacion_actual.ficha_manual.source_id).toBe('E2E-UNIDAD-A-DPE');
+  await expect(page).toHaveURL(/\/admin\/funcionarios\/\d+$/);
+});
+test('fallo técnico controlado permite reintentar y vuelve a consultar el backend real', async ({ page }) => {
+  await browserSession(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+  let attempts = 0;
+  await page.route('**/api/v1/manual-funciones/dependencias/resolver?*', async (route) => {
+    attempts++;
+    if (attempts === 1) await route.fulfill({ status: 503, json: { success: false, message: 'Servidor temporalmente no disponible.' } });
+    else await route.continue();
+  });
+  await chooseAmbiguous(page);
+  await expect(page.getByRole('alert')).toContainText('No pudimos consultar el Manual');
+  await expect(page.getByRole('button', { name: 'Reintentar', exact: true })).toBeVisible();
+  await captureAmbiguity(page, '04-network-retry');
+  await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Este cargo requiere revisión del Manual');
+  expect(attempts).toBe(2);
+  await expect(page.getByRole('button', { name: /Reintentar/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Cambiar dependencia' }).click();
+  await expect(page.getByRole('combobox', { name: 'Dependencia', exact: true })).toHaveValue('');
+  await expect(page.getByRole('combobox', { name: 'Dependencia', exact: true })).toBeFocused();
+  await expect(page.getByRole('combobox', { name: 'Cargo', exact: true })).toBeDisabled();
+});

@@ -15,6 +15,9 @@ function setup(edit = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[edit ? '/edit/7' : '/new']}><Routes><Route path="/new" element={<FuncionarioForm />} /><Route path="/edit/:id" element={<FuncionarioForm />} /><Route path="/admin/funcionarios/:id" element={<p>Guardado</p>} /></Routes></MemoryRouter></QueryClientProvider>);
 }
+function apiError(code?: string, status = 422) {
+  return { isAxiosError: true, response: { status, data: { code, message: 'Texto que no se interpreta', errors: { cargo_id: ['Texto que no se interpreta'] } } } };
+}
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(dependenciasService.list).mockResolvedValue([{ id: a, nombre: 'Unidad A' }, { id: b, nombre: 'Unidad B' }]);
@@ -90,12 +93,15 @@ it('error de cargos ofrece reintento sin habilitar guardar', async () => {
   await screen.findByRole('option', { name: /Profesional A/ });
 });
 it('ambigüedad de perfil bloquea guardar y muestra mensaje de dominio', async () => {
-  vi.mocked(dependenciasService.resolver).mockRejectedValue(new Error('Hay varios perfiles; se requiere revisión administrativa.'));
+  vi.mocked(dependenciasService.resolver).mockRejectedValue(apiError('MANUAL_FICHA_AMBIGUA'));
   setup(); await screen.findByRole('option', { name: 'Unidad A' });
   await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), a);
   await screen.findByRole('option', { name: /Profesional A/ });
   await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), '41');
-  expect(await screen.findByRole('alert')).toHaveTextContent('Hay varios perfiles');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Este cargo requiere revisión del Manual');
+  expect(screen.queryByRole('button', { name: /Reintentar/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Elegir otro cargo' })).toBeVisible();
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveAccessibleDescription(/Este cargo requiere revisión del Manual/);
   expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
 });
 it('respuesta tardía del perfil anterior no restaura selección tras cambiar dependencia', async () => {
@@ -112,15 +118,119 @@ it('respuesta tardía del perfil anterior no restaura selección tras cambiar de
   expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
   expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
 });
-it('edición precarga valores y preserva ficha histórica sin resolverla nuevamente', async () => {
-  vi.mocked(funcionariosService.getById).mockResolvedValue({ success: true, data: { id: 7, tipo_documento: 'CC', numero_documento: '12345678', nombres: 'Persona', apellidos: 'Prueba', estado: 'activo', fecha_ingreso: '2024-01-15', fecha_seleccion: '2026-10-05', unidad_organizacional: { id: a, nombre: 'Unidad A' }, vinculacion_legacy: true, cargo: { ...cargo, nivel: 'Profesional', estado: true }, asignacion_actual: { id: 1, manual_cargo_version_id: 99, ficha_manual: { id: 99, source_id: 'LEGACY-99', area_funcional: 'Unidad A', version: 'Anterior' }, tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa' } } });
+async function seleccionarConError(code = 'MANUAL_FICHA_AMBIGUA', status = 422) {
+  vi.mocked(dependenciasService.resolver).mockRejectedValueOnce(apiError(code, status));
+  setup();
+  fireEvent.change(screen.getByLabelText('Fecha de vinculación'), { target: { value: '2024-01-15' } });
+  await userEvent.type(screen.getByLabelText('Número de cédula'), '12345678');
+  await userEvent.type(screen.getByLabelText('Nombres'), 'Persona');
+  await userEvent.type(screen.getByLabelText('Apellidos'), 'Sintética');
+  await screen.findByRole('option', { name: 'Unidad A' });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), a);
+  await screen.findByRole('option', { name: /Profesional A/ });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), '41');
+  await screen.findByRole('alert');
+}
+it('elegir otro cargo limpia perfil y cargo, conserva dependencia y datos personales, y devuelve foco', async () => {
+  await seleccionarConError();
+  await userEvent.click(screen.getByRole('button', { name: 'Elegir otro cargo' }));
+  expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveValue(a);
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveFocus();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Perfil funcional asociado:/)).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Nombres')).toHaveValue('Persona');
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), '41');
+  await screen.findByText(/TEST-A/);
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeEnabled();
+});
+it('cambiar dependencia limpia toda selección derivada y devuelve foco sin borrar datos personales', async () => {
+  await seleccionarConError();
+  await userEvent.click(screen.getByRole('button', { name: 'Cambiar dependencia' }));
+  expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveFocus();
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toBeDisabled();
+  expect(screen.getByLabelText('Buscar cargo por nombre, código o grado')).toHaveValue('');
+  expect(screen.getByLabelText('Buscar dependencia por nombre')).toHaveValue('');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Perfil funcional asociado:/)).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Nombres')).toHaveValue('Persona');
+});
+it('submit directo también queda bloqueado con ambigüedad y datos válidos', async () => {
+  await seleccionarConError();
+  fireEvent.submit(screen.getByRole('button', { name: 'Guardar funcionario' }).closest('form')!);
+  await act(async () => {});
+  expect(funcionariosService.create).not.toHaveBeenCalled();
+});
+it.each([502, 503, 408, 429])('fallo técnico HTTP %s ofrece retry y vuelve a consultar el mismo perfil', async (status) => {
+  await seleccionarConError('', status);
+  expect(screen.getByRole('alert')).toHaveTextContent('No pudimos consultar el Manual');
+  await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  await screen.findByText(/TEST-A/);
+  expect(dependenciasService.resolver).toHaveBeenCalledTimes(2);
+  expect(dependenciasService.resolver).toHaveBeenLastCalledWith(a, '41', '2024-01-15');
+});
+it('fallo de conexión sin respuesta ofrece retry', async () => {
+  vi.mocked(dependenciasService.resolver).mockRejectedValueOnce({ isAxiosError: true, code: 'ERR_NETWORK' });
+  setup();
+  await screen.findByRole('option', { name: 'Unidad A' });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), a);
+  await screen.findByRole('option', { name: /Profesional A/ });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), '41');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Revise la conexión o inténtelo nuevamente.');
+  await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  await screen.findByText(/TEST-A/);
+  expect(dependenciasService.resolver).toHaveBeenCalledTimes(2);
+});
+it.each(['MANUAL_FICHA_NO_ENCONTRADA', 'MANUAL_FICHA_INCOMPLETA', 'MANUAL_FICHA_INCOMPATIBLE', 'MANUAL_VERSION_NO_VIGENTE'])('%s no ofrece retry', async (code) => {
+  await seleccionarConError(code);
+  expect(screen.queryByRole('button', { name: /Reintentar/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Elegir otro cargo' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
+  if (code === 'MANUAL_FICHA_NO_ENCONTRADA') {
+    expect(screen.getByRole('alert')).toHaveTextContent('No se encontró un perfil del Manual compatible con este cargo, dependencia y fecha.');
+    expect(screen.queryByText('Este cargo requiere revisión del Manual')).not.toBeInTheDocument();
+  }
+});
+it('validación de cargo requerida no ofrece reintentar la carga', async () => {
+  setup(); await seleccionar();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Cargo' }), { target: { value: '' } });
+  await screen.findByText('Seleccione un cargo.');
+  expect(screen.queryByRole('button', { name: /Reintentar/ })).not.toBeInTheDocument();
+});
+it.each([true, false])('edición preserva ficha histórica sin resolverla nuevamente (legacy=%s)', async (legacy) => {
+  vi.mocked(dependenciasService.cargos).mockResolvedValue([{ ...cargo, perfiles_count: 2 }]);
+  vi.mocked(dependenciasService.resolver).mockRejectedValue(apiError('MANUAL_FICHA_AMBIGUA'));
+  vi.mocked(funcionariosService.getById).mockResolvedValue({ success: true, data: { id: 7, tipo_documento: 'CC', numero_documento: '12345678', nombres: 'Persona', apellidos: 'Prueba', estado: 'activo', fecha_ingreso: '2024-01-15', fecha_seleccion: '2026-10-05', unidad_organizacional: { id: a, nombre: 'Unidad A' }, vinculacion_legacy: legacy, cargo: { ...cargo, nivel: 'Profesional', estado: true }, asignacion_actual: { id: 1, manual_cargo_version_id: 99, ficha_manual: { id: 99, source_id: 'LEGACY-99', area_funcional: 'Unidad A', version: 'Anterior' }, tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa' } } });
   vi.mocked(funcionariosService.update).mockResolvedValue({ success: true, data: { id: 7 } } as never);
   setup(true); await screen.findByText(/LEGACY-99/);
   expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveValue(a);
   expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('41');
   expect(dependenciasService.resolver).not.toHaveBeenCalled();
+  expect(screen.queryByText('Este cargo requiere revisión del Manual')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeEnabled();
+  await screen.findByRole('option', { name: /Requiere revisión del Manual/ });
   await userEvent.click(screen.getByRole('button', { name: 'Guardar funcionario' }));
   await waitFor(() => expect(funcionariosService.update).toHaveBeenCalledWith('7', expect.objectContaining({ unidad_organizacional_id: a, cargo_id: '41' }), true));
+});
+it('ambigüedad detectada al guardar también bloquea y se presenta con acciones de dominio', async () => {
+  vi.mocked(funcionariosService.create).mockRejectedValueOnce(apiError('MANUAL_FICHA_AMBIGUA'));
+  setup();
+  fireEvent.change(screen.getByLabelText('Fecha de vinculación'), { target: { value: '2024-01-15' } });
+  await seleccionar();
+  await userEvent.type(screen.getByLabelText('Número de cédula'), '12345678');
+  await userEvent.type(screen.getByLabelText('Nombres'), 'Persona');
+  await userEvent.type(screen.getByLabelText('Apellidos'), 'Sintética');
+  await userEvent.click(screen.getByRole('button', { name: 'Guardar funcionario' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Este cargo requiere revisión del Manual');
+  expect(screen.queryByRole('button', { name: /Reintentar/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Elegir otro cargo' }));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveValue(a);
 });
 it('submit envía dependencia/cargo sin ficha y muestra validación requerida', async () => {
   vi.mocked(funcionariosService.create).mockResolvedValue({ success: true, data: { id: 7 } } as never);

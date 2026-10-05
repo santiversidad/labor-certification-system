@@ -55,6 +55,18 @@ La interfaz usa selects nativos con búsqueda etiquetada, accesibles por teclado
 
 ## Edición e históricos
 
+### Presentación de condiciones del Manual
+
+La resolución y el guardado por unidad conservan HTTP **422**, con `errors.cargo_id` y un `code` estable: `MANUAL_FICHA_AMBIGUA` para varias candidatas y `MANUAL_FICHA_NO_ENCONTRADA` para cero. Se reutilizan los nombres de dominio existentes. No se devuelven candidatas ni funciones completas; la respuesta exitosa conserva solo `source_id` y `funciones_count`.
+
+La ambigüedad es una condición **no retryable**. El formulario muestra **«Este cargo requiere revisión del Manual»** y explica que no puede seleccionar automáticamente funciones potencialmente incorrectas. **«Elegir otro cargo»** limpia cargo, búsqueda y confirmación del perfil, conserva dependencia y datos personales, y devuelve foco al selector de cargo. **«Cambiar dependencia»** limpia también dependencia y búsquedas, y devuelve foco a su selector. El mensaje inline tiene `role="alert"`, está asociado al cargo y al botón de guardar mediante `aria-describedby`, y usa tratamiento informativo institucional.
+
+**«Reintentar» se reserva para fallos técnicos** de consulta: conexión sin respuesta, timeout, HTTP 5xx, 408 o 429. Los códigos del Manual tienen prioridad sobre HTTP y no ofrecen retry; las demás respuestas 4xx tampoco. La validación de campos requeridos no ofrece reintentar la carga de selectores. Cero candidatas tiene un mensaje distinto: «No se encontró un perfil del Manual compatible con este cargo, dependencia y fecha».
+
+El botón de guardar queda deshabilitado mientras no haya resolución única confirmada; el submit también comprueba ese estado. Una ambigüedad que aparece en la validación del guardado se muestra con las mismas acciones. La resolución normativa no se delega al usuario: no existe selección de fichas ni preferencia entre perfil específico y transversal. Las combinaciones ambiguas siguen bloqueadas. Una edición personal conserva su ficha exacta registrada aunque el catálogo actual sea ambiguo, tanto en relaciones legacy como en relaciones con unidad persistida.
+
+Una ficha incompleta con ámbito fiable sigue pudiendo asociarse conforme al comportamiento previo; esta mejora no cambia las reglas de completitud para certificados. Los códigos existentes de ficha incompleta, incompatible y Manual no vigente, cuando son devueltos, se presentan sin retry.
+
 La precarga identifica la ficha mediante la relación normativa aplicable hoy; solo usa la referencia legacy cuando no existen relaciones normativas. La unidad registrada se lee desde la clave persistida, incluso si la ficha es transversal. La unidad legacy se presenta como proyección de su ficha exacta, sin escribirla en el historial; una ficha transversal legacy sin clave de unidad no se asigna a una unidad por inferencia. El texto libre histórico se muestra explícitamente en lectura. Cuando no hay ficha/ámbito fiable, se muestra la dependencia histórica conservada y se requiere una selección explícita para reemplazar la vinculación. No se infiere una relación por denominación o texto libre del funcionario.
 
 Una edición sin cambiar dependencia/cargo omite esos IDs del payload y conserva la ficha e intervalos, incluso si actualmente el catálogo muestra nuevas ambigüedades o ya no ofrece la ficha anterior. Cambiar la vinculación cierra la asignación laboral anterior en ayer y crea otra desde hoy; sus relaciones normativas anteriores permanecen intactas. Se mantiene la protección contra sustituciones en el mismo día. No se transforma una asignación legacy en otra retroactivamente para simplificar el formulario.
