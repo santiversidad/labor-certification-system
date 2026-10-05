@@ -31,6 +31,7 @@ class RolesPermisosSeeder extends Seeder
         'cargos.ver',
         'cargos.crear',
         'cargos.editar',
+        'escala_salarial.gestionar',
 
         // Solicitudes
         'solicitudes.ver',

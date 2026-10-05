@@ -61,7 +61,7 @@ function recoveryFor(username: string) {
   const known = recoveries.get(normalized);
   if (known?.length) return known.shift()!;
   const file = test.info().file;
-  const offset = file.endsWith('autoservice.spec.ts') ? 0 : file.endsWith('identity-lifecycle.spec.ts') ? 100 : file.endsWith('payment-workflow.spec.ts') ? 200 : file.endsWith('dependency-position-selection.spec.ts') ? 450 : 300;
+  const offset = file.endsWith('autoservice.spec.ts') ? 0 : file.endsWith('identity-lifecycle.spec.ts') ? 100 : file.endsWith('payment-workflow.spec.ts') ? 200 : file.endsWith('dependency-position-selection.spec.ts') ? 450 : file.endsWith('salary-scale.spec.ts') ? 480 : 300;
   const key = normalized + ':' + offset;
   const index = offset + (fixtureCounters.get(key) ?? 0); fixtureCounters.set(key, index - offset + 1);
   return createHmac('sha256', 'e2e-only-fixture-seed').update(normalized + ':' + index).digest('hex');

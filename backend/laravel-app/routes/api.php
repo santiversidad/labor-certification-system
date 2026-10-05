@@ -6,15 +6,17 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BackofficeUserController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\CertificadoController;
+use App\Http\Controllers\Api\V1\DependenciaManualController;
 use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
 use App\Http\Controllers\Api\V1\ManualFuncionController;
-use App\Http\Controllers\Api\V1\MiCertificacionController;
 use App\Http\Controllers\Api\V1\MfaController;
+use App\Http\Controllers\Api\V1\MiCertificacionController;
 use App\Http\Controllers\Api\V1\PagoSolicitudController;
 use App\Http\Controllers\Api\V1\PagoSoporteController;
 use App\Http\Controllers\Api\V1\ParametroCertificacionController;
 use App\Http\Controllers\Api\V1\ReporteController;
+use App\Http\Controllers\Api\V1\SalaryScaleController;
 use App\Http\Controllers\Api\V1\SolicitudCertificacionController;
 use App\Http\Controllers\Api\V1\ValidacionPublicaController;
 use Illuminate\Support\Facades\Route;
@@ -68,10 +70,22 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::patch('/', [ParametroCertificacionController::class, 'update'])->middleware('auth.recent')->name('update');
         });
 
+        Route::prefix('escala-salarial')->group(function () {
+            Route::get('/', [SalaryScaleController::class, 'index']);
+            Route::get('/vigencias', [SalaryScaleController::class, 'years']);
+            Route::post('/vigencias', [SalaryScaleController::class, 'store']);
+            Route::post('/vigencias/previsualizar', [SalaryScaleController::class, 'preview']);
+            Route::get('/vigencias/{vigencia}', [SalaryScaleController::class, 'show'])->whereNumber('vigencia');
+            Route::patch('/vigencias/{vigencia}', [SalaryScaleController::class, 'update'])->whereNumber('vigencia');
+            Route::post('/vigencias/{vigencia}/calcular', [SalaryScaleController::class, 'calculate'])->whereNumber('vigencia');
+            Route::post('/vigencias/{vigencia}/publicar', [SalaryScaleController::class, 'publish'])->whereNumber('vigencia');
+            Route::patch('/items/{item}', [SalaryScaleController::class, 'item'])->whereNumber('item');
+        });
+
         Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
-            Route::get('/dependencias', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'index']);
-            Route::get('/dependencias/cargos', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'cargos']);
-            Route::get('/dependencias/resolver', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'resolver']);
+            Route::get('/dependencias', [DependenciaManualController::class, 'index']);
+            Route::get('/dependencias/cargos', [DependenciaManualController::class, 'cargos']);
+            Route::get('/dependencias/resolver', [DependenciaManualController::class, 'resolver']);
             Route::get('/fichas', [ManualFuncionController::class, 'fichas'])->name('fichas');
             Route::get('/estado', [ManualFuncionController::class, 'estado'])->name('estado');
             Route::get('/diff/{from}/{to}', [ManualFuncionController::class, 'diff'])->name('diff');

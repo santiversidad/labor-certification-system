@@ -131,14 +131,18 @@ Prefijo base: `/api/v1`
 | GET    | `/cargos/{id}` | `cargos.ver` |
 | PUT    | `/cargos/{id}` | `cargos.editar` |
 
-### Rangos Salariales
+### Escala salarial administrativa (solo admin)
 | Método | Endpoint | Permiso requerido |
 |--------|----------|-------------------|
-| GET    | `/rangos-salariales` | `rangos_salariales.ver` |
-| POST   | `/rangos-salariales` | `rangos_salariales.crear` |
-| GET    | `/rangos-salariales/{id}` | `rangos_salariales.ver` |
-| PUT    | `/rangos-salariales/{id}` | `rangos_salariales.editar` |
-| GET    | `/rangos-salariales/consultar?codigo=219&grado=02&vigencia=2026` | `rangos_salariales.ver` |
+| GET | `/escala-salarial` | admin + `escala_salarial.gestionar` |
+| GET / POST | `/escala-salarial/vigencias` | admin + `escala_salarial.gestionar` |
+| GET / PATCH | `/escala-salarial/vigencias/{id}` | admin + `escala_salarial.gestionar` |
+| POST | `/escala-salarial/vigencias/previsualizar` | admin + `escala_salarial.gestionar` |
+| POST | `/escala-salarial/vigencias/{id}/calcular` | admin + `escala_salarial.gestionar` |
+| POST | `/escala-salarial/vigencias/{id}/publicar` | admin + `escala_salarial.gestionar` |
+| PATCH | `/escala-salarial/items/{id}` | admin + `escala_salarial.gestionar` |
+
+El dominio anterior `rangos_salariales` fue retirado. Esta escala es independiente de funcionarios y certificados. La plantilla 2024/2025 no contiene cifras hasta recibir transcripción revisada. Modelo e importador: [SALARY_SCALE_MODEL.md](../../SALARY_SCALE_MODEL.md).
 
 ### Funcionarios
 | Método | Endpoint | Permiso requerido |
@@ -214,7 +218,7 @@ php artisan test
 
 Cobertura Sprint 1:
 - `LoginTest` — login válido, credenciales incorrectas, usuario inactivo, logout, sin auth
-- `RangoSalarialTest` — consultar existente, 404, crear, duplicado, sin auth
+- `SalaryScaleTest` — autorización admin, vigencias, cálculo preciso, históricos, importador y conflictos. No restaura `RangoSalarialTest` legacy.
 
 ---
 
@@ -227,8 +231,7 @@ Cobertura Sprint 1:
 | funcionarios.crear/editar/eliminar | ✅ | — | — |
 | cargos.ver | ✅ | ✅ | — |
 | cargos.crear/editar | ✅ | — | — |
-| rangos_salariales.ver | ✅ | ✅ | — |
-| rangos_salariales.crear/editar | ✅ | — | — |
+| escala_salarial.gestionar | ✅ | — | — |
 | solicitudes.ver | ✅ | ✅ | ✅ |
 | solicitudes.crear | ✅ | ✅ | ✅ |
 | solicitudes.cambiar_estado | ✅ | ✅ | — |

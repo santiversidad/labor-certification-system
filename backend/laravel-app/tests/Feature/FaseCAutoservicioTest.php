@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\CertificadoPdfService;
 use App\Services\ResolverFuncionesFuncionarioService;
 use App\Services\TokenValidacionService;
+use App\Services\UnidadesManualService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,7 +77,7 @@ class FaseCAutoservicioTest extends TestCase
     public function test_alta_de_funcionario_no_cambia_identidad_ni_permisos_del_admin(): void
     {
         $adminId = $this->admin->id;
-        $this->assertCount(36, $this->admin->getAllPermissions());
+        $this->assertCount(37, $this->admin->getAllPermissions());
 
         $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/v1/funcionarios', $this->datosFuncionario('100200390'))
@@ -91,7 +92,7 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertSame($adminId, $admin->id);
         $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
         $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
-        $this->assertCount(36, $admin->getAllPermissions());
+        $this->assertCount(37, $admin->getAllPermissions());
         $this->assertTrue($admin->can('funcionarios.ver'));
         $this->assertNull($admin->funcionario);
     }
@@ -111,7 +112,7 @@ class FaseCAutoservicioTest extends TestCase
         $this->assertSame($adminId, $admin->id);
         $this->assertTrue($admin->hasRole(RoleEnum::Admin->value));
         $this->assertFalse($admin->hasRole(RoleEnum::Funcionario->value));
-        $this->assertCount(36, $admin->getAllPermissions());
+        $this->assertCount(37, $admin->getAllPermissions());
         $this->assertTrue($admin->can('funcionarios.ver'));
         $this->assertNull($admin->funcionario);
         $this->assertDatabaseMissing('funcionarios', ['user_id' => $adminId]);
@@ -396,7 +397,7 @@ class FaseCAutoservicioTest extends TestCase
             'nombres' => 'Laura', 'apellidos' => 'Funcionario',
             'correo_institucional' => "{$documento}@alcaldia.test",
             'estado' => 'activo', 'fecha_ingreso' => '2024-01-15',
-            'unidad_organizacional_id' => app(\App\Services\UnidadesManualService::class)->unidadFicha(ManualFixture::ficha($this->cargo)->id)['id'], 'cargo_id' => $this->cargo->id,
+            'unidad_organizacional_id' => app(UnidadesManualService::class)->unidadFicha(ManualFixture::ficha($this->cargo)->id)['id'], 'cargo_id' => $this->cargo->id,
             'tipo_vinculacion' => 'planta', 'naturaleza_cargo' => 'carrera_administrativa',
         ];
     }

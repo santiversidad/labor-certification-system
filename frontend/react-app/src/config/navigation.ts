@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { BadgeCheck, BookOpenCheck, BriefcaseBusiness, FileBarChart, Gauge, ScrollText, Settings, Users } from 'lucide-react';
+import { BadgeCheck, BookOpenCheck, BriefcaseBusiness, Coins, FileBarChart, Gauge, ScrollText, Settings, Users } from 'lucide-react';
 import type { Role } from '../types/roles.types';
 
 export type NavigationItem = {
@@ -22,6 +22,7 @@ export const adminNavigation: NavigationItem[] = [
   { label: 'Funcionarios', path: '/admin/funcionarios', icon: Users, roles: ['admin'] },
   { label: 'Usuarios internos', path: '/admin/usuarios-internos', icon: Users, roles: ['admin'] },
   { label: 'Cargos', path: '/admin/cargos', icon: BriefcaseBusiness, roles: ['admin'] },
+  { label: 'Escala salarial', path: '/admin/escala-salarial', icon: Coins, roles: ['admin'] },
   { label: 'Manual de Funciones', path: '/admin/manual-funciones', icon: BookOpenCheck, roles: ['admin'] },
   { label: 'Certificaciones', path: '/admin/certificaciones', icon: BadgeCheck, roles: ['admin', 'secretario'] },
   { label: 'Configuración', path: '/admin/configuracion', icon: Settings, roles: ['admin'] },

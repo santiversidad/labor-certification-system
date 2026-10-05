@@ -72,9 +72,9 @@ async function assertPdfDownload(page: Page, expectedType: 'SENCILLO' | 'CON FUN
 test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.beforeAll(async () => { await mkdir('test-results/regression-phase26', { recursive: true }); });
-  test('administración revalida identidad, conserva 36 permisos y navega sin módulo salarial', async ({ page }) => {
+  test('administración revalida identidad, conserva 37 permisos y separa la escala administrativa de certificados', async ({ page }) => {
     const session = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
-    expect(session.user.permisos).toHaveLength(36);
+    expect(session.user.permisos).toHaveLength(37);
     const me = await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(session.token) });
     expect(me.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/dashboard/);
@@ -191,7 +191,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
     expect((await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(employeeSession.token) })).status()).toBe(401);
     const adminSession = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
     expect(adminSession.user.roles).toContain('admin');
-    expect(adminSession.user.permisos).toHaveLength(36);
+    expect(adminSession.user.permisos).toHaveLength(37);
     await expect(page).toHaveURL(/\/admin\/dashboard/);
   });
 
