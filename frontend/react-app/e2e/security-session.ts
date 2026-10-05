@@ -94,13 +94,11 @@ export async function captureBrowserSession(page: Page) {
 export async function completeMfa(page: Page, username: string) {
   await expect(page).toHaveURL(/\/seguridad\/mfa/);
   await expect(page.getByRole('heading', { name: /^(Configurar autenticación en dos pasos|Verificar código)$/ })).toBeVisible();
-  if (await page.getByLabel('Clave de configuración').count()) {
-    const secret = await page.getByLabel('Clave de configuración').inputValue();
-    await expect(page.getByLabel('Clave de configuración')).not.toHaveValue('');
-    const value = secret || await page.getByLabel('Clave de configuración').inputValue();
-    await page.getByLabel('Código de autenticación').fill(new TOTP({ secret: value }).generate());
+  if (await page.getByRole('heading', { name: 'Configurar autenticación en dos pasos', exact: true }).count()) {
+    const value = await pendingMfaSecret(page);
+    await page.getByLabel('Código de 6 dígitos', { exact: true }).fill(new TOTP({ secret: value }).generate());
     const response = page.waitForResponse((r) => r.url().endsWith('/auth/mfa/confirm') && r.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Confirmar autenticación', exact: true }).click();
+    await page.getByRole('button', { name: 'Activar autenticación en dos pasos', exact: true }).click();
     const result = await response; expect(result.status()).toBe(200);
     recoveries.set(username.toLowerCase(), (await result.json()).data.recovery_codes);
     await page.getByRole('button', { name: 'Ya los guardé, continuar' }).click();
@@ -111,6 +109,16 @@ export async function completeMfa(page: Page, username: string) {
   }
   await expect(page).toHaveURL(/\/admin\/dashboard/);
   await captureBrowserSession(page);
+}
+// Read synthetic test-account material only in memory. Boolean assertions avoid
+// printing its value on failure; screenshots must mask both QR and manual key.
+export async function pendingMfaSecret(page: Page) {
+  await expect(page.getByTestId('mfa-qr')).toBeVisible();
+  await page.getByText('No puedo escanear el código', { exact: true }).click();
+  const secret = await page.getByTestId('mfa-secret').inputValue();
+  expect(Boolean(secret)).toBe(true);
+  await page.getByText('No puedo escanear el código', { exact: true }).click();
+  return secret;
 }
 export async function browserSession(page: Page, username: string, password: string) {
   observe(page);

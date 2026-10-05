@@ -22,7 +22,7 @@ export const authService = {
     await apiClient.post(endpoints.auth.logout);
   },
   async setupMfa() {
-    return (await apiClient.post<ApiResponse<{ secret: string; issuer: string; account: string }>>('/auth/mfa/setup')).data;
+    return (await apiClient.post<ApiResponse<{ secret: string; issuer: string; account: string; otpauth_uri: string }>>('/auth/mfa/setup')).data;
   },
   async verifyMfa(code: string, enrollment = false) {
     return (await apiClient.post<ApiResponse<{ user: LoginResponse['user']; recovery_codes: string[] }>>('/auth/mfa/' + (enrollment ? 'confirm' : 'verify'), { code })).data;

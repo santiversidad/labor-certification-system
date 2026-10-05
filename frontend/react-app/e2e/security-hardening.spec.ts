@@ -1,7 +1,7 @@
 import { expect, request as playwrightRequest, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { TOTP } from 'otpauth';
-import { apiSession, browserSession, captureBrowserSession, sessionHeaders } from './security-session';
+import { apiSession, browserSession, captureBrowserSession, pendingMfaSecret, sessionHeaders } from './security-session';
 
 const api = 'http://e2e-api:8280/api/v1';
 const origin = 'http://e2e-web:3200';
@@ -15,7 +15,7 @@ async function capture(page: Page, file: string) {
   await expect(page.getByText('Validando sesión...', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Cargando pantalla...', { exact: true })).toHaveCount(0);
   await page.screenshot({ path: `${evidence}/${file}.png`, animations: 'disabled', fullPage: true,
-    mask: [page.getByTestId('mfa-secret'), page.getByTestId('recovery-codes'), page.locator('input[type="password"]'), page.getByLabel('Código de recuperación', { exact: true })] });
+    mask: [page.getByTestId('mfa-qr'), page.getByTestId('mfa-secret'), page.getByTestId('recovery-codes'), page.locator('input[type="password"]'), page.getByLabel('Código de 6 dígitos', { exact: true }), page.getByLabel('Código de autenticación', { exact: true }), page.getByLabel('Código de recuperación', { exact: true })] });
 }
 async function begin(page: Page, username: string, pass = password) {
   await page.context().clearCookies();
@@ -75,14 +75,28 @@ test.describe.serial('Fase 2.9 seguridad de navegador A–L', () => {
     const pending = await apiSession(caller, target, data.temporary_password);
     expect((await caller.put(api + '/auth/change-password', { headers: sessionHeaders(pending.token), data: { current_password: data.temporary_password, password, password_confirmation: password } })).status()).toBe(200);
     await begin(page, target); await expect(page).toHaveURL(/\/seguridad\/mfa/);
-    await expect(page.getByTestId('mfa-secret')).not.toHaveValue(''); secret = await page.getByTestId('mfa-secret').inputValue();
+    secret = await pendingMfaSecret(page);
+    await page.reload();
+    expect((await pendingMfaSecret(page)) === secret).toBe(true);
+    await page.getByRole('button', { name: 'Cancelar y cerrar sesión' }).click();
+    await expect(page).toHaveURL(/\/login/);
+    await begin(page, target);
+    const next = await pendingMfaSecret(page);
+    expect(next === secret).toBe(false); secret = next;
+    await page.getByLabel('Código de 6 dígitos', { exact: true }).fill('000000');
+    const invalid = page.waitForResponse((r) => r.url().endsWith('/mfa/confirm') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Activar autenticación en dos pasos', exact: true }).click();
+    expect((await invalid).status()).toBe(422);
+    await expect(page.getByRole('alert')).toContainText('El código no es válido o ya cambió.');
     expect((await page.request.get(api + '/admin/usuarios-internos', { headers: sessionHeaders(await captureBrowserSession(page)) })).status()).toBe(401);
     await capture(page, '02-mfa-setup-redacted'); await page.setViewportSize({ width: 360, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await capture(page, '09-mobile-mfa');
+    await page.setViewportSize({ width: 768, height: 1024 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await capture(page, '11-tablet-mfa-redacted');
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.getByLabel('Código de autenticación', { exact: true }).fill(new TOTP({ secret }).generate());
+    await page.getByLabel('Código de 6 dígitos', { exact: true }).fill(new TOTP({ secret }).generate());
     const response = page.waitForResponse((r) => r.url().endsWith('/mfa/confirm') && r.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Confirmar autenticación', exact: true }).click();
+    await page.getByRole('button', { name: 'Activar autenticación en dos pasos', exact: true }).click();
     const proof = await response; expect(proof.status()).toBe(200); codes = (await proof.json()).data.recovery_codes; expect(codes).toHaveLength(8);
     await expect(page.getByTestId('recovery-codes')).toBeVisible(); await capture(page, '04-recovery-codes-redacted');
     await page.getByRole('button', { name: 'Ya los guardé, continuar' }).click(); await expect(page).toHaveURL(/\/admin\/dashboard/);
@@ -123,9 +137,22 @@ test.describe.serial('Fase 2.9 seguridad de navegador A–L', () => {
     const code = codes.shift()!; await begin(page, target); await capture(page, '03-mfa-verify');
     expect((await recover(page, code)).status()).toBe(200); await expect(page).toHaveURL(/\/admin\/dashboard/);
     await begin(page, target); expect((await recover(page, code)).status()).toBe(422);
-    await expect(page.getByRole('alert').filter({ hasText: 'Los datos suministrados no son válidos.' }).first()).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'El código de recuperación no es válido o ya fue utilizado.' }).first()).toBeVisible();
     await page.getByLabel('Código de recuperación', { exact: true }).fill(codes.shift()!);
-    await page.getByRole('button', { name: 'Verificar y continuar' }).click(); await expect(page).toHaveURL(/\/admin\/dashboard/);
+    let proof = page.waitForResponse((r) => r.url().endsWith('/mfa/verify') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Verificar y continuar' }).click();
+    let result = await proof;
+    // Enrollment's new invalid-code case counts against the existing 5/min
+    // actor limit. Respect the server's retry window; never loosen the limit.
+    if (result.status() === 429) {
+      const retrySeconds = Number(result.headers()['retry-after']);
+      expect(retrySeconds > 0 && retrySeconds <= 60).toBe(true);
+      await page.waitForTimeout(retrySeconds * 1000 + 250);
+      proof = page.waitForResponse((r) => r.url().endsWith('/mfa/verify') && r.request().method() === 'POST');
+      await page.getByRole('button', { name: 'Verificar y continuar' }).click();
+      result = await proof;
+    }
+    expect(result.status()).toBe(200); await expect(page).toHaveURL(/\/admin\/dashboard/);
     targetSession = await captureBrowserSession(page);
   });
   test('I: reset MFA por otro administrador invalida cookies y exige nuevo enrollment', async ({ page }) => {
@@ -133,7 +160,7 @@ test.describe.serial('Fase 2.9 seguridad de navegador A–L', () => {
     // The old session is checked using its isolated cookie context, never a bearer.
     expect((await caller.get(api + '/auth/me', { headers: sessionHeaders(targetSession) })).status()).toBe(401);
     await begin(page, target); await expect(page.getByRole('heading', { name: 'Configurar autenticación en dos pasos', exact: true })).toBeVisible();
-    await expect(page.getByTestId('mfa-secret')).not.toHaveValue(''); expect(await page.getByTestId('mfa-secret').inputValue()).not.toBe(secret);
+    expect((await pendingMfaSecret(page)) === secret).toBe(false);
   });
   test('J: login limita intentos temporalmente y muestra mensaje controlado', async ({ page }) => {
     await page.goto('/login'); await page.getByLabel('Usuario', { exact: true }).fill('unknown.security.' + Date.now());

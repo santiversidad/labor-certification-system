@@ -7,7 +7,7 @@ let recoveryIndex = 400; // Separate range from the existing synthetic regressio
 
 async function capture(page: Page, name: string) {
   await expect(page.locator('.animate-pulse')).toHaveCount(0);
-  const secrets = [page.getByTestId('mfa-secret'), page.getByTestId('recovery-codes'), page.getByLabel('Código de recuperación', { exact: true })];
+  const secrets = [page.getByTestId('mfa-qr'), page.getByTestId('mfa-secret'), page.getByTestId('recovery-codes'), page.getByLabel('Código de 6 dígitos', { exact: true }), page.getByLabel('Código de autenticación', { exact: true }), page.getByLabel('Código de recuperación', { exact: true })];
   for (const input of await page.locator('input[type="password"]').all()) {
     if (await input.inputValue()) secrets.push(input);
   }

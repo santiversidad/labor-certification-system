@@ -7,6 +7,7 @@ export function RecoveryCodesModal({ codes, onClose }: { codes: string[]; onClos
   const [notice, setNotice] = useState('');
   return <Modal open title="Códigos de recuperación" onClose={onClose}>
     <div className="space-y-4">
+      <p className="text-sm text-text-muted">Estos códigos le permiten acceder a su cuenta si pierde el celular o no puede usar su aplicación autenticadora.</p>
       <Alert variant="warning">Guarde estos códigos en un lugar seguro. Cada código sirve una sola vez y solo se muestra ahora. No los comparta.</Alert>
       <pre data-testid="recovery-codes" className="overflow-x-auto rounded border border-border p-3 text-xs">{codes.join('\n')}</pre>
       {notice ? <p role="status">{notice}</p> : null}

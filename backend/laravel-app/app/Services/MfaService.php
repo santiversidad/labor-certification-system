@@ -26,7 +26,10 @@ class MfaService
             $request->session()->put('mfa_setup_secret', $encrypted);
         }
         // Only explicit setup returns this value, never /me or a persisted QR image.
-        return ['secret' => Crypt::decryptString($encrypted), 'issuer' => 'Certificaciones Villavicencio', 'account' => $user->username];
+        $secret = Crypt::decryptString($encrypted);
+        $issuer = 'Certificaciones Villavicencio';
+        return ['secret' => $secret, 'issuer' => $issuer, 'account' => $user->username,
+            'otpauth_uri' => $this->totp->getQRCodeUrl($issuer, $user->username, $secret)];
     }
 
     public function verify(Request $request, bool $enrollment = false): array
