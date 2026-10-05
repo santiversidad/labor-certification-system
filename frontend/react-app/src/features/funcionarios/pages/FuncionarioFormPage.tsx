@@ -6,7 +6,7 @@ export function FuncionarioFormPage() {
   const { id } = useParams();
   return (
     <div className="app-page max-w-5xl">
-      <PageHeader eyebrow="Talento Humano" title={id ? 'Editar funcionario' : 'Crear funcionario'} description="Registre la información institucional y asigne explícitamente la ficha normativa correcta." />
+      <PageHeader eyebrow="Talento Humano" title={id ? 'Editar funcionario' : 'Crear funcionario'} description="Registre la información institucional y seleccione la dependencia y el cargo aplicables." />
       <FuncionarioForm />
     </div>
   );

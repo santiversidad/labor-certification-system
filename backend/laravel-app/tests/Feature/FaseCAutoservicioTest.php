@@ -396,7 +396,7 @@ class FaseCAutoservicioTest extends TestCase
             'nombres' => 'Laura', 'apellidos' => 'Funcionario',
             'correo_institucional' => "{$documento}@alcaldia.test",
             'estado' => 'activo', 'fecha_ingreso' => '2024-01-15',
-            'dependencia' => 'Talento Humano', 'cargo_id' => $this->cargo->id,
+            'unidad_organizacional_id' => app(\App\Services\UnidadesManualService::class)->unidadFicha(ManualFixture::ficha($this->cargo)->id)['id'], 'cargo_id' => $this->cargo->id,
             'tipo_vinculacion' => 'planta', 'naturaleza_cargo' => 'carrera_administrativa',
         ];
     }

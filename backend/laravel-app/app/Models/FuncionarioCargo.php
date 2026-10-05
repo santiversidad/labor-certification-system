@@ -14,6 +14,7 @@ class FuncionarioCargo extends Model
 
     protected $fillable = [
         'funcionario_id',
+        'unidad_organizacional_id',
         'cargo_id',
         'tipo_vinculacion',
         'naturaleza_cargo',

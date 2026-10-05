@@ -251,3 +251,8 @@ Cobertura Sprint 1:
 - [ ] Políticas formales (`FuncionarioPolicy`, `CertificadoPolicy`, etc.)
 - [ ] Pruebas de funcionarios, cargos, solicitudes y certificados
 - [ ] Documentación OpenAPI / Swagger (L5-Swagger o Scribe)
+
+
+## Selección por dependencia
+
+El formulario administrativo selecciona dependencia y cargo; el servidor resuelve la ficha exacta por ámbito y fecha. Modelo, API, compatibilidad histórica y límites de los datos: [DEPENDENCY_POSITION_SELECTION_MODEL.md](../../DEPENDENCY_POSITION_SELECTION_MODEL.md). La migración es aditiva, sin backfill ni modificaciones del Manual.

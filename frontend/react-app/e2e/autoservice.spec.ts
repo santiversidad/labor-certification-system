@@ -1,3 +1,4 @@
+import { selectEmployment } from './dependency-selection';
 import { browserSession, captureBrowserSession, sessionHeaders } from './security-session';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -23,16 +24,7 @@ async function createEmployee(page: Page, suffix: string, cargoLabel = 'Profesio
   await page.getByLabel('Número de cédula').fill(documento);
   await page.getByLabel('Nombres', { exact: true }).fill('Persona');
   await page.getByLabel('Apellidos', { exact: true }).fill(`Ficticia ${suffix}`);
-  await page.getByLabel('Dependencia', { exact: true }).fill('Talento Humano E2E');
-  await page.locator('select[name="cargo_id"]').selectOption({ label: cargoLabel });
-  await page.getByLabel('Fecha de vinculación').fill('2024-01-15');
-  if (cargoLabel.includes('Incompleto')) {
-    const ficha = page.getByLabel('Ficha del Manual de Funciones');
-    const option = ficha.locator('option').filter({ hasText: 'E2E-INC-001' });
-    await expect(option).toHaveCount(1);
-    await ficha.selectOption((await option.getAttribute('value'))!);
-  }
-  await expect(page.getByLabel('Ficha del Manual de Funciones')).toHaveValue(/\d+/);
+  await selectEmployment(page, cargoLabel, cargoLabel.includes('Incompleto') ? 'Validación incompleta E2E' : 'Autoservicio E2E');
   const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/funcionarios') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Guardar funcionario' }).click();
   expect((await responsePromise).status()).toBe(201);

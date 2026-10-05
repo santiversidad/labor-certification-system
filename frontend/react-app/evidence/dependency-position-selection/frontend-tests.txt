@@ -1,0 +1,13 @@
+
+> certificaciones-laborales-villavicencio@0.0.0 test
+> vitest run --pool=threads --maxWorkers=1 --reporter=dot
+
+
+ RUN  v4.1.11 /app
+
+···································································································
+
+ Test Files  22 passed (22)
+      Tests  99 passed (99)
+   Start at  05:31:03
+   Duration  44.75s (transform 17.38s, setup 2.69s, import 21.42s, tests 7.46s, environment 10.70s)

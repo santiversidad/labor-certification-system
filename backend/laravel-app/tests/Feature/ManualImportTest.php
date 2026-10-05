@@ -365,6 +365,7 @@ class ManualImportTest extends TestCase
             ->assertOk()->assertJsonCount(2, 'data');
         $this->actingAs($admin, 'sanctum')->putJson('/api/v1/funcionarios/'.$u->funcionario->id, [
             'cargo_id' => $otra->cargo_id, 'manual_cargo_version_id' => $otra->id,
+            'unidad_organizacional_id' => app(\App\Services\UnidadesManualService::class)->unidadFicha($otra->id)['id'],
         ])->assertOk();
         $this->assertSame($anterior->manual_cargo_version_id, $anterior->fresh()->manual_cargo_version_id);
         $this->assertSame(today()->subDay()->toDateString(), $anterior->fresh()->fecha_fin->toDateString());

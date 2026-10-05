@@ -69,6 +69,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
         });
 
         Route::prefix('manual-funciones')->name('manual-funciones.')->group(function () {
+            Route::get('/dependencias', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'index']);
+            Route::get('/dependencias/cargos', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'cargos']);
+            Route::get('/dependencias/resolver', [\App\Http\Controllers\Api\V1\DependenciaManualController::class, 'resolver']);
             Route::get('/fichas', [ManualFuncionController::class, 'fichas'])->name('fichas');
             Route::get('/estado', [ManualFuncionController::class, 'estado'])->name('estado');
             Route::get('/diff/{from}/{to}', [ManualFuncionController::class, 'diff'])->name('diff');

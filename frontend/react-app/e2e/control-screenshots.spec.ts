@@ -1,3 +1,4 @@
+import { selectEmployment } from './dependency-selection';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { browserSession, captureBrowserSession, sessionHeaders } from './security-session';
@@ -28,10 +29,7 @@ test('evidencia visual real de Fase 2', async ({ page }) => {
   await page.getByLabel('Número de cédula').fill(documento);
   await page.getByLabel('Nombres', { exact: true }).fill('Evidencia');
   await page.getByLabel('Apellidos', { exact: true }).fill('Visual Fase Dos');
-  await page.getByLabel('Dependencia', { exact: true }).fill('Talento Humano E2E');
-  await page.locator('select[name="cargo_id"]').selectOption({ label: 'Profesional E2E · E2E/01' });
-  await page.getByLabel('Fecha de vinculación').fill('2024-01-15');
-  await expect(page.getByLabel('Ficha del Manual de Funciones')).toHaveValue(/\d+/);
+  await selectEmployment(page, 'Profesional E2E · E2E/01');
   await page.getByRole('button', { name: 'Guardar funcionario' }).click();
   await expect(page).toHaveURL(/\/admin\/funcionarios\/\d+$/);
   const employeeDetailUrl = page.url();

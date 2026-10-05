@@ -14,6 +14,9 @@ export type Funcionario = {
   fecha_ingreso?: string | null;
   fecha_retiro?: string | null;
   dependencia?: string | null;
+  unidad_organizacional?: { id: string; nombre: string } | null;
+  vinculacion_legacy?: boolean;
+  fecha_seleccion?: string;
   cargo?: Cargo;
   asignacion_actual?: { id: number; manual_cargo_version_id: number | null; ficha_manual?: { id: number; source_id: string | null; area_funcional: string; version: string } | null; tipo_vinculacion: 'planta' | 'provisional' | 'encargo' | 'temporal'; naturaleza_cargo: 'carrera_administrativa' | 'libre_nombramiento' | 'provisional' | 'encargo' } | null;
   usuario?: { id: number; estado: boolean; must_change_password: boolean } | null;

@@ -57,3 +57,8 @@ Puede usar cualquier contrasena no vacia mientras `VITE_USE_MOCKS=true`.
 - Publicas: `/login`, `/validar-certificado/:token`
 - Funcionario/secretario: `/app/dashboard`, `/app/solicitudes`, `/app/certificados`
 - Administrador: `/admin/dashboard`, `/admin/funcionarios`, `/admin/cargos`, `/admin/manual`, `/admin/certificados`, `/admin/configuracion`, `/admin/auditoria`, `/admin/reportes`
+
+
+## Selección por dependencia
+
+El formulario administrativo selecciona dependencia y cargo; el servidor resuelve la ficha exacta por ámbito y fecha. Modelo, API, compatibilidad histórica y límites de los datos: [DEPENDENCY_POSITION_SELECTION_MODEL.md](../../DEPENDENCY_POSITION_SELECTION_MODEL.md). La migración es aditiva, sin backfill ni modificaciones del Manual.

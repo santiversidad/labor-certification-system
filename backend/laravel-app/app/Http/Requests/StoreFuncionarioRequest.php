@@ -30,8 +30,9 @@ class StoreFuncionarioRequest extends FormRequest
             'estado' => ['sometimes', Rule::enum(EstadoFuncionarioEnum::class)],
             'fecha_ingreso' => ['required', 'date'],
             'fecha_retiro' => ['nullable', 'date', 'after_or_equal:fecha_ingreso'],
-            'dependencia' => ['nullable', 'string', 'max:150'],
-            'cargo_id' => ['required', 'exists:cargos,id'],
+            'dependencia' => ['prohibited'],
+            'unidad_organizacional_id' => ['required', 'string', 'regex:/^[a-f0-9]{32}$/'],
+            'cargo_id' => ['required', 'integer', 'exists:cargos,id'],
             'tipo_vinculacion' => ['required', Rule::enum(TipoVinculacionEnum::class)],
             'naturaleza_cargo' => ['required', Rule::enum(NaturalezaCargoEnum::class)],
         ];

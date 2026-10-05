@@ -104,6 +104,46 @@ class PrepareAutoserviceE2E extends Command
                 'manual_cargo_version_id' => $fichaIncompleta->id, 'vigencia_desde' => '2024-01-15',
             ], ['origen' => 'fixture_e2e']);
             ParametroSistema::updateOrCreate(['clave' => 'requiere_pago_certificado'], ['valor' => 'false', 'tipo' => 'boolean']);
+            $scopedManual = ManualFuncion::firstOrCreate(['codigo' => 'E2E-UNIDADES'], ['nombre' => 'Manual ficticio de selección por dependencia']);
+            $scopedVersion = $scopedManual->versiones()->firstOrCreate(['version' => 'E2E-UNIDADES-1'], [
+                'estado' => 'borrador', 'acto_tipo' => 'Prueba', 'acto_numero' => 'E2E-UNIDADES',
+                'acto_fecha' => '2020-01-01', 'vigencia_desde' => '2020-01-01',
+            ]);
+            if ($scopedVersion->estado === 'borrador') {
+                $sharedCargo = Cargo::firstOrCreate(['codigo' => 'DPE', 'grado' => '02'], [
+                    'denominacion' => 'Profesional de dependencias E2E', 'nivel' => 'Profesional', 'estado' => true,
+                ]);
+                foreach (['A', 'B'] as $unidad) {
+                    $only = Cargo::firstOrCreate(['codigo' => 'DP'.$unidad, 'grado' => '03'], [
+                        'denominacion' => 'Cargo exclusivo '.$unidad.' E2E', 'nivel' => 'Profesional', 'estado' => true,
+                    ]);
+                    foreach ([$sharedCargo, $only] as $position) {
+                        $profile = $scopedVersion->cargos()->create(['cargo_id' => $position->id,
+                            'source_id' => 'E2E-UNIDAD-'.$unidad.'-'.$position->codigo,
+                            'dependencia' => 'Donde se ubique el cargo', 'area_funcional' => 'Dependencia '.$unidad.' E2E',
+                            'proposito_principal' => 'Validar selección aislada en unidad '.$unidad,
+                        ]);
+                        $profile->funciones()->create(['orden' => 1, 'descripcion' => 'Función exclusiva de dependencia '.$unidad.' E2E.']);
+                    }
+                }
+                $scopedVersion->update(['estado' => 'publicado']);
+            }
+            $globalCargo = Cargo::firstOrCreate(['codigo' => 'DPG', 'grado' => '01'], [
+                'denominacion' => 'Cargo transversal E2E', 'nivel' => 'Profesional', 'estado' => true,
+            ]);
+            $globalManual = ManualFuncion::firstOrCreate(['codigo' => 'E2E-TRANSVERSAL'], ['nombre' => 'Manual ficticio de aplicabilidad transversal']);
+            $globalVersion = $globalManual->versiones()->firstOrCreate(['version' => 'E2E-TRANSVERSAL-1'], [
+                'estado' => 'borrador', 'acto_tipo' => 'Prueba', 'acto_numero' => 'E2E-TRANSVERSAL',
+                'acto_fecha' => '2020-01-01', 'vigencia_desde' => '2020-01-01',
+            ]);
+            if ($globalVersion->estado === 'borrador') {
+                $globalProfile = $globalVersion->cargos()->create(['cargo_id' => $globalCargo->id,
+                    'source_id' => 'E2E-TRANSVERSAL-001', 'dependencia' => 'Donde se ubique el cargo',
+                    'area_funcional' => 'Todas las dependencias', 'proposito_principal' => 'Validar la aplicabilidad explícita transversal.',
+                ]);
+                $globalProfile->funciones()->create(['orden' => 1, 'descripcion' => 'Función transversal E2E.']);
+                $globalVersion->update(['estado' => 'publicado']);
+            }
         });
         $this->info('Fixtures sintéticos preparados en la base E2E aislada; no se eliminaron registros.');
 

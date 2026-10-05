@@ -20,6 +20,11 @@ class FuncionarioResource extends JsonResource
             : ($relacion?->isEmpty() && ! $asignacion?->fichasNormativas()->exists() ? $asignacion?->fichaManual : null);
 
         return [
+            'unidad_organizacional' => $asignacion?->unidad_organizacional_id
+                ? app(\App\Services\UnidadesManualService::class)->unidadPorClave($asignacion->unidad_organizacional_id)
+                : app(\App\Services\UnidadesManualService::class)->unidadFicha($ficha?->id),
+            'vinculacion_legacy' => $asignacion && ! $asignacion->unidad_organizacional_id,
+            'fecha_seleccion' => today()->toDateString(),
             'asignacion_actual' => $asignacion ? [
                 'id' => $asignacion->id, 'manual_cargo_version_id' => $ficha?->id,
                 'ficha_manual' => $ficha ? ['id' => $ficha->id, 'source_id' => $ficha->source_id,

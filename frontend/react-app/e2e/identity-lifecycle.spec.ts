@@ -1,3 +1,4 @@
+import { fixtureUnit } from './dependency-selection';
 import { apiSession, browserSession, captureBrowserSession, completeMfa, sessionHeaders } from './security-session';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
@@ -25,7 +26,7 @@ async function employee(request: APIRequestContext, admin: string) {
   const cargo = cargos.data.find((c: { codigo: string }) => c.codigo === 'E2E');
   const created = await request.post(api + '/funcionarios', { headers: headers(admin), data: {
     numero_documento: username, tipo_documento: 'CC', nombres: 'María', apellidos: 'Test',
-    estado: 'activo', fecha_ingreso: '2024-01-15', cargo_id: cargo.id,
+    estado: 'activo', fecha_ingreso: '2024-01-15', cargo_id: cargo.id, unidad_organizacional_id: await fixtureUnit(request, admin),
     tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa',
   } });
   expect(created.status()).toBe(201);

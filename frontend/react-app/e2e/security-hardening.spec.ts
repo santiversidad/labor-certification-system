@@ -1,3 +1,4 @@
+import { fixtureUnit } from './dependency-selection';
 import { expect, request as playwrightRequest, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { TOTP } from 'otpauth';
@@ -41,7 +42,7 @@ async function newEmployee(suffix: string) {
   const cargo = cargos.data.find((item: { codigo: string }) => item.codigo === 'E2E');
   const created = await caller.post(api + '/funcionarios', { headers: sessionHeaders(admin), data: {
     numero_documento: username, tipo_documento: 'CC', nombres: 'Persona seguridad', apellidos: 'Sintética ' + suffix,
-    estado: 'activo', fecha_ingreso: '2024-01-15', cargo_id: cargo.id,
+    estado: 'activo', fecha_ingreso: '2024-01-15', cargo_id: cargo.id, unidad_organizacional_id: await fixtureUnit(caller, admin),
     tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa',
   } });
   expect(created.status()).toBe(201); const data = (await created.json()).data;

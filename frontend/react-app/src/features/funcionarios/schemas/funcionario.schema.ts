@@ -10,9 +10,8 @@ export const funcionarioSchema = z.object({
   estado: z.enum(['activo', 'retirado', 'suspendido']).default('activo'),
   fecha_ingreso: z.string().min(1, 'Seleccione la fecha de ingreso.'),
   fecha_retiro: z.string().optional(),
-  dependencia: z.string().max(150, 'Maximo 150 caracteres.').optional(),
+  unidad_organizacional_id: z.string().min(1, 'Seleccione una dependencia existente.'),
   cargo_id: z.string().min(1, 'Seleccione un cargo.'),
-  manual_cargo_version_id: z.string().min(1, 'Seleccione la ficha exacta del Manual.'),
   tipo_vinculacion: z.enum(['planta', 'provisional', 'encargo', 'temporal']),
   naturaleza_cargo: z.enum(['carrera_administrativa', 'libre_nombramiento', 'provisional', 'encargo']),
 });

@@ -61,7 +61,8 @@ class FuncionarioController extends Controller
         $data = $request->validated();
 
         $funcionario = DB::transaction(function () use ($data) {
-            $ficha = app(SeleccionarFichaManualService::class)->seleccionar((int) $data['cargo_id'], $data['manual_cargo_version_id'] ?? null);
+            $ficha = app(SeleccionarFichaManualService::class)->porUnidad($data['unidad_organizacional_id'], (int) $data['cargo_id'], \Carbon\CarbonImmutable::parse($data['fecha_ingreso']), $data['manual_cargo_version_id'] ?? null);
+            $data['dependencia'] = app(\App\Services\UnidadesManualService::class)->unidadPorClave($data['unidad_organizacional_id'])['nombre'];
             $estado = EstadoFuncionarioEnum::from($data['estado'] ?? EstadoFuncionarioEnum::Activo->value);
             $nombre = trim($data['nombres'].' '.$data['apellidos']);
 
@@ -76,10 +77,11 @@ class FuncionarioController extends Controller
             ]);
             $user->assignRole(RoleEnum::Funcionario->value);
 
-            $funcionario = Funcionario::create(Arr::except($data, ['tipo_vinculacion', 'naturaleza_cargo', 'manual_cargo_version_id']) + ['user_id' => $user->id]);
+            $funcionario = Funcionario::create(Arr::except($data, ['tipo_vinculacion', 'naturaleza_cargo', 'manual_cargo_version_id', 'unidad_organizacional_id']) + ['user_id' => $user->id]);
 
             $asignacion = FuncionarioCargo::create([
                 'funcionario_id' => $funcionario->id,
+                'unidad_organizacional_id' => $data['unidad_organizacional_id'],
                 'cargo_id' => $data['cargo_id'],
                 'manual_cargo_version_id' => $ficha->id,
                 'tipo_vinculacion' => $data['tipo_vinculacion'],
@@ -128,7 +130,8 @@ class FuncionarioController extends Controller
     public function update(UpdateFuncionarioRequest $request, int $funcionario): JsonResponse
     {
         $model = Funcionario::with(['user', 'historialCargos'])->findOrFail($funcionario);
-        $data = $request->validated();
+        // Empty prohibited values may pass Laravel validation; never persist client dependency text.
+        $data = Arr::except($request->validated(), ['dependencia']);
         $anterior = $model->getAttributes();
 
         DB::transaction(function () use ($model, $data) {
@@ -140,11 +143,23 @@ class FuncionarioController extends Controller
             }
             $vigente = $vigentes->first();
             $cargoNuevo = (int) ($data['cargo_id'] ?? $cargoAnterior);
+            $relaciones = $vigente?->fichasNormativas()
+                ->where(fn ($q) => $q->whereNull('vigencia_desde')->orWhereDate('vigencia_desde', '<=', today()))
+                ->where(fn ($q) => $q->whereNull('vigencia_hasta')->orWhereDate('vigencia_hasta', '>=', today()))->get();
+            $fichaActualId = $relaciones?->count() === 1 ? $relaciones->sole()->manual_cargo_version_id
+                : ($relaciones?->isEmpty() && ! $vigente?->fichasNormativas()->exists() ? $vigente?->manual_cargo_version_id : null);
+            $unidadActual = $vigente?->unidad_organizacional_id ?? app(\App\Services\UnidadesManualService::class)->unidadFicha($fichaActualId)['id'] ?? null;
+            $cambioUnidad = isset($data['unidad_organizacional_id']) && $data['unidad_organizacional_id'] !== $unidadActual;
             $ficha = null;
-            if (array_key_exists('manual_cargo_version_id', $data) || $cargoNuevo !== $cargoAnterior) {
-                $ficha = app(SeleccionarFichaManualService::class)->seleccionar($cargoNuevo, $data['manual_cargo_version_id'] ?? null);
+            if ($cambioUnidad || $cargoNuevo !== $cargoAnterior || (isset($data['unidad_organizacional_id']) && ! $fichaActualId)
+                || (isset($data['manual_cargo_version_id']) && $data['manual_cargo_version_id'] !== $fichaActualId)) {
+                if (! isset($data['unidad_organizacional_id'])) {
+                    throw ValidationException::withMessages([isset($data['manual_cargo_version_id']) ? 'manual_cargo_version_id' : 'unidad_organizacional_id' => 'Seleccione una dependencia para modificar la vinculación.']);
+                }
+                $ficha = app(SeleccionarFichaManualService::class)->porUnidad($data['unidad_organizacional_id'], $cargoNuevo, \Carbon\CarbonImmutable::today(), $data['manual_cargo_version_id'] ?? null);
+                $data['dependencia'] = app(\App\Services\UnidadesManualService::class)->unidadPorClave($data['unidad_organizacional_id'])['nombre'];
             }
-            $model->update(Arr::except($data, ['tipo_vinculacion', 'naturaleza_cargo', 'manual_cargo_version_id']));
+            $model->update(Arr::except($data, ['tipo_vinculacion', 'naturaleza_cargo', 'manual_cargo_version_id', 'unidad_organizacional_id']));
 
             $estado = $model->estado === EstadoFuncionarioEnum::Activo;
             $model->user?->update([
@@ -158,13 +173,7 @@ class FuncionarioController extends Controller
                 $model->user?->revokeAuthentication();
             }
 
-            if ($ficha && $cargoNuevo === $cargoAnterior && $vigente && ! $vigente->manual_cargo_version_id) {
-                $vigente->update(['manual_cargo_version_id' => $ficha->id]);
-                $vigente->fichasNormativas()->create([
-                    'manual_cargo_version_id' => $ficha->id, 'vigencia_desde' => today(),
-                    'origen' => 'asignacion_inicial', 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
-                ]);
-            } elseif ($cargoNuevo !== $cargoAnterior || ($ficha && $ficha->id !== $vigente?->manual_cargo_version_id)) {
+            if ($cambioUnidad || $cargoNuevo !== $cargoAnterior || ($ficha && $ficha->id !== $fichaActualId)) {
                 $fechaInicio = now(config('app.timezone'))->startOfDay();
                 if ($vigente && $vigente->fecha_inicio->greaterThanOrEqualTo($fechaInicio)) {
                     throw ValidationException::withMessages(['manual_cargo_version_id' => 'ASIGNACION_CAMBIO_MISMO_DIA: revise el historial antes de sustituir la ficha.']);
@@ -173,6 +182,7 @@ class FuncionarioController extends Controller
 
                 $nuevaAsignacion = FuncionarioCargo::create([
                     'funcionario_id' => $model->id,
+                    'unidad_organizacional_id' => $data['unidad_organizacional_id'],
                     'cargo_id' => $cargoNuevo,
                     'manual_cargo_version_id' => $ficha?->id,
                     'tipo_vinculacion' => $data['tipo_vinculacion'] ?? $vigente?->tipo_vinculacion?->value ?? TipoVinculacionEnum::Planta->value,
@@ -185,6 +195,8 @@ class FuncionarioController extends Controller
                     'manual_cargo_version_id' => $ficha->id, 'vigencia_desde' => $fechaInicio,
                     'origen' => 'asignacion_inicial', 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
                 ]);
+            } elseif ($vigente) {
+                $vigente->update(Arr::only($data, ['tipo_vinculacion', 'naturaleza_cargo']));
             }
         });
 

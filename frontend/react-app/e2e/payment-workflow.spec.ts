@@ -1,3 +1,4 @@
+import { fixtureUnit } from './dependency-selection';
 import { apiSession, browserSession, sessionHeaders } from './security-session';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -13,7 +14,7 @@ async function employee(request: APIRequestContext, admin: string, suffix: strin
   const documento = `P27${Date.now()}${suffix}`.slice(0, 20);
   const cargos = await (await request.get(`${api}/cargos?per_page=100`, { headers: headers(admin) })).json();
   const cargo = cargos.data.find((c: { codigo: string }) => c.codigo === 'E2E'); expect(cargo).toBeTruthy();
-  const r = await request.post(`${api}/funcionarios`, { headers: headers(admin), data: { tipo_documento: 'CC', numero_documento: documento, nombres: 'Funcionario pago', apellidos: `Ficticio ${suffix}`, estado: 'activo', fecha_ingreso: '2024-01-15', dependencia: 'Prueba E2E', cargo_id: cargo.id, tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa' } });
+  const r = await request.post(`${api}/funcionarios`, { headers: headers(admin), data: { tipo_documento: 'CC', numero_documento: documento, nombres: 'Funcionario pago', apellidos: `Ficticio ${suffix}`, estado: 'activo', fecha_ingreso: '2024-01-15', unidad_organizacional_id: await fixtureUnit(request, admin), cargo_id: cargo.id, tipo_vinculacion: 'planta', naturaleza_cargo: 'carrera_administrativa' } });
   expect(r.status()).toBe(201);
   const token = await apiLogin(request, documento, documento);
   expect((await request.put(`${api}/auth/change-password`, { headers: headers(token), data: { current_password: documento, password: 'E2EPagoClave2026', password_confirmation: 'E2EPagoClave2026' } })).status()).toBe(200);
