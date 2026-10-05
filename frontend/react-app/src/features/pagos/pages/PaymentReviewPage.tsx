@@ -21,7 +21,7 @@ export function PaymentReviewPage() {
   if (!permitted) return <Alert title="Acceso restringido" variant="error">No tiene permiso para consultar pagos.</Alert>;
   if (query.isError) return <ErrorState />;
   return <div className="app-page">
-    <PageHeader eyebrow="Secretaría" title="Validación de pagos" description="Revise la evidencia del pago. Al confirmarlo, el sistema expide la certificación automáticamente." />
+    <PageHeader appearance="institutional" eyebrow="Secretaría" title="Validación de pagos" description="Revise la evidencia del pago. Al confirmarlo, el sistema expide la certificación automáticamente." />
     <label className="block max-w-sm space-y-2 text-sm font-semibold">Estado del pago<select className="field-control" onChange={(e) => { setEstado(e.target.value); setPage(1); }} value={estado}>
       <option value="pago_en_revision">En revisión</option><option value="pago_rechazado">Rechazados</option><option value="pago_confirmado">Confirmados</option><option value="generada">Generados</option><option value="expedicion_fallida">Error de expedición</option><option value="pendiente_pago">Pendientes de comprobante</option>
     </select></label>

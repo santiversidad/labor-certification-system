@@ -10,10 +10,10 @@ export function AuthLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       <GovBar />
       <main className="grid flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(430px,0.95fr)]">
-        <section className="relative hidden overflow-hidden bg-brand-deep px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
-          <div aria-hidden="true" className="absolute -right-24 top-28 h-72 w-72 rounded-full border border-white/10" />
-          <div aria-hidden="true" className="absolute -right-4 top-52 h-40 w-40 rounded-full border border-white/10" />
-          <Brand inverse />
+        <section className="auth-visual relative hidden min-w-0 overflow-hidden bg-brand-deep px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
+          <img alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high" height={1001} src="/assets/auth/login-villavicencio.webp" width={1600} />
+          <div aria-hidden="true" className="auth-visual-overlay absolute inset-0" />
+          <div className="relative"><Brand inverse /></div>
           <div className="relative max-w-xl animate-fade-up">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Servicio institucional</p>
             <h1 className="mt-4 text-4xl font-bold leading-tight tracking-[-0.035em] xl:text-5xl">Su certificación laboral, <GradientText>cuando la necesite.</GradientText></h1>
@@ -26,8 +26,8 @@ export function AuthLayout() {
           </div>
           <p className="relative text-xs text-blue-200/75">Alcaldía de Villavicencio · Meta</p>
         </section>
-        <section className="flex items-center justify-center px-4 py-10 sm:px-8 lg:px-12">
-          <div className="w-full max-w-md animate-fade-up rounded-lg border border-border/80 bg-surface p-6 shadow-institutional sm:p-8 lg:p-9">
+        <section className="flex min-w-0 items-center justify-center px-4 py-10 sm:px-8 lg:px-12">
+          <div className="min-w-0 w-full max-w-md animate-fade-up rounded-lg border border-border/80 bg-surface p-6 shadow-institutional sm:p-8 lg:p-9">
             <div className="mb-8 lg:hidden"><Brand /></div>
             <Outlet />
           </div>

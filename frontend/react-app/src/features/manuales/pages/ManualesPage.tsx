@@ -36,7 +36,7 @@ export function ManualesPage() {
 
   return (
     <div className="space-y-7">
-      <PageHeader eyebrow="Gestión normativa" title="Manual de Funciones" description="Versiones completas, comparables e inmutables después de su publicación." actions={<Button icon={<Plus size={17} />} onClick={() => setCrear((value) => !value)}>Crear borrador</Button>} />
+      <PageHeader appearance="institutional" eyebrow="Gestión normativa" title="Manual de Funciones" description="Versiones completas, comparables e inmutables después de su publicación." actions={<Button icon={<Plus size={17} />} onClick={() => setCrear((value) => !value)}>Crear borrador</Button>} />
       {[createMutation, importMutation, diffMutation, planMutation, publishMutation].filter((mutation) => mutation.isError).map((mutation, index) => <Alert key={index} title="No fue posible completar la operación del Manual" variant="error">{getErrorMessage(mutation.error)}</Alert>)}
 
       {vigente ? <section className="overflow-hidden rounded-xl bg-govBlue text-white transition-all duration-300">

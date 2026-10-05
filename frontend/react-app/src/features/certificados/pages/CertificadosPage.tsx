@@ -31,7 +31,7 @@ export function CertificadosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Certificados" description="Consulte certificados generados, estado y solicitud asociada." />
+      <PageHeader appearance="institutional" title="Certificados" description="Consulte certificados generados, estado y solicitud asociada." />
       <Card title="Certificados disponibles">
         <label className="mb-5 block max-w-xs text-sm font-medium text-text">
           Tipo de certificado

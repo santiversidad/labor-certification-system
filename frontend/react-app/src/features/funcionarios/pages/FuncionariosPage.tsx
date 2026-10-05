@@ -41,7 +41,7 @@ export function FuncionariosPage() {
 
   return (
     <div className="app-page">
-      <PageHeader eyebrow="Talento Humano" title="Funcionarios" description="Administre vinculación, cargo, ficha normativa y acceso al autoservicio." actions={<Link to="/admin/funcionarios/nuevo"><Button icon={<Plus size={17} />} type="button">Crear funcionario</Button></Link>} />
+      <PageHeader appearance="institutional" eyebrow="Talento Humano" title="Funcionarios" description="Administre vinculación, cargo, ficha normativa y acceso al autoservicio." actions={<Link to="/admin/funcionarios/nuevo"><Button icon={<Plus size={17} />} type="button">Crear funcionario</Button></Link>} />
       <section className="surface-section space-y-5 p-5 sm:p-6">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_180px]">
           <div className="relative"><Search aria-hidden="true" className="absolute left-3 top-[39px] z-10 text-muted" size={16} /><Input className="pl-9" label="Buscar" onChange={(event) => { setQ(event.target.value); setPage(1); }} placeholder="Cédula o nombre" value={q} /></div>

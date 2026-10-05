@@ -26,7 +26,7 @@ export function ConfiguracionCertificacionesPage() {
 
   return (
     <div className="app-page max-w-4xl">
-      <PageHeader eyebrow="Configuración institucional" title="Pago de certificaciones" description="Controle si la expedición automática debe esperar una confirmación de pago." />
+      <PageHeader appearance="institutional" eyebrow="Configuración institucional" title="Pago de certificaciones" description="Controle si la expedición automática debe esperar una confirmación de pago." />
       {mutation.isError ? <ErrorState message={getErrorMessage(mutation.error)} /> : null}
       <section className="surface-section overflow-hidden">
         <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:justify-between sm:p-8">

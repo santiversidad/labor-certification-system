@@ -14,7 +14,7 @@ export function SolicitudesPage() {
   const [page, setPage] = useState(1);
   const query = useQuery({ queryKey: ['solicitudes', page], queryFn: () => solicitudesService.listPage(page) });
   if (query.isError) return <ErrorState />;
-  return <div className="app-page"><PageHeader title="Mis solicitudes" description="Consulte su pago, los comprobantes y la expedición de cada certificado." />
+  return <div className="app-page"><PageHeader appearance="institutional" title="Mis solicitudes" description="Consulte su pago, los comprobantes y la expedición de cada certificado." />
     <Table<SolicitudCertificacion> loading={query.isLoading} data={query.data?.data ?? []} columns={[
       { header: 'Radicado', accessor: (s) => <Link className="font-semibold text-primary underline" to={`/app/solicitudes/${s.id}`}>{s.radicado}</Link> },
       { header: 'Tipo', accessor: (s) => certificateTypeLabel(s.tipo_certificado) },

@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { Table } from '../../components/ui/Table';
 import type { ApiResponse } from '../../lib/api/api.types';
 import { apiClient } from '../../lib/api/apiClient';
@@ -42,10 +43,7 @@ export function BackofficeUsersPage() {
   const select = (action: Action, user?: User) => { setNotice(''); setSelection({ action, user }); };
   return (
     <div className="min-w-0 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="eyebrow">Administración de accesos</p><h1 className="mt-2 text-2xl font-bold text-text">Usuarios internos</h1><p className="mt-2 max-w-2xl text-sm text-muted">Cada persona utiliza una cuenta individual. Para solicitar sus certificados debe usar una cuenta de funcionario separada.</p></div>
-        <Button onClick={() => select('create')}>Crear usuario interno</Button>
-      </div>
+      <PageHeader appearance="institutional" eyebrow="Administración de accesos" title="Usuarios internos" description="Cada persona utiliza una cuenta individual. Para solicitar sus certificados debe usar una cuenta de funcionario separada." actions={<Button onClick={() => select('create')}>Crear usuario interno</Button>} />
       {notice ? <Alert announce variant="success">{notice}</Alert> : null}
       <div className="grid gap-4 sm:grid-cols-3">
         <Input label="Buscar por nombre o usuario" onChange={(event) => { setQ(event.target.value); setPage(1); }} value={q} />
