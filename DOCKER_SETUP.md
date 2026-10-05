@@ -1,5 +1,30 @@
 # Entorno local con Docker
 
+## Arranque diario canónico CT
+
+El entorno diario actual usa el repositorio `C:\Users\mondr\source\labor-certification-recovery`
+y **únicamente** `docker-compose.certificate-types.yml`:
+
+```powershell
+Set-Location 'C:\Users\mondr\source\labor-certification-recovery'
+docker compose -f docker-compose.certificate-types.yml up -d app nginx frontend
+docker compose -f docker-compose.certificate-types.yml ps
+```
+
+Frontend: `http://localhost:3200`; API: `http://localhost:8280`; PostgreSQL existente:
+`localhost:5434`. Contenedores diarios: `scl_ct_frontend`, `scl_ct_nginx`,
+`scl_ct_app` y `scl_recovery_postgres`. El navegador utiliza `/api/v1` y el proxy
+Vite dirige `/api` y `/sanctum` a `http://nginx`.
+
+Consulte [DEV_NETWORK_PROXY_FIX.md](DEV_NETWORK_PROXY_FIX.md) para diagnóstico,
+recreación segura, contenedores que no deben iniciarse y limpieza de E2E.
+
+## Referencia histórica del entorno anterior
+
+**El resto de este documento describe el entorno anterior y sus resultados históricos.
+Sus puertos, cuentas, conteos y comandos sin `-f` no corresponden al entorno diario
+CT; no ejecutar esos comandos para iniciar, sembrar, migrar o detener CT.**
+
 Este repositorio contiene dos aplicaciones: una API Laravel en `backend/laravel-app` y un cliente React/Vite en `frontend/react-app`. El entorno de desarrollo usa PHP-FPM, Nginx, PostgreSQL y Node.js exclusivamente dentro de contenedores.
 
 ## Requisitos
