@@ -25,6 +25,7 @@ export const adminNavigation: NavigationItem[] = [
   { label: 'Escala salarial', path: '/admin/escala-salarial', icon: Coins, roles: ['admin'] },
   { label: 'Manual de Funciones', path: '/admin/manual-funciones', icon: BookOpenCheck, roles: ['admin'] },
   { label: 'Certificaciones', path: '/admin/certificaciones', icon: BadgeCheck, roles: ['admin', 'secretario'] },
+  { label: 'Plantillas de certificados', path: '/admin/plantillas-certificados', icon: ScrollText, roles: ['admin'] },
   { label: 'Configuración', path: '/admin/configuracion', icon: Settings, roles: ['admin'] },
   { label: 'Auditoría', path: '/admin/auditoria', icon: ScrollText, roles: ['admin'] },
   { label: 'Reportes', path: '/admin/reportes', icon: FileBarChart, roles: ['admin'] },

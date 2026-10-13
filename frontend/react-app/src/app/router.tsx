@@ -27,6 +27,8 @@ const FuncionarioFormPage = lazy(() => import('../features/funcionarios/pages/Fu
 const FuncionarioDetailPage = lazy(() => import('../features/funcionarios/pages/FuncionarioDetailPage').then((module) => ({ default: module.FuncionarioDetailPage })));
 const CargosPage = lazy(() => import('../features/cargos/pages/CargosPage').then((module) => ({ default: module.CargosPage })));
 const SalaryScalePage = lazy(() => import('../features/escala-salarial/pages/SalaryScalePage').then((module) => ({ default: module.SalaryScalePage })));
+const CertificateTemplatesPage = lazy(() => import('../features/plantillas-certificados/pages/CertificateTemplatesPage').then((module) => ({ default: module.CertificateTemplatesPage })));
+const CertificateTemplateEditorPage = lazy(() => import('../features/plantillas-certificados/pages/CertificateTemplateEditorPage').then((module) => ({ default: module.CertificateTemplateEditorPage })));
 const ManualesPage = lazy(() => import('../features/manuales/pages/ManualesPage').then((module) => ({ default: module.ManualesPage })));
 const CertificadosPage = lazy(() => import('../features/certificados/pages/CertificadosPage').then((module) => ({ default: module.CertificadosPage })));
 const CertificadoDetailPage = lazy(() => import('../features/certificados/pages/CertificadoDetailPage').then((module) => ({ default: module.CertificadoDetailPage })));
@@ -79,6 +81,8 @@ export const router = createBrowserRouter([
       { path: 'usuarios-internos', element: <RoleRoute allowedRoles={['admin']}>{screen(BackofficeUsersPage)}</RoleRoute> },
       { path: 'cargos', element: <RoleRoute allowedRoles={['admin']}>{screen(CargosPage)}</RoleRoute> },
       { path: 'escala-salarial', element: <RoleRoute allowedRoles={['admin']}>{screen(SalaryScalePage)}</RoleRoute> },
+      { path: 'plantillas-certificados', element: <RoleRoute allowedRoles={['admin']}>{screen(CertificateTemplatesPage)}</RoleRoute> },
+      { path: 'plantillas-certificados/versiones/:versionId', element: <RoleRoute allowedRoles={['admin']}>{screen(CertificateTemplateEditorPage)}</RoleRoute> },
       { path: 'manual-funciones', element: <RoleRoute allowedRoles={['admin']}>{screen(ManualesPage)}</RoleRoute> },
       { path: 'certificaciones', element: screen(CertificadosPage) },
       { path: 'certificaciones/:id', element: screen(CertificadoDetailPage) },

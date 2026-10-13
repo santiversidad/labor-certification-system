@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Cargo;
 use App\Models\Funcionario;
 use App\Models\FuncionarioCargo;
+use App\Models\ManualCargoVersion;
 use App\Models\ManualFuncion;
 use App\Models\ParametroSistema;
 use App\Models\User;
@@ -21,7 +22,7 @@ class PrepareAutoserviceE2E extends Command
 
     public function handle(): int
     {
-        if (! app()->environment('testing') || ! in_array(DB::connection()->getDatabaseName(), ['scl_certificate_types_e2e', 'scl_manual_pages_e2e'], true)) {
+        if (! app()->environment('testing') || ! in_array(DB::connection()->getDatabaseName(), ['scl_certificate_types_e2e', 'scl_manual_pages_e2e', 'scl_template_editor_e2e'], true)) {
             $this->error('E2E_ISOLATION_REQUIRED');
 
             return self::FAILURE;
@@ -34,6 +35,16 @@ class PrepareAutoserviceE2E extends Command
             ]);
             $admin->assignRole('admin');
             $this->mfaFixture($admin);
+            if (DB::connection()->getDatabaseName() === 'scl_template_editor_e2e') {
+                $secondAdmin = User::firstOrCreate(['username' => 'e2e-template-concurrent'], [
+                    'tipo_cuenta' => 'backoffice', 'documento' => null, 'name' => 'Cuenta sintética de concurrencia',
+                    'password' => Hash::make('E2EAdminClave2026'), 'estado' => true, 'must_change_password' => false,
+                ]);
+                // The editor test promotes this account through the existing API.
+                // Earlier last-admin regression tests must retain their fixture topology.
+                $secondAdmin->assignRole('secretario');
+                $this->mfaFixture($secondAdmin);
+            }
             foreach (['E2E-SECRETARIA', 'E2E-SECRETARIA-2'] as $documento) {
                 $secretaria = User::firstOrCreate(['username' => strtolower($documento)], [
                     'tipo_cuenta' => 'backoffice', 'documento' => null, 'name' => 'Secretaría ficticia pagos E2E', 'password' => Hash::make('E2ESecretaria2026'),
@@ -187,7 +198,7 @@ class PrepareAutoserviceE2E extends Command
         return self::SUCCESS;
     }
 
-    private function documentar(\App\Models\ManualCargoVersion $ficha, ?int $page = null): void
+    private function documentar(ManualCargoVersion $ficha, ?int $page = null): void
     {
         $hash = hash('sha256', 'e2e-synthetic-profile:'.$ficha->id);
         $ficha->forceFill(['content_hash' => $hash, 'pagina_inicio' => $page ?? $ficha->id,
@@ -199,7 +210,7 @@ class PrepareAutoserviceE2E extends Command
     {
         // Synthetic, exclusively behind the existing testing + exact E2E database guard.
         // Larger fixture pool lets preexisting regressions authenticate without TOTP sleeps.
-        $codes = array_map(fn ($index) => hash_hmac('sha256', $user->username.':'.$index, 'e2e-only-fixture-seed'), range(0, 511));
+        $codes = array_map(fn ($index) => hash_hmac('sha256', $user->username.':'.$index, 'e2e-only-fixture-seed'), range(0, 767));
         $user->forceFill(['password' => str_contains($user->username, 'secretaria') ? 'E2ESecretaria2026' : 'E2EAdminClave2026',
             'estado' => true, 'must_change_password' => false, 'mfa_secret' => 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
             'mfa_confirmed_at' => now(), 'mfa_last_step' => null,

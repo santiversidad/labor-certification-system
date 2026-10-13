@@ -1,19 +1,29 @@
 <?php
 
+use App\Exceptions\CertificateTemplateException;
 use App\Exceptions\IdentityException;
+use App\Http\Middleware\BrowserBoundary;
+use App\Http\Middleware\EnforceCsrfToken;
 use App\Http\Middleware\EnsureCurrentIdentity;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\RequireFuncionarioContext;
+use App\Http\Middleware\RequireMfa;
+use App\Http\Middleware\RequireRecentAuthentication;
+use App\Http\Middleware\ResolveAuthenticationPrincipal;
+use App\Http\Middleware\SecurityHeaders;
+use App\Services\SecurityEvents;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -25,16 +35,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Spaces between literal text and variable tokens are document content.
+        $middleware->trimStrings(except: ['contenido.paragraphs.*.runs.*.text']);
         $middleware->redirectGuestsTo(null);
         $middleware->statefulApi();
-        $middleware->web(replace: [\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class => \App\Http\Middleware\EnforceCsrfToken::class]);
-        $middleware->prepend(\App\Http\Middleware\BrowserBoundary::class);
-        $middleware->prepend(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->web(replace: [PreventRequestForgery::class => EnforceCsrfToken::class]);
+        $middleware->prepend(BrowserBoundary::class);
+        $middleware->prepend(SecurityHeaders::class);
         $middleware->trustProxies(at: array_filter(explode(',', env('TRUSTED_PROXIES', ''))));
         $middleware->alias([
-            'auth.principal' => \App\Http\Middleware\ResolveAuthenticationPrincipal::class,
-            'mfa' => \App\Http\Middleware\RequireMfa::class,
-            'auth.recent' => \App\Http\Middleware\RequireRecentAuthentication::class,
+            'auth.principal' => ResolveAuthenticationPrincipal::class,
+            'mfa' => RequireMfa::class,
+            'auth.recent' => RequireRecentAuthentication::class,
             'password.changed' => EnsurePasswordChanged::class,
             'identity.current' => EnsureCurrentIdentity::class,
             'context.funcionario' => RequireFuncionarioContext::class,
@@ -44,11 +56,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'code', 'recovery_code', 'mfa_secret']);
         $exceptions->report(function (Throwable $e) {
             // Framework exception messages may embed SQL bindings or request secrets.
-            \Illuminate\Support\Facades\Log::error('Application exception', ['type' => $e::class, 'code' => (string) $e->getCode()]);
+            Log::error('Application exception', ['type' => $e::class, 'code' => (string) $e->getCode()]);
+
             return false;
         });
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, Request $request) {
-            \App\Services\SecurityEvents::record('csrf_rejected');
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            SecurityEvents::record('csrf_rejected');
+
             return response()->json(['success' => false, 'code' => 'CSRF_REJECTED', 'message' => 'La sesión de seguridad expiró. Actualice la página.'], 419);
         });
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*', 'login', 'logout', 'sanctum/*'));
@@ -60,7 +74,8 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->render(function (AuthorizationException $e, Request $request) {
             if ($request->is('api/*')) {
-                \App\Services\SecurityEvents::record('forbidden_access', ['user_id' => $request->user()?->id]);
+                SecurityEvents::record('forbidden_access', ['user_id' => $request->user()?->id]);
+
                 return response()->json(['success' => false, 'message' => 'No tiene permisos para realizar esta acción.'], 403);
             }
         });
@@ -84,6 +99,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
         $exceptions->dontReport([IdentityException::class]);
+        $exceptions->render(function (CertificateTemplateException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['success' => false, 'code' => $e->domainCode, 'message' => $e->getMessage()], $e->status);
+            }
+        });
         $exceptions->render(function (DomainException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([

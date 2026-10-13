@@ -35,17 +35,23 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         libonig-dev \
+        libfreetype6-dev libfreetype6 \
+        libjpeg62-turbo-dev libjpeg62-turbo \
+        libpng-dev libpng16-16 \
+        libwebp-dev libwebp7 \
         libpq-dev \
         libpq5 \
         libxml2-dev \
         unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
+        gd exif \
         dom \
         mbstring \
         pdo_pgsql \
         xml \
         xmlwriter \
-    && apt-get purge -y --auto-remove libonig-dev libpq-dev libxml2-dev \
+    && apt-get purge -y --auto-remove libonig-dev libpq-dev libxml2-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html

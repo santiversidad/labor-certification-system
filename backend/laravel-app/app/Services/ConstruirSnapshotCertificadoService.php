@@ -72,6 +72,11 @@ class ConstruirSnapshotCertificadoService
             $snapshot['manual_funciones'] = $manual;
         }
 
+        $template = app(CertificateTemplateService::class)->forSnapshot($solicitud->tipo_certificado->value);
+        if ($template !== null) {
+            $snapshot['plantilla_certificado'] = $template;
+        }
+
         return $snapshot;
     }
 }

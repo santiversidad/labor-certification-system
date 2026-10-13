@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BackofficeUserController;
 use App\Http\Controllers\Api\V1\CargoController;
 use App\Http\Controllers\Api\V1\CertificadoController;
+use App\Http\Controllers\Api\V1\CertificateTemplateController;
 use App\Http\Controllers\Api\V1\DependenciaManualController;
 use App\Http\Controllers\Api\V1\DisponibilidadCertificacionController;
 use App\Http\Controllers\Api\V1\FuncionarioController;
@@ -39,6 +40,19 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'identity.current', 'password.changed', 'mfa', 'throttle:authenticated'])->group(function () {
+        Route::prefix('admin/plantillas-certificados')->group(function () {
+            $controller = CertificateTemplateController::class;
+            Route::get('/', [$controller, 'index']);
+            Route::get('/catalogo', [$controller, 'catalog']);
+            Route::post('/{plantilla}/versiones', [$controller, 'create']);
+            Route::get('/{plantilla}/versiones', [$controller, 'history']);
+            Route::get('/versiones/{version}', [$controller, 'show']);
+            Route::put('/versiones/{version}', [$controller, 'update']);
+            Route::post('/versiones/{version}/publicar', [$controller, 'publish']);
+            Route::post('/versiones/{version}/preview', [$controller, 'preview'])->middleware('throttle:template-preview');
+            Route::post('/versiones/{version}/assets', [$controller, 'upload'])->middleware('throttle:template-assets');
+            Route::get('/assets/{asset}', [$controller, 'asset']);
+        });
         Route::post('auth/reauthenticate', [MfaController::class, 'reauthenticate'])->middleware('throttle:reauth');
         Route::post('auth/mfa/recovery-codes', [MfaController::class, 'recovery'])->middleware(['auth.recent', 'throttle:security-action']);
         Route::get('mi-certificacion/disponibilidad', DisponibilidadCertificacionController::class)->middleware('context.funcionario')->name('mi-certificacion.disponibilidad');

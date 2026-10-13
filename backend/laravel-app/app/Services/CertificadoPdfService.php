@@ -14,6 +14,9 @@ class CertificadoPdfService
 
     public function generarDesdeSnapshot(array $snapshot): string
     {
+        if (array_key_exists('plantilla_certificado', $snapshot)) {
+            return app(CertificateTemplateRenderer::class)->generar($snapshot);
+        }
         $dompdf = new Dompdf($this->options());
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->loadHtml($this->renderHtml($snapshot), 'UTF-8');
@@ -30,6 +33,10 @@ class CertificadoPdfService
 
     public function renderHtml(array $snapshot): string
     {
+        if (array_key_exists('plantilla_certificado', $snapshot)) {
+            return app(CertificateTemplateRenderer::class)->html($snapshot);
+        }
+
         return view('certificados.laboral', [
             'document' => $this->documentData->fromSnapshot($snapshot),
             'institution' => config('certificate_pdf.institution'),

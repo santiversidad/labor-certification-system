@@ -1,0 +1,125 @@
+{
+  "environment": "Isolated synthetic E2E, Windows Docker bind mount; not a production SLA",
+  "requests": [
+    {
+      "path": "/src/features/plantillas-certificados/pages/CertificateTemplatesPage.tsx",
+      "method": "GET",
+      "ms": 527,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/components/TemplatePreview.tsx",
+      "method": "GET",
+      "ms": 133,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/services/templates.service.ts",
+      "method": "GET",
+      "ms": 136,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/schemas/template.schema.ts",
+      "method": "GET",
+      "ms": 138,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados",
+      "method": "GET",
+      "ms": 828,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/:id/versiones",
+      "method": "POST",
+      "ms": 352,
+      "status": 201
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados",
+      "method": "GET",
+      "ms": 317,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/pages/CertificateTemplateEditorPage.tsx",
+      "method": "GET",
+      "ms": 41,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/components/TemplateAssetUploader.tsx",
+      "method": "GET",
+      "ms": 18,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/components/TemplateBlockEditor.tsx",
+      "method": "GET",
+      "ms": 42,
+      "status": 200
+    },
+    {
+      "path": "/src/features/plantillas-certificados/components/TemplateVariablePicker.tsx",
+      "method": "GET",
+      "ms": 22,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/versiones/:id",
+      "method": "GET",
+      "ms": 442,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/catalogo",
+      "method": "GET",
+      "ms": 155,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/assets/:id",
+      "method": "GET",
+      "ms": 130,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/assets/:id",
+      "method": "GET",
+      "ms": 231,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/versiones/:id/assets",
+      "method": "POST",
+      "ms": 2376,
+      "status": 201
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/assets/:id",
+      "method": "GET",
+      "ms": 308,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/versiones/:id",
+      "method": "PUT",
+      "ms": 868,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/versiones/:id/preview",
+      "method": "POST",
+      "ms": 1815,
+      "status": 200
+    },
+    {
+      "path": "/api/v1/admin/plantillas-certificados/versiones/:id/publicar",
+      "method": "POST",
+      "ms": 690,
+      "status": 200
+    }
+  ]
+}

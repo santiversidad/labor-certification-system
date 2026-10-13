@@ -15,6 +15,11 @@ server {
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     # HSTS must be set at the institutional HTTPS terminator, never HTTP CT.
     location / { try_files $uri $uri/ /index.html; }
+    # PDF.js uses a local ES-module worker; Nginx's stock MIME map omits .mjs.
+    location ~* \.mjs$ {
+        types { application/javascript mjs; }
+        try_files $uri =404;
+    }
     location ~ ^/(api/|sanctum/) {
         proxy_pass http://${API_UPSTREAM};
         proxy_set_header Host $host;
