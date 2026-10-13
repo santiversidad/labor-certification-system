@@ -86,6 +86,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/dependencias', [DependenciaManualController::class, 'index']);
             Route::get('/dependencias/cargos', [DependenciaManualController::class, 'cargos']);
             Route::get('/dependencias/resolver', [DependenciaManualController::class, 'resolver']);
+            Route::get('/dependencias/funciones-registradas/{ficha}', [DependenciaManualController::class, 'funcionesRegistradas']);
             Route::get('/fichas', [ManualFuncionController::class, 'fichas'])->name('fichas');
             Route::get('/estado', [ManualFuncionController::class, 'estado'])->name('estado');
             Route::get('/diff/{from}/{to}', [ManualFuncionController::class, 'diff'])->name('diff');

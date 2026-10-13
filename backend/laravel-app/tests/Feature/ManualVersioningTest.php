@@ -212,6 +212,7 @@ class ManualVersioningTest extends TestCase
             'metadata_manual' => ['nivel' => 'Profesional', 'conocimientos' => [['numero' => 1, 'texto' => 'Normativa']]],
         ]);
         $ficha->funciones()->create(['orden' => 1, 'descripcion' => $funcion, 'numero_fuente' => 1, 'grupo' => 'Específicas']);
+        \Tests\Support\ManualFixture::documentar($ficha);
 
         return $ficha;
     }

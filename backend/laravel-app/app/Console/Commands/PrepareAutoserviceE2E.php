@@ -21,7 +21,7 @@ class PrepareAutoserviceE2E extends Command
 
     public function handle(): int
     {
-        if (! app()->environment('testing') || DB::connection()->getDatabaseName() !== 'scl_certificate_types_e2e') {
+        if (! app()->environment('testing') || ! in_array(DB::connection()->getDatabaseName(), ['scl_certificate_types_e2e', 'scl_manual_pages_e2e'], true)) {
             $this->error('E2E_ISOLATION_REQUIRED');
 
             return self::FAILURE;
@@ -64,6 +64,7 @@ class PrepareAutoserviceE2E extends Command
                         'descripcion' => "Función extensa ficticia E2E {$order}: gestionar información institucional de prueba con precisión, trazabilidad, oportunidad y criterios verificables de calidad, sin alterar el orden definido en el snapshot.",
                     ]);
                 }
+                $this->documentar($ficha);
                 $version->update(['estado' => 'publicado']);
             }
 
@@ -124,6 +125,7 @@ class PrepareAutoserviceE2E extends Command
                             'proposito_principal' => 'Validar selección aislada en unidad '.$unidad,
                         ]);
                         $profile->funciones()->create(['orden' => 1, 'descripcion' => 'Función exclusiva de dependencia '.$unidad.' E2E.']);
+                        $this->documentar($profile);
                     }
                 }
                 $scopedVersion->update(['estado' => 'publicado']);
@@ -160,12 +162,37 @@ class PrepareAutoserviceE2E extends Command
                     'area_funcional' => 'Todas las dependencias', 'proposito_principal' => 'Validar la aplicabilidad explícita transversal.',
                 ]);
                 $globalProfile->funciones()->create(['orden' => 1, 'descripcion' => 'Función transversal E2E.']);
+                $this->documentar($globalProfile);
                 $globalVersion->update(['estado' => 'publicado']);
+            }
+            $pagesManual = ManualFuncion::firstOrCreate(['codigo' => 'E2E-PAGINAS'], ['nombre' => 'Manual sintético de páginas']);
+            $pagesVersion = $pagesManual->versiones()->firstOrCreate(['version' => 'E2E-PAGINAS-1'], [
+                'estado' => 'borrador', 'acto_tipo' => 'Prueba', 'acto_numero' => 'E2E-PAGINAS',
+                'acto_fecha' => '2020-01-01', 'vigencia_desde' => '2020-01-01',
+            ]);
+            if ($pagesVersion->estado === 'borrador') {
+                $pagesCargo = Cargo::firstOrCreate(['codigo' => 'PGS', 'grado' => '02'], ['denominacion' => 'Profesional de páginas E2E', 'nivel' => 'Profesional', 'estado' => true]);
+                foreach ([101, 102] as $page) {
+                    $profile = $pagesVersion->cargos()->create(['cargo_id' => $pagesCargo->id, 'source_id' => 'E2E-PAGINA-'.$page,
+                        'dependencia' => 'Donde se ubique el cargo', 'area_funcional' => 'Dependencia A E2E',
+                        'proposito_principal' => 'Comprobar selección documental explícita.']);
+                    $profile->funciones()->create(['orden' => 1, 'descripcion' => 'Función exclusiva de la ficha sintética '.$page.'.']);
+                    $this->documentar($profile, $page);
+                }
+                $pagesVersion->update(['estado' => 'publicado']);
             }
         });
         $this->info('Fixtures sintéticos preparados en la base E2E aislada; no se eliminaron registros.');
 
         return self::SUCCESS;
+    }
+
+    private function documentar(\App\Models\ManualCargoVersion $ficha, ?int $page = null): void
+    {
+        $hash = hash('sha256', 'e2e-synthetic-profile:'.$ficha->id);
+        $ficha->forceFill(['content_hash' => $hash, 'pagina_inicio' => $page ?? $ficha->id,
+            'verificacion_documental' => ['estado' => 'verificada', 'content_hash' => $hash,
+                'pdf_sha256' => hash('sha256', 'e2e-synthetic-document'), 'origen' => 'fixture_e2e']])->save();
     }
 
     private function mfaFixture(User $user): void

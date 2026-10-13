@@ -13,7 +13,7 @@ export function DependenciaSelect({ label, value, search, onSearch, onChange, op
       <option value="">{loading ? `Cargando ${label === 'Cargo' ? 'cargos' : 'dependencias'}...` : placeholder}</option>
       {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
     </Select>
-    <Input label={label === 'Cargo' ? 'Buscar cargo por nombre, código o grado' : 'Buscar dependencia por nombre'} type="search" value={search} onChange={(event) => onSearch(event.target.value)} disabled={disabled} />
+    <Input label={label === 'Cargo' ? 'Buscar cargo por nombre, código, grado o página' : 'Buscar dependencia por nombre'} type="search" value={search} onChange={(event) => onSearch(event.target.value)} disabled={disabled} />
     {!disabled && !loading && !error && !options.length && <p className="text-sm text-muted" role="status">{empty}</p>}
     {loading && <p className="text-sm text-muted" role="status">Cargando {label === 'Cargo' ? 'cargos' : 'dependencias'}...</p>}
     {error && retry && <button className="text-sm font-semibold text-primary underline" type="button" onClick={retry}>Reintentar carga de {label.toLowerCase()}</button>}

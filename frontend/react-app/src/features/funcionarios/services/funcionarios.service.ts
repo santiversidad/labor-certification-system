@@ -5,7 +5,10 @@ import type { FuncionarioFormValues } from '../schemas/funcionario.schema';
 import type { Funcionario } from '../types/funcionario.types';
 
 export type FuncionarioFilters = { page?: number; per_page?: number; q?: string; cargo_id?: string; dependencia?: string; estado?: string };
-const payload = (values: FuncionarioFormValues) => ({ ...values, cargo_id: Number(values.cargo_id), fecha_retiro: values.fecha_retiro || null });
+const payload = (values: FuncionarioFormValues) => {
+  const { manual_cargo_version_id: ficha, ...rest } = values;
+  return { ...rest, cargo_id: Number(values.cargo_id), ...(ficha ? { manual_cargo_version_id: Number(ficha) } : {}), fecha_retiro: values.fecha_retiro || null };
+};
 
 export const funcionariosService = {
   async list(filters: FuncionarioFilters = {}): Promise<ApiResponse<Funcionario[]>> {
@@ -19,7 +22,7 @@ export const funcionariosService = {
   },
   async update(id: string | number, values: FuncionarioFormValues, conservarVinculacion = false): Promise<ApiResponse<Funcionario>> {
     const data: Partial<ReturnType<typeof payload>> = payload(values);
-    if (conservarVinculacion) { delete data.cargo_id; delete data.unidad_organizacional_id; }
+    if (conservarVinculacion) { delete data.cargo_id; delete data.unidad_organizacional_id; delete data.manual_cargo_version_id; }
     return (await apiClient.put<ApiResponse<Funcionario>>(`${endpoints.funcionarios}/${id}`, data)).data;
   },
   async resetAccess(id: string | number): Promise<void> {

@@ -2,6 +2,7 @@ import type { ApiError } from '../api/api.types';
 import axios from 'axios';
 
 export const domainErrorMessages: Record<string, string> = {
+  MANUAL_FICHA_NO_VERIFICADA: 'No se pudo verificar el perfil de funciones asociado a esta vinculación. Solicite una revisión administrativa de la información del cargo.',
   MONTHLY_CERTIFICATE_LIMIT: 'Ya solicitó esta modalidad durante el mes actual. Podrá solicitarla nuevamente el próximo mes.',
   MANUAL_FICHA_INCOMPLETA: 'La ficha del Manual de Funciones está incompleta. Talento Humano debe revisarla antes de expedir este certificado.',
   MANUAL_FICHA_NO_ASIGNADA: 'No tiene una ficha del Manual de Funciones asignada. Comuníquese con Talento Humano para actualizar su información.',

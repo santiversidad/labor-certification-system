@@ -19,3 +19,9 @@ it('edición sin cambio laboral omite unidad y cargo; cambio explícito envía a
   await funcionariosService.update(7, values);
   expect(vi.mocked(apiClient.put).mock.calls[1][1]).toMatchObject({ unidad_organizacional_id: 'a'.repeat(32), cargo_id: 41 });
 });
+it('envía la ficha como ID numérico y la omite al conservar vinculación histórica', async () => {
+  await funcionariosService.create({ ...values, manual_cargo_version_id: '102' });
+  expect(vi.mocked(apiClient.post).mock.calls[0][1]).toMatchObject({ cargo_id: 41, manual_cargo_version_id: 102 });
+  await funcionariosService.update(7, { ...values, manual_cargo_version_id: '102' }, true);
+  expect(vi.mocked(apiClient.put).mock.calls[0][1]).not.toHaveProperty('manual_cargo_version_id');
+});

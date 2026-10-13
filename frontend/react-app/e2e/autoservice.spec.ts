@@ -196,10 +196,9 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
   });
 
   test('ficha incompleta permite sencillo y rechaza únicamente funciones', async ({ page }) => {
-    await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
-    incompleteEmployee = await createEmployee(page, 'Incompleto', 'Profesional Incompleto E2E · E2I/01');
-    await logout(page);
-    await completeFirstLogin(page, incompleteEmployee);
+    // Existing incomplete assignments keep simple certificates; new incomplete selections are blocked.
+    incompleteEmployee = 'E2E-INCOMPLETE';
+    await login(page, incompleteEmployee, 'E2EIncomplete2026');
     const session = { token: await captureBrowserSession(page) };
     const headers = sessionHeaders(session.token);
     const simple = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'sencillo' } });
@@ -218,7 +217,7 @@ test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
 
   test('las pantallas críticas conservan navegación y contenido en 360 y 768 px', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await login(page, incompleteEmployee, employeePassword);
+    await login(page, incompleteEmployee, 'E2EIncomplete2026');
     await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
     await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
     await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);

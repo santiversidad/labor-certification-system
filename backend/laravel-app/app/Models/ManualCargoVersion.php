@@ -18,7 +18,16 @@ class ManualCargoVersion extends Model
 
     protected function casts(): array
     {
-        return ['metadata_manual' => 'array'];
+        return ['metadata_manual' => 'array', 'verificacion_documental' => 'array', 'pagina_inicio' => 'integer'];
+    }
+
+    public function paginaVerificada(): bool
+    {
+        return $this->pagina_inicio > 0
+            && is_string($this->content_hash) && strlen($this->content_hash) === 64
+            && ($this->verificacion_documental['estado'] ?? null) === 'verificada'
+            && preg_match('/^[a-f0-9]{64}$/', $this->verificacion_documental['pdf_sha256'] ?? '') === 1
+            && ($this->verificacion_documental['content_hash'] ?? null) === $this->content_hash;
     }
 
     public function version(): BelongsTo

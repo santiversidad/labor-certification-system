@@ -12,6 +12,7 @@ export const funcionarioSchema = z.object({
   fecha_retiro: z.string().optional(),
   unidad_organizacional_id: z.string().min(1, 'Seleccione una dependencia existente.'),
   cargo_id: z.string().min(1, 'Seleccione un cargo.'),
+  manual_cargo_version_id: z.string().optional(),
   tipo_vinculacion: z.enum(['planta', 'provisional', 'encargo', 'temporal']),
   naturaleza_cargo: z.enum(['carrera_administrativa', 'libre_nombramiento', 'provisional', 'encargo']),
 });

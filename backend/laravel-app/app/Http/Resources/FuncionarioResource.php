@@ -28,7 +28,8 @@ class FuncionarioResource extends JsonResource
             'asignacion_actual' => $asignacion ? [
                 'id' => $asignacion->id, 'manual_cargo_version_id' => $ficha?->id,
                 'ficha_manual' => $ficha ? ['id' => $ficha->id, 'source_id' => $ficha->source_id,
-                    'area_funcional' => $ficha->area_funcional, 'version' => $ficha->version->version] : null,
+                    'area_funcional' => $ficha->area_funcional, 'version' => $ficha->version->version,
+                    'pagina_inicio' => $ficha->pagina_inicio, 'pagina_verificada' => $ficha->paginaVerificada()] : null,
                 'tipo_vinculacion' => $asignacion->tipo_vinculacion, 'naturaleza_cargo' => $asignacion->naturaleza_cargo,
             ] : null,
             'id' => $this->id,

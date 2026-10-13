@@ -1,6 +1,10 @@
 import axios from 'axios';
 
 const messages: Record<string, { title: string; description: string }> = {
+  MANUAL_FICHA_NO_VERIFICADA: {
+    title: 'Este perfil requiere revisión del Manual',
+    description: 'No se pudo verificar la referencia documental y las funciones de esta ficha. Solicite revisión a la Dirección de Personal.',
+  },
   MANUAL_FICHA_AMBIGUA: {
     title: 'Este cargo requiere revisión del Manual',
     description: 'El Manual de Funciones contiene más de un perfil aplicable para este cargo, dependencia y fecha. El sistema no puede seleccionar uno automáticamente porque podría asignar funciones incorrectas.',

@@ -18,7 +18,7 @@ class PrepareSalaryScaleE2E extends Command
 
     public function handle(): int
     {
-        if (! app()->environment('testing') || DB::connection()->getDatabaseName() !== 'scl_certificate_types_e2e') {
+        if (! app()->environment('testing') || ! in_array(DB::connection()->getDatabaseName(), ['scl_certificate_types_e2e', 'scl_manual_pages_e2e'], true)) {
             $this->error('E2E_ISOLATION_REQUIRED');
 
             return self::FAILURE;

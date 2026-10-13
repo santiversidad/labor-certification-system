@@ -95,6 +95,7 @@ class FuncionarioController extends Controller
                 'vigencia_desde' => $data['fecha_ingreso'],
                 'origen' => 'asignacion_inicial',
                 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
+                'metadata' => ['version_id' => $ficha->manual_funciones_version_id, 'pagina_inicio' => $ficha->pagina_inicio, 'source_id' => $ficha->source_id],
             ]);
 
             $this->registrarAuditoria->execute(
@@ -102,7 +103,8 @@ class FuncionarioController extends Controller
                 modelo: 'Funcionario',
                 modeloId: $funcionario->id,
                 descripcion: "Funcionario y cuenta de primer ingreso creados para {$funcionario->numero_documento}.",
-                metadata: ['user_id' => $funcionario->user_id, 'must_change_password' => true, 'cargo_id' => $funcionario->cargo_id],
+                metadata: ['user_id' => $funcionario->user_id, 'must_change_password' => true, 'cargo_id' => $funcionario->cargo_id,
+                    'funcionario_cargo_id' => $asignacion->id, 'ficha_id' => $ficha->id, 'version_id' => $ficha->manual_funciones_version_id, 'pagina_inicio' => $ficha->pagina_inicio],
             );
             $this->registrarAuditoria->execute(
                 accion: 'crear_usuario_funcionario', modelo: 'User', modeloId: $user->id,
@@ -194,7 +196,11 @@ class FuncionarioController extends Controller
                 $nuevaAsignacion->fichasNormativas()->create([
                     'manual_cargo_version_id' => $ficha->id, 'vigencia_desde' => $fechaInicio,
                     'origen' => 'asignacion_inicial', 'resolved_by' => request()->user()?->getKey(), 'resolved_at' => now(),
+                    'metadata' => ['version_id' => $ficha->manual_funciones_version_id, 'pagina_inicio' => $ficha->pagina_inicio, 'source_id' => $ficha->source_id],
                 ]);
+                $this->registrarAuditoria->execute('seleccionar_ficha_manual', 'FuncionarioCargo', $nuevaAsignacion->id,
+                    'Selección administrativa explícita de perfil normativo.',
+                    ['ficha_anterior_id' => $fichaActualId, 'ficha_id' => $ficha->id, 'version_id' => $ficha->manual_funciones_version_id, 'pagina_inicio' => $ficha->pagina_inicio]);
             } elseif ($vigente) {
                 $vigente->update(Arr::only($data, ['tipo_vinculacion', 'naturaleza_cargo']));
             }

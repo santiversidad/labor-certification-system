@@ -16,6 +16,6 @@ export async function selectEmployment(page: Page, cargoLabel: string, nombre = 
   await unidad.selectOption({ label: nombre });
   const cargo = page.getByRole('combobox', { name: 'Cargo', exact: true });
   await expect(cargo.locator('option').filter({ hasText: cargoLabel })).toHaveCount(1);
-  await cargo.selectOption({ label: cargoLabel });
+  await cargo.selectOption(await cargo.locator('option').filter({ hasText: cargoLabel }).first().getAttribute('value') ?? '');
   await expect(page.getByText(/Perfil funcional asociado:/)).toBeVisible();
 }

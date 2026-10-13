@@ -7,7 +7,7 @@ import { FuncionarioForm } from './FuncionarioForm';
 import { dependenciasService } from '../services/dependencias.service';
 import { funcionariosService } from '../services/funcionarios.service';
 
-vi.mock('../services/dependencias.service', () => ({ dependenciasService: { list: vi.fn(), cargos: vi.fn(), resolver: vi.fn() } }));
+vi.mock('../services/dependencias.service', () => ({ dependenciasService: { list: vi.fn(), cargos: vi.fn(), resolver: vi.fn(), funciones: vi.fn(), funcionesRegistradas: vi.fn() } }));
 vi.mock('../services/funcionarios.service', () => ({ funcionariosService: { getById: vi.fn(), create: vi.fn(), update: vi.fn() } }));
 const a = 'a'.repeat(32), b = 'b'.repeat(32);
 const cargo = { id: 41, denominacion: 'Profesional A', codigo: '219', grado: '02', perfiles_count: 1 };
@@ -60,7 +60,7 @@ it('selección habilita cargo, limita opciones y cambio de unidad limpia cargo y
 });
 it('búsqueda de cargo se envía al backend con unidad y fecha', async () => {
   setup(); await seleccionar();
-  await userEvent.type(screen.getByLabelText('Buscar cargo por nombre, código o grado'), '219');
+  await userEvent.type(screen.getByLabelText('Buscar cargo por nombre, código, grado o página'), '219');
   await waitFor(() => expect(dependenciasService.cargos).toHaveBeenLastCalledWith(a, expect.any(String), '219'));
   expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
 });
@@ -152,7 +152,7 @@ it('cambiar dependencia limpia toda selección derivada y devuelve foco sin borr
   expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveFocus();
   expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('');
   expect(screen.getByRole('combobox', { name: 'Cargo' })).toBeDisabled();
-  expect(screen.getByLabelText('Buscar cargo por nombre, código o grado')).toHaveValue('');
+  expect(screen.getByLabelText('Buscar cargo por nombre, código, grado o página')).toHaveValue('');
   expect(screen.getByLabelText('Buscar dependencia por nombre')).toHaveValue('');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByText(/Perfil funcional asociado:/)).not.toBeInTheDocument();
@@ -207,7 +207,7 @@ it.each([true, false])('edición preserva ficha histórica sin resolverla nuevam
   vi.mocked(funcionariosService.update).mockResolvedValue({ success: true, data: { id: 7 } } as never);
   setup(true); await screen.findByText(/LEGACY-99/);
   expect(screen.getByRole('combobox', { name: 'Dependencia' })).toHaveValue(a);
-  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('41');
+  expect(screen.getByRole('combobox', { name: 'Cargo' })).toHaveValue('ficha-99');
   expect(dependenciasService.resolver).not.toHaveBeenCalled();
   expect(screen.queryByText('Este cargo requiere revisión del Manual')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeEnabled();
@@ -246,6 +246,48 @@ it('submit envía dependencia/cargo sin ficha y muestra validación requerida', 
   await waitFor(() => expect(funcionariosService.create).toHaveBeenCalled());
   const values = vi.mocked(funcionariosService.create).mock.calls[0][0];
   expect(values).toMatchObject({ unidad_organizacional_id: a, cargo_id: '41' });
-  expect(values).not.toHaveProperty('manual_cargo_version_id');
+  expect(values.manual_cargo_version_id).toBe('');
   expect(values).not.toHaveProperty('dependencia');
+});
+
+it('distingue perfiles por página y consulta solo las funciones de la ficha elegida', async () => {
+  const first = { ...cargo, manual_cargo_version_id: 101, source_id: 'TEST-101', pagina_inicio: 328, pagina_verificada: true, seleccionable: true };
+  const second = { ...first, manual_cargo_version_id: 102, source_id: 'TEST-102', pagina_inicio: 412 };
+  vi.mocked(dependenciasService.cargos).mockResolvedValue([first, second]);
+  vi.mocked(dependenciasService.resolver).mockImplementation(async (_unit, _cargo, _fecha, ficha) => ({ source_id: `TEST-${ficha}`, funciones_count: 1, pagina_inicio: ficha === '101' ? 328 : 412 }));
+  vi.mocked(dependenciasService.funciones).mockImplementation(async (_unit, _cargo, _fecha, ficha) => ({ source_id: `TEST-${ficha}`, funciones_count: 1, pagina_inicio: ficha === '101' ? 328 : 412, pagina_verificada: true, version: 'Manual sintético', funciones: [{ orden: 1, descripcion: `Función exacta ${ficha}`, numero_fuente: 1, grupo: '' }] }));
+  setup(); await screen.findByRole('option', { name: 'Unidad A' });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), a);
+  await screen.findByRole('option', { name: 'Profesional A · 219/02 · Página 328' });
+  expect(screen.getByRole('option', { name: 'Profesional A · 219/02 · Página 412' })).toBeVisible();
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), 'ficha-101');
+  await screen.findByText(/TEST-101/);
+  expect(dependenciasService.funciones).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: 'Ver funciones del cargo' }));
+  expect(await screen.findByText('Función exacta 101')).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: /funciones/i })).not.toBeInTheDocument();
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), 'ficha-102');
+  expect(screen.queryByText('Función exacta 101')).not.toBeInTheDocument();
+  await screen.findByText(/TEST-102/);
+  await userEvent.click(screen.getByRole('button', { name: 'Ver funciones del cargo' }));
+  expect(await screen.findByText('Función exacta 102')).toBeVisible();
+  expect(dependenciasService.resolver).toHaveBeenLastCalledWith(a, '41', expect.any(String), '102');
+});
+
+it('respuesta tardía de funciones no restaura la vista al cambiar dependencia', async () => {
+  vi.mocked(dependenciasService.cargos).mockResolvedValue([{ ...cargo, manual_cargo_version_id: 101, pagina_inicio: 328, pagina_verificada: true }]);
+  let complete!: (value: never) => void;
+  vi.mocked(dependenciasService.funciones).mockReturnValue(new Promise((resolve) => { complete = resolve; }));
+  setup(); await screen.findByRole('option', { name: 'Unidad A' });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), a);
+  await screen.findByRole('option', { name: /Página 328/ });
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cargo' }), 'ficha-101');
+  await screen.findByText(/TEST-A/);
+  await userEvent.click(screen.getByRole('button', { name: 'Ver funciones del cargo' }));
+  await screen.findByText('Cargando funciones...');
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Dependencia' }), b);
+  await act(async () => complete({ source_id: 'TEST-101', funciones_count: 1, funciones: [{ orden: 1, descripcion: 'Función tardía', numero_fuente: 1, grupo: '' }] } as never));
+  expect(screen.queryByText('Función tardía')).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Funciones del cargo' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Guardar funcionario' })).toBeDisabled();
 });

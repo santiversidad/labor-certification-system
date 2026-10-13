@@ -23,6 +23,7 @@ class UpdateFuncionarioRequest extends FormRequest
 
         return [
             'user_id' => ['prohibited'],
+            'pagina_inicio' => ['prohibited'], 'pagina_pdf' => ['prohibited'], 'verificacion_documental' => ['prohibited'],
             'manual_cargo_version_id' => ['nullable', 'integer', 'exists:manual_cargo_versiones,id'],
             'es_prueba_manual' => ['prohibited'],
             'tipo_documento' => ['sometimes', 'string', Rule::in(['CC', 'CE', 'PA', 'TI'])],

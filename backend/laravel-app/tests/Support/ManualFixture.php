@@ -11,6 +11,15 @@ use App\Models\ManualFuncion;
 /** Synthetic source used only by the preexisting workflow tests. */
 final class ManualFixture
 {
+    public static function documentar(ManualCargoVersion $ficha, ?int $pagina = null): void
+    {
+        // Explicitly synthetic evidence, never an institutional document or page assignment.
+        $hash = $ficha->content_hash ?: hash('sha256', 'synthetic-profile:'.$ficha->id);
+        $ficha->forceFill(['content_hash' => $hash, 'pagina_inicio' => $pagina ?? $ficha->id,
+            'verificacion_documental' => ['estado' => 'verificada', 'content_hash' => $hash,
+                'pdf_sha256' => hash('sha256', 'synthetic-pdf'), 'origen' => 'fixture_sintetico']])->save();
+    }
+
     public static function ficha(Cargo $cargo): ManualCargoVersion
     {
         $manual = ManualFuncion::firstOrCreate(['codigo' => 'TEST-FIXTURE'], ['nombre' => 'Manual sintético de pruebas']);
@@ -24,6 +33,7 @@ final class ManualFixture
         ]);
         $ficha->funciones()->firstOrCreate(['orden' => 1], ['descripcion' => 'Función sintética de pruebas.']);
         if ($version->estado === 'borrador') {
+            self::documentar($ficha);
             $version->update(['estado' => 'publicado', 'published_at' => now()]);
         }
 

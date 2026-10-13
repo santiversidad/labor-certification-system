@@ -67,6 +67,9 @@ class ResolverFuncionesFuncionarioService
             throw new DomainException('MANUAL_FICHA_INCOMPATIBLE');
         }
         $version = $ficha->version;
+        if ($asignacion->unidad_organizacional_id && ! app(UnidadesManualService::class)->enUnidad($fecha, $asignacion->unidad_organizacional_id)->whereKey($ficha->id)->exists()) {
+            throw new DomainException('MANUAL_FICHA_INCOMPATIBLE');
+        }
         // Only the development command can mark an assignment as a demo. HTTP never accepts this flag.
         $demo = app()->environment(['local', 'testing']) && $asignacion->es_prueba_manual
             && str_starts_with($funcionario->numero_documento, 'TEST-MANUAL-') && $version->estado === 'borrador';
@@ -78,6 +81,9 @@ class ResolverFuncionesFuncionarioService
             || $ficha->funciones->contains(fn ($f) => ! trim($f->descripcion))) {
             throw new DomainException('MANUAL_FICHA_INCOMPLETA');
         }
+        if (! $demo && ! $ficha->paginaVerificada()) {
+            throw new DomainException('MANUAL_FICHA_NO_VERIFICADA');
+        }
         // Level from the preserved source protects against subsequent catalog edits.
         $nivel = $ficha->metadata_manual['nivel'] ?? $asignacion->cargo->nivel;
         $comunes = DB::table('manual_funciones_comunes_nivel')->where('manual_funciones_version_id', $version->id)
@@ -88,6 +94,7 @@ class ResolverFuncionesFuncionarioService
             'manual_id' => $version->manual->id, 'manual_codigo' => $version->manual->codigo,
             'manual_nombre' => $version->manual->nombre, 'version_id' => $version->id, 'version' => $version->version,
             'ficha_id' => $ficha->id, 'source_id' => $ficha->source_id, 'content_hash' => $ficha->content_hash,
+            'pagina_inicio' => $ficha->pagina_inicio, 'verificacion_documental' => $ficha->verificacion_documental,
             'asignacion_id' => $asignacion->id, 'cargo_id' => $asignacion->cargo_id,
             'relacion_normativa_id' => $relaciones->first()?->id,
             'relacion_normativa' => $relacion ? [

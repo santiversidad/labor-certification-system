@@ -13,14 +13,26 @@ class SeleccionarFichaManualService
     public function porUnidad(string $unidadId, int $cargoId, CarbonInterface $fecha, ?int $fichaId = null): ManualCargoVersion
     {
         $fichas = app(UnidadesManualService::class)->enUnidad($fecha, $unidadId)->where('cargo_id', $cargoId)->with('version')->get();
+        if ($fichaId !== null) {
+            $ficha = $fichas->firstWhere('id', $fichaId);
+            if (! $ficha) {
+                throw ValidationException::withMessages(['manual_cargo_version_id' => 'La ficha no corresponde a la dependencia, cargo y fecha seleccionados.']);
+            }
+            if (! $ficha->paginaVerificada() || ! trim((string) $ficha->area_funcional) || ! trim((string) $ficha->proposito_principal) || ! $ficha->funciones()->exists()) {
+                throw ManualSelectionException::forCargo('MANUAL_FICHA_NO_VERIFICADA', 'No se pudo verificar este perfil. Solicite revisión administrativa del Manual.');
+            }
+
+            return $ficha;
+        }
         if ($fichas->count() !== 1) {
             throw ManualSelectionException::forCargo($fichas->isEmpty() ? 'MANUAL_FICHA_NO_ENCONTRADA' : 'MANUAL_FICHA_AMBIGUA', $fichas->isEmpty()
                 ? 'No hay un perfil aplicable para esta dependencia, cargo y fecha.'
                 : 'Hay varios perfiles para esta dependencia, cargo y fecha. Se requiere revisión administrativa del Manual.');
         }
         $ficha = $fichas->sole();
-        if ($fichaId !== null && $fichaId !== $ficha->id) {
-            throw ValidationException::withMessages(['manual_cargo_version_id' => 'La ficha no corresponde a la dependencia, cargo y fecha seleccionados.']);
+
+        if (! $ficha->paginaVerificada()) {
+            throw ManualSelectionException::forCargo('MANUAL_FICHA_NO_VERIFICADA', 'No se pudo verificar este perfil. Solicite revisión administrativa del Manual.');
         }
 
         return $ficha;

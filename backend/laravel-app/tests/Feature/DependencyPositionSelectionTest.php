@@ -55,6 +55,7 @@ class DependencyPositionSelectionTest extends TestCase
         if ($completa) {
             $ficha->funciones()->create(['orden' => 1, 'descripcion' => 'Función de '.$area]);
         }
+        \Tests\Support\ManualFixture::documentar($ficha);
 
         return $ficha;
     }
@@ -116,11 +117,11 @@ class DependencyPositionSelectionTest extends TestCase
         $this->assertDatabaseMissing('funcionarios', ['numero_documento' => 'DPS123456']);
     }
 
-    public function test_ambiguedad_no_se_resuelve_con_id_enviado_por_cliente(): void
+    public function test_ambiguedad_documentada_se_resuelve_con_seleccion_explicita_compatible(): void
     {
         $this->ficha('Unidad A', 'DPS-AMBIGUA');
         $this->publicar();
-        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])->assertUnprocessable()->assertJsonValidationErrors('cargo_id')->assertJsonPath('code', 'MANUAL_FICHA_AMBIGUA');
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])->assertCreated();
     }
 
     public function test_resolver_expone_codigos_distintos_sin_candidatos_ni_funciones_completas(): void
@@ -129,8 +130,9 @@ class DependencyPositionSelectionTest extends TestCase
         $url = '/api/v1/manual-funciones/dependencias/resolver?fecha=2024-01-15&unidad_organizacional_id='.$this->unidadA.'&cargo_id='.$this->cargo->id;
         $this->getJson($url)->assertOk()->assertExactJson(['success' => true, 'message' => 'Operación realizada correctamente.', 'data' => ['source_id' => 'DPS-A', 'funciones_count' => 1]]);
         $this->publicarAmbiguedadAdicional();
-        $response = $this->getJson($url.'&manual_cargo_version_id='.$this->a->id)->assertUnprocessable()
+        $response = $this->getJson($url)->assertUnprocessable()
             ->assertJsonPath('code', 'MANUAL_FICHA_AMBIGUA')->assertJsonValidationErrors('cargo_id');
+        $this->getJson($url.'&manual_cargo_version_id='.$this->a->id)->assertOk()->assertJsonPath('data.manual_cargo_version_id', $this->a->id);
         $this->assertSame(['success', 'message', 'errors', 'code'], array_keys($response->json()));
         $this->getJson(str_replace($this->unidadA, str_repeat('0', 32), $url))->assertUnprocessable()
             ->assertJsonPath('code', 'MANUAL_FICHA_NO_ENCONTRADA')->assertJsonValidationErrors('cargo_id');
@@ -242,7 +244,7 @@ class DependencyPositionSelectionTest extends TestCase
     {
         $this->ficha('Todas las dependencias', 'DPS-GLOBAL-AMBIGUO');
         $this->publicar();
-        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])->assertUnprocessable()->assertJsonValidationErrors('cargo_id');
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertUnprocessable()->assertJsonValidationErrors('cargo_id');
     }
 
     public function test_payloads_no_pueden_borrar_dependencia_ni_enviar_cargo_como_arreglo(): void
@@ -252,5 +254,76 @@ class DependencyPositionSelectionTest extends TestCase
         $id = $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertCreated()->json('data.id');
         $this->putJson('/api/v1/funcionarios/'.$id, ['dependencia' => null, 'nombres' => 'Actualizado'])->assertOk()->assertJsonPath('data.dependencia', 'Unidad A');
         $this->putJson('/api/v1/funcionarios/'.$id, ['dependencia' => 'Unidad inventada'])->assertUnprocessable()->assertJsonValidationErrors('dependencia');
+    }
+
+    public function test_perfiles_repetidos_paginados_y_busqueda_por_pagina_sin_cargar_funciones(): void
+    {
+        $segunda = $this->ficha('Unidad A', 'DPS-A-SEGUNDA');
+        $this->publicar();
+        $url = '/api/v1/manual-funciones/dependencias/cargos?fecha=2024-01-15&perfiles=1&unidad_organizacional_id='.$this->unidadA;
+        $this->getJson($url)->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 2)
+            ->assertJsonMissingPath('data.0.funciones')->assertJsonPath('data.0.pagina_verificada', true);
+        $this->getJson($url.'&q='.$segunda->pagina_inicio)->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.manual_cargo_version_id', $segunda->id);
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertUnprocessable()->assertJsonPath('code', 'MANUAL_FICHA_AMBIGUA');
+    }
+
+    public function test_seleccion_preview_vinculo_snapshot_y_pdf_usan_solo_segunda_ficha(): void
+    {
+        $segunda = $this->ficha('Unidad A', 'DPS-A-SEGUNDA');
+        $segunda->funciones()->update(['descripcion' => 'Texto normativo exclusivo de la segunda ficha.']);
+        $segunda->funciones()->create(['orden' => 2, 'descripcion' => 'Segunda función conservada en su orden.']);
+        $this->publicar();
+        $url = '/api/v1/manual-funciones/dependencias/resolver?fecha=2024-01-15&funciones=1&unidad_organizacional_id='.$this->unidadA.'&cargo_id='.$this->cargo->id.'&manual_cargo_version_id='.$segunda->id;
+        $this->getJson($url)->assertOk()->assertJsonPath('data.pagina_inicio', $segunda->pagina_inicio)
+            ->assertJsonPath('data.funciones.0.descripcion', 'Texto normativo exclusivo de la segunda ficha.')
+            ->assertJsonPath('data.funciones.1.orden', 2);
+        $created = $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $segunda->id])->assertCreated();
+        $employee = Funcionario::findOrFail($created->json('data.id'));
+        $relation = $employee->historialCargos()->sole()->fichasNormativas()->sole();
+        $this->assertSame($segunda->id, $relation->manual_cargo_version_id);
+        $this->assertSame($segunda->pagina_inicio, $relation->metadata['pagina_inicio']);
+        $this->getJson('/api/v1/manual-funciones/dependencias/funciones-registradas/'.$segunda->id.'?funcionario_id='.$employee->id)
+            ->assertOk()->assertJsonPath('data.source_id', $segunda->source_id);
+        $this->getJson('/api/v1/manual-funciones/dependencias/funciones-registradas/'.$this->b->id.'?funcionario_id='.$employee->id)->assertNotFound();
+        $employee->user->update(['must_change_password' => false]);
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $cert = app(\App\Services\ExpedirCertificacionService::class)->expedir($employee->user, 'funciones', null)['certificado'];
+        $this->assertSame($segunda->id, $cert->snapshot_datos['manual_funciones']['ficha_id']);
+        $this->assertSame($segunda->pagina_inicio, $cert->snapshot_datos['manual_funciones']['pagina_inicio']);
+        $this->assertSame($segunda->funciones->pluck('descripcion')->all(), array_column($cert->snapshot_datos['manual_funciones']['funciones'], 'descripcion'));
+        $pdf = \Illuminate\Support\Facades\Storage::disk('local')->get($cert->archivo_pdf_path);
+        $text = preg_replace('/\s+/u', ' ', (new \Smalot\PdfParser\Parser)->parseContent($pdf)->getText());
+        $this->assertStringContainsString('Texto normativo exclusivo de la segunda ficha.', $text);
+        $this->assertStringContainsString('Segunda función conservada en su orden.', $text);
+        $this->assertStringNotContainsString('Función de Unidad B', $text);
+        $this->assertSame('Función de Unidad A', $this->a->funciones->sole()->descripcion);
+    }
+
+    public function test_pagina_manipulada_y_evidencia_ausente_no_habilitan_seleccion(): void
+    {
+        $this->a->forceFill(['pagina_inicio' => null, 'verificacion_documental' => null])->save();
+        $this->publicar();
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id, 'pagina_inicio' => 665])
+            ->assertUnprocessable()->assertJsonValidationErrors('pagina_inicio');
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA) + ['manual_cargo_version_id' => $this->a->id])
+            ->assertUnprocessable()->assertJsonPath('code', 'MANUAL_FICHA_NO_VERIFICADA');
+        $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertUnprocessable()->assertJsonPath('code', 'MANUAL_FICHA_NO_VERIFICADA');
+    }
+
+    public function test_generacion_rechaza_vinculo_existente_con_dependencia_incompatible(): void
+    {
+        $this->publicar();
+        $id = $this->postJson('/api/v1/funcionarios', $this->datos($this->unidadA))->assertCreated()->json('data.id');
+        $employee = Funcionario::findOrFail($id);
+        $employee->historialCargos()->sole()->update(['unidad_organizacional_id' => $this->unidadB]);
+        $this->expectExceptionMessage('MANUAL_FICHA_INCOMPATIBLE');
+        app(ResolverFuncionesFuncionarioService::class)->resolver($employee, CarbonImmutable::now());
+    }
+
+    public function test_pagina_inicial_es_unica_en_cada_version(): void
+    {
+        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->b->forceFill(['pagina_inicio' => $this->a->pagina_inicio])->save();
     }
 }

@@ -65,6 +65,9 @@ class ManualImportTest extends TestCase
         $this->assertSame([], $result['errores']);
         $version = ManualFuncionVersion::findOrFail($result['version_id']);
         if ($publicar) {
+            foreach ($version->cargos as $ficha) {
+                \Tests\Support\ManualFixture::documentar($ficha, $ficha->metadata_manual['pagina_inicio']);
+            }
             // Synthetic test-only validity, never a claim about the real decree.
             $version->update(['estado' => 'publicado', 'vigencia_desde' => '2020-01-01', 'acto_fecha' => '2020-01-01']);
         }
