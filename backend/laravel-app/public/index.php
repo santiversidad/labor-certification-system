@@ -17,4 +17,9 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
-$app->handleRequest(Request::capture());
+if (getenv('APP_ENV') === 'local' && ($_SERVER['HTTP_X_PERFORMANCE_PROBE'] ?? '') === '1' && is_file('/tmp/http-probe.php')) {
+    $GLOBALS['performance_entry_ms'] = (microtime(true) - LARAVEL_START) * 1000;
+    (require '/tmp/http-probe.php')($app, Request::capture());
+} else {
+    $app->handleRequest(Request::capture());
+}

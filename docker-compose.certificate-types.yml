@@ -35,13 +35,23 @@ services:
     image: scl-ct-app:prepared
     build: *ct_app_build
     container_name: scl_ct_app
-    environment: *ct_app_environment
+    environment:
+      <<: *ct_app_environment
+      # Avoid scanning config/ through the Windows bind mount on every request.
+      # A local watcher refreshes this cache after edits; test/e2e do not inherit it.
+      CT_DEV_CONFIG_CACHE: "true"
+      APP_CONFIG_CACHE: /var/www/html/storage/framework/cache/ct-dev-config.php
+    entrypoint: [sh, /usr/local/bin/ct-dev-entrypoint.sh]
+    command: [php-fpm]
     volumes:
       - ./backend/laravel-app:/var/www/html
       - ct_backend_vendor:/var/www/html/vendor
       - ct_backend_build:/var/www/html/public/build
       - ct_backend_storage:/var/www/html/storage
       - ./output:/workspace-output
+      - ./docker/php/ct-dev-entrypoint.sh:/usr/local/bin/ct-dev-entrypoint.sh:ro
+      - ./docker/php/ct-dev-config.php:/usr/local/bin/ct-dev-config.php:ro
+      - ./docker/php/ct-dev-opcache.ini:/usr/local/etc/php/conf.d/zz-ct-dev-opcache.ini:ro
     networks:
       - default
       - recovery_database
