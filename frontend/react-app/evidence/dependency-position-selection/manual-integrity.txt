@@ -1,0 +1,57 @@
+{
+  "antes": {
+    "database": "scl_certificate_types_dev",
+    "fichas": 344,
+    "funciones": 3115,
+    "conocimientos": 2326,
+    "digest_normativo": "2ccdb15add1bedbe5c83aa978cf4fa45",
+    "perfiles_fuente_digest": "6498772ff64ec4f55a38a9f6b5631704",
+    "funciones_digest": "d99200dd43c0ec3614a524a443e22893",
+    "vinculaciones": 14,
+    "vinculaciones_digest": "ca1c5de48257957f6590c5aecc55aa0b",
+    "relaciones_digest": "684e7e2ebf2d705d2b8ceff835c2c4f8",
+    "certificados": 18,
+    "certificados_digest": "191e2d68a7dffa3f7732e56590a9ed8e",
+    "escala_items_digest": "4e53d651eba3088bc2d6407d376e022b",
+    "escala_vigencias_digest": "8fdbb9914e8cd5f6ccc4ccf04753bad7",
+    "pagos_digest": "c135c6b56ecb80d445bdfbd8f3234d21",
+    "ordenes_pago_digest": "54e58b4446ca990d51449ea533edcf1d",
+    "comprobantes_digest": "5bd28267ec614f8bf21e33fe4cf5f4d6",
+    "identidades_digest": "5a2700dfd54cffcb53be7ebb8ed22f5e"
+  },
+  "despues": {
+    "database": "scl_certificate_types_dev",
+    "fichas": 344,
+    "funciones": 3115,
+    "conocimientos": 2326,
+    "digest_normativo": "2ccdb15add1bedbe5c83aa978cf4fa45",
+    "perfiles_fuente_digest": "6498772ff64ec4f55a38a9f6b5631704",
+    "funciones_digest": "d99200dd43c0ec3614a524a443e22893",
+    "vinculaciones": 14,
+    "vinculaciones_digest": "ca1c5de48257957f6590c5aecc55aa0b",
+    "relaciones_digest": "684e7e2ebf2d705d2b8ceff835c2c4f8",
+    "certificados": 18,
+    "certificados_digest": "191e2d68a7dffa3f7732e56590a9ed8e",
+    "escala_items_digest": "4e53d651eba3088bc2d6407d376e022b",
+    "escala_vigencias_digest": "8fdbb9914e8cd5f6ccc4ccf04753bad7",
+    "pagos_digest": "c135c6b56ecb80d445bdfbd8f3234d21",
+    "ordenes_pago_digest": "54e58b4446ca990d51449ea533edcf1d",
+    "comprobantes_digest": "5bd28267ec614f8bf21e33fe4cf5f4d6",
+    "identidades_digest": "5a2700dfd54cffcb53be7ebb8ed22f5e"
+  },
+  "fingerprints_identicos": true,
+  "documentacion": {
+    "fichas_verificadas": 344,
+    "paginas_unicas": 344,
+    "MF-0343": 664,
+    "MF-0344": 665
+  },
+  "combinaciones_ambiguas": 50,
+  "candidatas_explicitas_validadas": 123,
+  "bloqueos_sin_id": 50,
+  "resolucion_vinculaciones_existentes": {
+    "MANUAL_FICHA_AMBIGUA": 1,
+    "RESUELTA": 10,
+    "MANUAL_FICHA_INCOMPLETA": 3
+  }
+}

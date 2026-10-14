@@ -1,19 +1,29 @@
-import { env } from '../../../config/env';
-import { endpoints } from '../../../lib/api/endpoints';
 import { apiClient } from '../../../lib/api/apiClient';
-import { mockPaginatedResponse } from '../../../lib/api/mockAdapter';
-import { mockCargos } from '../../../lib/mocks/mockCargos';
+import { endpoints } from '../../../lib/api/endpoints';
 import type { ApiResponse } from '../../../lib/api/api.types';
-import type { PaginatedResponse } from '../../../types/pagination.types';
 import type { Cargo } from '../types/cargo.types';
+import type { CargoFormValues } from '../schemas/cargo.schema';
 
 export const cargosService = {
-  async list(): Promise<ApiResponse<PaginatedResponse<Cargo>>> {
-    if (env.useMocks) {
-      return mockPaginatedResponse(mockCargos);
+  async options(): Promise<ApiResponse<Cargo[]>> {
+    const first = (await apiClient.get<ApiResponse<Cargo[]>>(endpoints.cargos, { params: { per_page: 100, page: 1 } })).data;
+    const items = [...first.data];
+    let page = 2;
+    while (items.length % 100 === 0 && items.length > 0) {
+      const next = (await apiClient.get<ApiResponse<Cargo[]>>(endpoints.cargos, { params: { per_page: 100, page } })).data;
+      items.push(...next.data);
+      if (next.data.length < 100) break;
+      page++;
     }
+    return { ...first, data: items };
+  },
+  async list(): Promise<ApiResponse<Cargo[]>> {
+    const response = await apiClient.get<ApiResponse<Cargo[]>>(endpoints.cargos);
+    return response.data;
+  },
 
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Cargo>>>(endpoints.cargos);
+  async create(payload: CargoFormValues): Promise<ApiResponse<Cargo>> {
+    const response = await apiClient.post<ApiResponse<Cargo>>(endpoints.cargos, payload);
     return response.data;
   },
 };

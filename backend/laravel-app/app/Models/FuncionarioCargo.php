@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\NaturalezaCargoEnum;
+use App\Enums\TipoVinculacionEnum;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class FuncionarioCargo extends Model
+{
+    protected $table = 'funcionario_cargo';
+
+    protected $fillable = [
+        'funcionario_id',
+        'unidad_organizacional_id',
+        'cargo_id',
+        'tipo_vinculacion',
+        'naturaleza_cargo',
+        'es_cargo_base',
+        'es_encargo',
+        'fecha_inicio',
+        'fecha_fin',
+        'acto_administrativo_id',
+        'manual_cargo_version_id', 'es_prueba_manual',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'es_prueba_manual' => 'boolean',
+            'tipo_vinculacion' => TipoVinculacionEnum::class,
+            'naturaleza_cargo' => NaturalezaCargoEnum::class,
+            'es_cargo_base' => 'boolean',
+            'es_encargo' => 'boolean',
+            'fecha_inicio' => 'date',
+            'fecha_fin' => 'date',
+        ];
+    }
+
+    public function funcionario(): BelongsTo
+    {
+        return $this->belongsTo(Funcionario::class);
+    }
+
+    public function fichaManual(): BelongsTo
+    {
+        return $this->belongsTo(ManualCargoVersion::class, 'manual_cargo_version_id');
+    }
+
+    public function fichasNormativas(): HasMany
+    {
+        return $this->hasMany(FuncionarioCargoManualFicha::class, 'funcionario_cargo_id');
+    }
+
+    public function cargo(): BelongsTo
+    {
+        return $this->belongsTo(Cargo::class);
+    }
+
+    public function actoAdministrativo(): BelongsTo
+    {
+        return $this->belongsTo(ActuacionAdministrativa::class, 'acto_administrativo_id');
+    }
+}

@@ -27,8 +27,8 @@ export function CargosPage() {
         <p className="mt-1 text-sm text-muted">Catalogo base de cargos institucionales.</p>
       </div>
       <CargoForm />
-      <Card title="Cargos registrados" description="Listado mock conectado mediante servicio de feature.">
-        <CargosTable cargos={data.data.data} />
+      <Card title="Cargos registrados" description="Catálogo de cargos institucionales.">
+        <CargosTable cargos={data.data} />
       </Card>
     </div>
   );

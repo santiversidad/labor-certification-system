@@ -4,15 +4,21 @@ namespace App\Enums;
 
 enum EstadoPagoEnum: string
 {
+    case NoRequerido = 'no_requerido';
     case Pendiente = 'pendiente';
-    case Aprobado  = 'aprobado';
+    case Cargado = 'cargado';
+    case Aprobado = 'aprobado';
+    case Confirmado = 'confirmado';
     case Rechazado = 'rechazado';
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
+            self::NoRequerido => 'No requerido',
             self::Pendiente => 'Pendiente',
-            self::Aprobado  => 'Aprobado',
+            self::Cargado => 'Cargado',
+            self::Aprobado => 'Aprobado',
+            self::Confirmado => 'Pago confirmado',
             self::Rechazado => 'Rechazado',
         };
     }

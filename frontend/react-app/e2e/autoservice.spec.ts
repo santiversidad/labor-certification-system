@@ -1,0 +1,246 @@
+import { selectEmployment } from './dependency-selection';
+import { browserSession, captureBrowserSession, sessionHeaders } from './security-session';
+import { expect, test, type Page } from '@playwright/test';
+import { mkdir, readFile } from 'node:fs/promises';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+const api = 'http://e2e-api:8280/api/v1';
+const employeePassword = 'MiClaveNueva2026';
+let simpleEmployee = '';
+let functionsEmployee = '';
+let incompleteEmployee = '';
+
+async function login(page: Page, username: string, password: string) { return browserSession(page, username, password); }
+
+async function logout(page: Page) {
+  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await expect(page).toHaveURL(/\/login/);
+  expect(await page.evaluate(() => localStorage.getItem('clv_session'))).toBeNull();
+}
+
+async function createEmployee(page: Page, suffix: string, cargoLabel = 'Profesional E2E · E2E/01') {
+  const documento = `92${Date.now()}${suffix.length}`;
+  await page.goto('/admin/funcionarios/nuevo');
+  await page.getByLabel('Número de cédula').fill(documento);
+  await page.getByLabel('Nombres', { exact: true }).fill('Persona');
+  await page.getByLabel('Apellidos', { exact: true }).fill(`Ficticia ${suffix}`);
+  await selectEmployment(page, cargoLabel, cargoLabel.includes('Incompleto') ? 'Validación incompleta E2E' : 'Autoservicio E2E');
+  const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/funcionarios') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Guardar funcionario' }).click();
+  expect((await responsePromise).status()).toBe(201);
+  await expect(page).toHaveURL(/\/admin\/funcionarios\/\d+$/);
+  return documento;
+}
+
+async function completeFirstLogin(page: Page, documento: string) {
+  await login(page, documento, documento);
+  await expect(page).toHaveURL(/\/cambiar-contrasena/);
+  await page.goto('/app/inicio');
+  await expect(page).toHaveURL(/\/cambiar-contrasena/);
+  await expect(page.getByText('Cambio obligatorio de contraseña')).toBeVisible();
+  await page.screenshot({ path: 'test-results/regression-phase26/09-cambio-password-warning.png', fullPage: true });
+  await page.getByLabel('Contraseña temporal', { exact: true }).fill(documento);
+  await page.getByLabel('Nueva contraseña', { exact: true }).fill(employeePassword);
+  await page.getByLabel('Confirmar nueva contraseña', { exact: true }).fill(employeePassword);
+  await page.getByRole('button', { name: 'Guardar y continuar' }).click();
+  await expect(page).toHaveURL(/\/app\/inicio/);
+}
+
+async function extractPdf(buffer: Buffer) {
+  const document = await getDocument({ data: new Uint8Array(buffer), isEvalSupported: false }).promise;
+  const pages: string[] = [];
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const content = await (await document.getPage(pageNumber)).getTextContent();
+    pages.push(content.items.flatMap((item) => ('str' in item ? [item.str] : [])).join(' '));
+  }
+  return { pages, text: pages.join(' ') };
+}
+
+async function assertPdfDownload(page: Page, expectedType: 'SENCILLO' | 'CON FUNCIONES') {
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Descargar PDF' }).click();
+  const file = await (await downloadPromise).path();
+  expect(file).not.toBeNull();
+  const bytes = await readFile(file!);
+  expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+  const parsed = await extractPdf(bytes);
+  expect(parsed.text).toContain(expectedType);
+  expect(parsed.text).toContain('BORRADOR');
+  return parsed;
+}
+
+test.describe.serial('Fase 2: tipos canónicos sin interfaz salarial', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  test.beforeAll(async () => { await mkdir('test-results/regression-phase26', { recursive: true }); });
+  test('administración revalida identidad, conserva 37 permisos y separa la escala administrativa de certificados', async ({ page }) => {
+    const session = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    expect(session.user.permisos).toHaveLength(37);
+    const me = await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(session.token) });
+    expect(me.status()).toBe(200);
+    await expect(page).toHaveURL(/\/admin\/dashboard/);
+    await expect(page.getByText(/rangos salariales|salario/i)).toHaveCount(0);
+
+    for (const [path, heading] of [
+      ['/admin/funcionarios', 'Funcionarios'], ['/admin/manual-funciones', 'Manual de Funciones'],
+      ['/admin/configuracion', 'Pago de certificaciones'], ['/admin/certificaciones', 'Certificados'],
+      ['/admin/reportes', 'Reportes'], ['/admin/auditoria', 'Auditoría'],
+    ] as const) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+      await expect(page.getByText(/rangos salariales|con salario|sin salario/i)).toHaveCount(0);
+    }
+    await logout(page);
+    await page.goto('/validar-certificado');
+    await page.getByLabel('Código de validación').fill('CODIGO-INVALIDO');
+    await page.getByRole('button', { name: 'Validar certificado' }).click();
+    await expect(page.getByText('Certificado no válido')).toBeVisible();
+    await page.screenshot({ path: 'test-results/regression-phase26/10-validacion-error.png', fullPage: true });
+  });
+
+  test('admin crea funcionario y el autoservicio sencillo genera y descarga PDF real', async ({ page }) => {
+    await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    simpleEmployee = await createEmployee(page, 'Sencillo');
+    await logout(page);
+    await completeFirstLogin(page, simpleEmployee);
+    await expect(page.getByText('Disponibilidad mensual de certificados')).toBeVisible();
+    await expect(page.getByText('Disponible ahora')).toHaveCount(2);
+    await page.screenshot({ path: 'test-results/regression-phase26/01-funcionario-disponibilidad-general.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/regression-phase26/02-sencillo-disponible.png', fullPage: true });
+    await page.getByRole('button', { name: 'Solicitar sencillo' }).click();
+    await expect(page).toHaveURL(/\/app\/solicitudes\/nueva\/sencillo$/);
+    await expect(page.getByRole('heading', { name: 'Certificado laboral sencillo' })).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Generar certificado sencillo' })).toBeEnabled();
+    await page.screenshot({ path: 'test-results/regression-phase26/05-formulario-sencillo.png', fullPage: true });
+    const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/solicitudes') && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Generar certificado sencillo' }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body.data.solicitud.tipo_certificado).toBe('sencillo');
+    expect(body.data.certificado.snapshot_datos).not.toHaveProperty('manual_funciones');
+    expect(JSON.stringify(body)).not.toMatch(/salario|requiere_salario/i);
+    await expect(page.getByRole('heading', { name: 'Certificación generada correctamente' })).toBeVisible();
+    await expect(page.locator('.result-reveal')).toHaveCSS('opacity', '1');
+    await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
+    const parsed = await assertPdfDownload(page, 'SENCILLO');
+    expect(parsed.text).not.toContain('Funciones esenciales');
+    await logout(page);
+  });
+
+  test('certificado con funciones usa la ficha completa y conserva evidencia en snapshot y PDF', async ({ page }) => {
+    await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    functionsEmployee = await createEmployee(page, 'Funciones');
+    await logout(page);
+    await completeFirstLogin(page, functionsEmployee);
+    await page.getByRole('button', { name: 'Solicitar con funciones' }).click();
+    await expect(page).toHaveURL(/\/app\/solicitudes\/nueva\/funciones$/);
+    await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Generar certificado con funciones' })).toBeEnabled();
+    await page.screenshot({ path: 'test-results/regression-phase26/06-formulario-funciones.png', fullPage: true });
+    const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/solicitudes') && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Generar certificado con funciones' }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body.data.solicitud.tipo_certificado).toBe('funciones');
+    expect(body.data.certificado.snapshot_datos.manual_funciones.source_id).toBe('E2E-001');
+    expect(body.data.certificado.snapshot_datos.manual_funciones.funciones[0].descripcion).toBe('Atender pruebas sintéticas.');
+    expect(JSON.stringify(body)).not.toMatch(/salario|requiere_salario/i);
+    expect(body.data.descarga_url).toMatch(/^\/api\/v1\/mi-certificacion\/descargar\/[a-f0-9]{64}$/);
+    const session = { token: await captureBrowserSession(page) };
+    const pdf = await page.request.get(`http://e2e-api:8280${body.data.descarga_url}`, { headers: sessionHeaders(session.token) });
+    expect(pdf.status()).toBe(200);
+    const bytes = await pdf.body();
+    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+    const parsed = await extractPdf(bytes);
+    expect(parsed.text).toContain('CON FUNCIONES');
+    expect(parsed.text).toContain('Atender pruebas sintéticas.');
+    expect(parsed.pages.length).toBeGreaterThan(1);
+    await logout(page);
+  });
+
+  test('la cuota bloquea el mismo tipo y permite el tipo contrario', async ({ page }) => {
+    const session = await login(page, simpleEmployee, employeePassword);
+    const headers = sessionHeaders(session.token);
+    const duplicate = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'sencillo' } });
+    expect(duplicate.status()).toBe(409);
+    expect((await duplicate.json()).code).toBe('MONTHLY_CERTIFICATE_LIMIT');
+    await page.goto('/app/inicio');
+    await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);
+    await expect(page.getByText('Disponible ahora')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Solicitar sencillo' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Solicitar con funciones' })).toBeEnabled();
+    await page.screenshot({ path: 'test-results/regression-phase26/03-sencillo-no-disponible.png', fullPage: true });
+    await page.locator('.rb-spotlight-card').first().screenshot({ path: 'test-results/regression-phase26/04-proxima-fecha-destacada.png' });
+    await page.goto('/app/solicitudes/nueva/sencillo');
+    await expect(page.getByText('Certificado no disponible actualmente')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Generar certificado sencillo' })).toBeDisabled();
+    await page.screenshot({ path: 'test-results/regression-phase26/07-deeplink-no-disponible.png', fullPage: true });
+    const opposite = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'funciones' } });
+    expect(opposite.status()).toBe(201);
+    await logout(page);
+  });
+
+  test('logout funcionario y nuevo login admin no reutilizan identidad ni disponibilidad', async ({ page }) => {
+    const employeeSession = await login(page, functionsEmployee, employeePassword);
+    expect((await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(employeeSession.token) })).status()).toBe(200);
+    await expect(page).toHaveURL(/\/app\/inicio/);
+    await logout(page);
+    expect((await page.request.get(`${api}/auth/me`, { headers: sessionHeaders(employeeSession.token) })).status()).toBe(401);
+    const adminSession = await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    expect(adminSession.user.roles).toContain('admin');
+    expect(adminSession.user.permisos).toHaveLength(37);
+    await expect(page).toHaveURL(/\/admin\/dashboard/);
+  });
+
+  test('ficha incompleta permite sencillo y rechaza únicamente funciones', async ({ page }) => {
+    // Existing incomplete assignments keep simple certificates; new incomplete selections are blocked.
+    incompleteEmployee = 'E2E-INCOMPLETE';
+    await login(page, incompleteEmployee, 'E2EIncomplete2026');
+    const session = { token: await captureBrowserSession(page) };
+    const headers = sessionHeaders(session.token);
+    const simple = await page.request.post(`${api}/solicitudes`, { headers, data: { tipo_certificado: 'sencillo' } });
+    expect(simple.status()).toBe(201);
+    await page.goto('/app/solicitudes/nueva/funciones');
+    await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
+    const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/solicitudes') && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Generar certificado con funciones' }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(409);
+    expect((await response.json()).code).toBe('MANUAL_FICHA_INCOMPLETA');
+    await expect(page.getByRole('alert')).toContainText('ficha del Manual de Funciones está incompleta');
+    await page.screenshot({ path: 'test-results/regression-phase26/08-mf0167-warning.png', fullPage: true });
+    await expect(page.getByText(/salario/i)).toHaveCount(0);
+  });
+
+  test('las pantallas críticas conservan navegación y contenido en 360 y 768 px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await login(page, incompleteEmployee, 'E2EIncomplete2026');
+    await expect(page.getByRole('heading', { name: 'Certificaciones laborales' })).toBeVisible();
+    await expect(page.getByText('Certificado laboral sencillo')).toBeVisible();
+    await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);
+    await page.screenshot({ path: 'test-results/regression-phase26/11-mobile-dashboard.png', fullPage: true });
+    await page.goto('/app/solicitudes/nueva/funciones');
+    await expect(page.getByRole('heading', { name: 'Certificado laboral con funciones' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Generar certificado con funciones' })).toBeEnabled();
+    await page.screenshot({ path: 'test-results/regression-phase26/12-mobile-formulario.png', fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await page.setViewportSize({ width: 768, height: 900 });
+    await page.goto('/app/inicio');
+    await expect(page.getByText('Próxima disponibilidad')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await page.goto('/app/solicitudes/nueva/funciones');
+    await expect(page.getByRole('button', { name: 'Generar certificado con funciones' })).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await logout(page);
+
+    await login(page, 'E2E-ADMIN', 'E2EAdminClave2026');
+    for (const path of ['/admin/funcionarios', '/admin/funcionarios/nuevo', '/admin/manual-funciones', '/admin/certificaciones']) {
+      await page.goto(path);
+      await expect(page.locator('main')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    }
+  });
+});

@@ -1,5 +1,5 @@
 export type Cargo = {
-  id: string;
+  id: number;
   codigo: string;
   grado: string;
   denominacion: string;

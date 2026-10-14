@@ -1,75 +1,63 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
+import { AlertTriangle, BadgeCheck, BookOpenCheck, FileText, ListChecks, UserCheck, UserX } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
-import { auditoriaService } from '../../auditoria/services/auditoria.service';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { Badge } from '../../../components/ui/Badge';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { CountUp } from '../../../components/react-bits/CountUp/CountUp';
 import { certificadosService } from '../../certificados/services/certificados.service';
+import { configuracionService } from '../../configuracion/services/configuracion.service';
 import { funcionariosService } from '../../funcionarios/services/funcionarios.service';
-import { pagosService } from '../../pagos/services/pagos.service';
-import { AdminAuditSummary } from '../components/AdminAuditSummary';
-import { AdminPendingRequestsTable } from '../components/AdminPendingRequestsTable';
-import { AdminQuickActions } from '../components/AdminQuickActions';
-import { AdminStatsGrid } from '../components/AdminStatsGrid';
-import { dashboardService } from '../services/dashboard.service';
+import { manualesService } from '../../manuales/services/manuales.service';
+import { solicitudesService } from '../../solicitudes/services/solicitudes.service';
+import { RecentRequestsTable } from '../components/RecentRequestsTable';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 export function AdminDashboardPage() {
-  const dashboardQuery = useQuery({
-    queryKey: ['admin-dashboard-summary'],
-    queryFn: dashboardService.getSummary,
-  });
-  const funcionariosQuery = useQuery({ queryKey: ['admin-funcionarios-summary'], queryFn: funcionariosService.list });
-  const pagosQuery = useQuery({ queryKey: ['admin-pagos-summary'], queryFn: pagosService.list });
-  const certificadosQuery = useQuery({ queryKey: ['admin-certificados-summary'], queryFn: certificadosService.list });
-  const auditoriaQuery = useQuery({ queryKey: ['admin-auditoria-summary'], queryFn: auditoriaService.list });
+  const { user } = useAuth();
+  const isAdmin = Boolean(user?.roles.includes('admin'));
+  const funcionarios = useQuery({ queryKey: ['dashboard-funcionarios'], queryFn: () => funcionariosService.list({ per_page: 100 }), enabled: isAdmin });
+  const certificados = useQuery({ queryKey: ['dashboard-certificados'], queryFn: certificadosService.list, enabled: isAdmin });
+  const solicitudes = useQuery({ queryKey: ['dashboard-solicitudes'], queryFn: solicitudesService.list, enabled: isAdmin });
+  const manuales = useQuery({ queryKey: ['dashboard-manuales'], queryFn: manualesService.estado, enabled: isAdmin });
+  const configuracion = useQuery({ queryKey: ['dashboard-configuracion'], queryFn: configuracionService.get, enabled: isAdmin });
 
-  if (dashboardQuery.isLoading || funcionariosQuery.isLoading || pagosQuery.isLoading || certificadosQuery.isLoading || auditoriaQuery.isLoading) {
-    return <LoadingState />;
+  if (!isAdmin) {
+    return <div className="app-page"><PageHeader eyebrow="Consulta institucional" title="Administración" description="Secretaría valida los pagos de las solicitudes que requieren cobro." /><section className="surface-section p-6"><h2 className="font-bold text-text">Flujo automático</h2><p className="mt-2 text-sm leading-6 text-muted">Revise el comprobante y confirme o rechace el pago. Al confirmarlo, el sistema expide automáticamente el certificado.</p><Link className="mt-5 inline-flex font-semibold text-primary hover:underline" to="/admin/pagos">Validación de pagos</Link></section></div>;
   }
 
-  if (
-    dashboardQuery.isError ||
-    funcionariosQuery.isError ||
-    pagosQuery.isError ||
-    certificadosQuery.isError ||
-    auditoriaQuery.isError ||
-    !dashboardQuery.data ||
-    !funcionariosQuery.data ||
-    !pagosQuery.data ||
-    !certificadosQuery.data ||
-    !auditoriaQuery.data
-  ) {
-    return <ErrorState />;
-  }
-
-  const solicitudes = dashboardQuery.data.data.recentRequests;
-  const solicitudesPendientes = solicitudes.filter((solicitud) => ['pendiente', 'en_revision', 'pendiente_pago', 'pago_en_revision'].includes(solicitud.estado)).length;
-  const pagosPorValidar = pagosQuery.data.data.data.filter((pago) => pago.estado === 'cargado' || pago.estado === 'pendiente').length;
+  const hasError = funcionarios.isError || certificados.isError || solicitudes.isError || manuales.isError || configuracion.isError;
+  if (hasError) return <ErrorState message="No fue posible cargar uno o más indicadores administrativos." />;
+  const staff = funcionarios.data?.data ?? [];
+  const certificates = certificados.data?.data ?? [];
+  const requests = solicitudes.data?.data ?? [];
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const certificatesThisMonth = certificates.filter((item) => (item.fecha_generacion ?? item.created_at ?? '').startsWith(currentMonth));
+  const currentManual = manuales.data?.data.versiones.find((item) => item.id === manuales.data?.data.manual_vigente);
+  const loading = funcionarios.isLoading || certificados.isLoading || solicitudes.isLoading || manuales.isLoading || configuracion.isLoading;
+  const stats = [
+    { label: 'Funcionarios activos', value: staff.filter((item) => item.estado === 'activo').length, icon: UserCheck },
+    { label: 'Funcionarios inactivos', value: staff.filter((item) => item.estado !== 'activo').length, icon: UserX },
+    { label: 'Certificaciones del mes', value: certificatesThisMonth.length, icon: BadgeCheck },
+    { label: 'Sencillos', value: requests.filter((item) => item.tipo_certificado === 'sencillo').length, icon: FileText },
+    { label: 'Con funciones', value: requests.filter((item) => item.tipo_certificado === 'funciones').length, icon: ListChecks },
+    { label: 'Errores de expedición', value: requests.filter((item) => item.estado === 'fallida').length, icon: AlertTriangle },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border border-govBlue/15 bg-surface p-6">
-        <p className="text-sm font-semibold text-govBlue">Panel Administrativo V2</p>
-        <h1 className="mt-2 text-2xl font-semibold text-text">Control institucional de certificaciones</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Supervise solicitudes, pagos, certificados y catalogos maestros desde una vista sobria preparada para la API Laravel.
-        </p>
-      </div>
-
-      <AdminStatsGrid
-        certificadosGenerados={certificadosQuery.data.data.data.length}
-        funcionariosRegistrados={funcionariosQuery.data.data.meta.total}
-        pagosPorValidar={pagosPorValidar}
-        solicitudesPendientes={solicitudesPendientes}
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <AdminQuickActions />
-          <Card title="Solicitudes recientes" description="Listado operativo para priorizar revision administrativa.">
-            <AdminPendingRequestsTable solicitudes={solicitudes} />
-          </Card>
-        </div>
-        <AdminAuditSummary logs={auditoriaQuery.data.data.data} />
+    <div className="app-page">
+      <PageHeader eyebrow="Resumen operativo" title="Dashboard" description="Estado actual de funcionarios, expediciones, Manual y configuración de pago." />
+      <section aria-label="Indicadores" className="grid gap-px overflow-hidden rounded-lg border border-border bg-border shadow-soft sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {stats.map((stat) => <div className="bg-surface p-5 transition-colors duration-200 hover:bg-surface-hover" key={stat.label}><div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold text-muted">{stat.label}</p><stat.icon aria-hidden="true" className="shrink-0 text-primary" size={19} /></div>{loading ? <Skeleton className="mt-4 h-9 w-16" /> : <p className="mt-3 text-3xl font-bold tracking-tight text-text"><CountUp to={stat.value} /></p>}</div>)}
+      </section>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <section className="surface-section min-w-0 p-5 sm:p-6"><div className="mb-4"><h2 className="font-bold text-text">Expediciones recientes</h2><p className="mt-1 text-sm text-muted">Últimas solicitudes informadas por el servicio institucional.</p></div>{loading ? <Skeleton className="h-56 w-full" /> : <RecentRequestsTable solicitudes={requests.slice(0, 5)} />}</section>
+        <aside className="surface-section divide-y divide-border p-5 sm:p-6">
+          <div className="pb-5"><div className="flex items-center justify-between gap-3"><h2 className="font-bold text-text">Manual vigente</h2><BookOpenCheck className="text-primary" size={19} /></div>{loading ? <Skeleton className="mt-4 h-12" /> : currentManual ? <><p className="mt-3 text-xl font-bold text-text">{currentManual.version}</p><p className="mt-1 text-sm text-muted">{currentManual.acto}</p></> : <p className="mt-3 text-sm text-muted">No hay versión vigente informada.</p>}</div>
+          <div className="py-5"><p className="text-sm font-bold text-text">Pago de certificaciones</p>{loading ? <Skeleton className="mt-3 h-8 w-28" /> : <Badge className="mt-3" tone={configuracion.data?.data.requiere_pago_certificado ? 'gold' : 'green'}>{configuracion.data?.data.requiere_pago_certificado ? 'ACTIVADO' : 'DESACTIVADO'}</Badge>}</div>
+          <nav className="pt-4 text-sm font-semibold" aria-label="Accesos frecuentes"><Link className="block py-2 text-primary hover:underline" to="/admin/funcionarios/nuevo">Crear funcionario</Link><Link className="block py-2 text-primary hover:underline" to="/admin/manual-funciones">Gestionar Manual</Link><Link className="block py-2 text-primary hover:underline" to="/admin/configuracion">Configurar pagos</Link></nav>
+        </aside>
       </div>
     </div>
   );

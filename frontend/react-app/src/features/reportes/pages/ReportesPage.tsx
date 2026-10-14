@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { Alert } from '../../../components/ui/Alert';
+import { PageHeader } from '../../../components/ui/PageHeader';
 import { ReportsSummary } from '../components/ReportsSummary';
 import { reportesService } from '../services/reportes.service';
 
@@ -20,15 +21,10 @@ export function ReportesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Reportes</h1>
-        <p className="mt-1 text-sm text-muted">Resumen institucional inicial para analitica y exportaciones futuras.</p>
-      </div>
+    <div className="app-page">
+      <PageHeader eyebrow="Información institucional" title="Reportes" description="Resumen acumulado respaldado por el servicio actual de reportes." />
       <ReportsSummary resumen={data.data} />
-      <Card title="Integracion pendiente" description="La pantalla esta lista para conectar filtros, graficas y exportaciones desde la API Laravel.">
-        <p className="text-sm text-muted">Los indicadores actuales provienen de servicios mock centralizados.</p>
-      </Card>
+      <Alert title="Alcance de los datos" tone="info">El endpoint actual entrega cifras acumuladas y no admite rangos de fecha. No se presenta un filtro que pueda inducir a interpretar un periodo inexistente.</Alert>
     </div>
   );
 }

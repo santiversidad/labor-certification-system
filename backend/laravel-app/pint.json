@@ -1,0 +1,6 @@
+{
+    "preset": "laravel",
+    "notName": [
+        "*-camilo_ortega.php"
+    ]
+}

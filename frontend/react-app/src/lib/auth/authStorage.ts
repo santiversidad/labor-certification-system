@@ -1,42 +1,19 @@
 import type { Session, User } from '../../types/common.types';
 
-const SESSION_KEY = 'clv_session';
-
+// Identity is memory-only. Authentication is the server's HttpOnly cookie.
+let current: Session | null = null;
 export const authStorage = {
-  getSession(): Session | null {
-    const rawSession = localStorage.getItem(SESSION_KEY);
-
-    if (!rawSession) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(rawSession) as Session;
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-  },
-
+  getSession(): Session | null { return current; },
   setSession(session: Session) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    current = { user: session.user };
     window.dispatchEvent(new Event('auth-session-changed'));
   },
-
   clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+    if (current === null) return;
+    current = null;
     window.dispatchEvent(new Event('auth-session-changed'));
   },
-
-  getToken(): string | null {
-    return this.getSession()?.token ?? null;
-  },
-
-  getUser(): User | null {
-    return this.getSession()?.user ?? null;
-  },
-
-  isAuthenticated(): boolean {
-    return Boolean(this.getToken() && this.getUser());
-  },
+  getUser(): User | null { return current?.user ?? null; },
+  isAuthenticated(): boolean { return Boolean(current?.user); },
+  removeLegacySession() { localStorage.removeItem('clv_session'); },
 };

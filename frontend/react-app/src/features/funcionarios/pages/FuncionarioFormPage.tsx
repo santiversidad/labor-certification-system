@@ -1,12 +1,12 @@
 import { FuncionarioForm } from '../components/FuncionarioForm';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { useParams } from 'react-router-dom';
 
 export function FuncionarioFormPage() {
+  const { id } = useParams();
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Formulario de funcionario</h1>
-        <p className="mt-1 text-sm text-muted">Alta y edicion placeholder con React Hook Form y Zod.</p>
-      </div>
+    <div className="app-page max-w-5xl">
+      <PageHeader eyebrow="Talento Humano" title={id ? 'Editar funcionario' : 'Crear funcionario'} description="Registre la información institucional y seleccione la dependencia y el cargo aplicables." />
       <FuncionarioForm />
     </div>
   );

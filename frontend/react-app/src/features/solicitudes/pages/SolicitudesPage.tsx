@@ -1,33 +1,25 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../../components/ui/Card';
+import { Link } from 'react-router-dom';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingState } from '../../../components/feedback/LoadingState';
-import { SolicitudesTable } from '../components/SolicitudesTable';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { Table } from '../../../components/ui/Table';
+import { formatDate } from '../../../lib/formatters/dates';
+import { SolicitudStatusBadge } from '../components/SolicitudStatusBadge';
 import { solicitudesService } from '../services/solicitudes.service';
+import type { SolicitudCertificacion } from '../types/solicitud.types';
+import { certificateTypeLabel } from '../utils/certificateType';
 
 export function SolicitudesPage() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['solicitudes'],
-    queryFn: solicitudesService.list,
-  });
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (isError || !data) {
-    return <ErrorState />;
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Solicitudes</h1>
-        <p className="mt-1 text-sm text-muted">Listado inicial de solicitudes con datos mock.</p>
-      </div>
-      <Card title="Solicitudes registradas" description="La tabla consume servicios mock y quedara lista para la API.">
-        <SolicitudesTable solicitudes={data.data.data} />
-      </Card>
-    </div>
-  );
+  const [page, setPage] = useState(1);
+  const query = useQuery({ queryKey: ['solicitudes', page], queryFn: () => solicitudesService.listPage(page) });
+  if (query.isError) return <ErrorState />;
+  return <div className="app-page"><PageHeader appearance="institutional" title="Mis solicitudes" description="Consulte su pago, los comprobantes y la expedición de cada certificado." />
+    <Table<SolicitudCertificacion> loading={query.isLoading} data={query.data?.data ?? []} columns={[
+      { header: 'Radicado', accessor: (s) => <Link className="font-semibold text-primary underline" to={`/app/solicitudes/${s.id}`}>{s.radicado}</Link> },
+      { header: 'Tipo', accessor: (s) => certificateTypeLabel(s.tipo_certificado) },
+      { header: 'Estado', accessor: (s) => <SolicitudStatusBadge estado={s.estado} /> },
+      { header: 'Fecha', accessor: (s) => s.created_at ? formatDate(s.created_at) : '—' },
+    ]} pagination={query.data?.meta ? { currentPage: page, lastPage: query.data.meta.last_page, total: query.data.meta.total, onPageChange: setPage } : undefined} />
+  </div>;
 }

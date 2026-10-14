@@ -1,28 +1,27 @@
 import { Badge } from '../../../components/ui/Badge';
+import { Alert } from '../../../components/ui/Alert';
 import { Card } from '../../../components/ui/Card';
 import type { ValidacionCertificado } from '../types/validacionPublica.types';
+import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
 
 export function ValidationResultCard({ result }: { result: ValidacionCertificado }) {
+  const anulado = result.resultado === 'anulado';
+  const mensaje = result.resultado === 'no_encontrado'
+    ? 'Certificado no encontrado o código de validación inválido.'
+    : result.resultado === 'integridad_comprometida'
+      ? 'El documento no pudo validarse.'
+      : anulado ? 'CERTIFICADO ANULADO' : result.mensaje;
   return (
-    <Card title="Resultado de validacion" description="Consulta publica preparada para consumir el endpoint de Laravel.">
+    <Card title="Resultado de validación" description="Verificación pública del certificado.">
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-muted">Estado</dt>
-          <dd><Badge tone={result.valido ? 'green' : 'red'}>{result.valido ? 'Valido' : 'No valido'}</Badge></dd>
-        </div>
-        <div>
-          <dt className="text-muted">Codigo</dt>
-          <dd className="font-medium text-text">{result.codigoValidacion}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Funcionario</dt>
-          <dd className="font-medium text-text">{result.funcionario}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Cargo</dt>
-          <dd className="font-medium text-text">{result.cargo}</dd>
-        </div>
+        <div><dt className="text-muted">Estado</dt><dd><Badge tone={result.valido ? 'green' : 'red'}>{anulado ? 'CERTIFICADO ANULADO' : result.valido ? 'Válido' : 'No válido'}</Badge></dd></div>
+        <div><dt className="text-muted">Código único</dt><dd className="font-medium text-text">{result.codigo_unico ?? 'No encontrado'}</dd></div>
+        {result.codigo_unico ? <div><dt className="text-muted">Tipo</dt><dd className="font-medium text-text">{certificateTypeLabel(result.tipo_certificado)}</dd></div> : null}
+        {result.funcionario ? <div><dt className="text-muted">Funcionario titular</dt><dd className="font-medium text-text">{result.funcionario.nombre}</dd></div> : null}
+        {result.cargo ? <div><dt className="text-muted">Cargo</dt><dd className="font-medium text-text">{result.cargo}</dd></div> : null}
+        {result.fecha_generacion ? <div><dt className="text-muted">Fecha de generación</dt><dd className="font-medium text-text">{result.fecha_generacion}</dd></div> : null}
       </dl>
+      {mensaje ? <Alert className="mt-4" title={result.valido ? 'Certificado válido' : 'Certificado no válido'} variant={result.valido ? 'success' : 'error'}>{mensaje}</Alert> : null}
     </Card>
   );
 }

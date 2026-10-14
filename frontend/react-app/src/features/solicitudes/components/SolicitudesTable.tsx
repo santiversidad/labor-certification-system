@@ -1,13 +1,18 @@
 import { Link } from 'react-router-dom';
+import { Button } from '../../../components/ui/Button';
 import { Table, type TableColumn } from '../../../components/ui/Table';
+import { formatDate } from '../../../lib/formatters/dates';
 import { SolicitudStatusBadge } from './SolicitudStatusBadge';
 import type { SolicitudCertificacion } from '../types/solicitud.types';
+import { CERTIFICATE_TYPE_SHORT_LABELS } from '../utils/certificateType';
 
 const columns: TableColumn<SolicitudCertificacion>[] = [
-  { header: 'Radicado', accessor: (row) => <Link className="font-medium text-govBlue" to={`${row.id}`}>{row.radicado}</Link> },
-  { header: 'Tipo', accessor: 'tipo' },
+  { header: 'N°', accessor: (row) => <Link className="font-medium text-govBlue" to={`${row.id}`}>{row.id}</Link> },
+  { header: 'Tipo', accessor: (row) => CERTIFICATE_TYPE_SHORT_LABELS[row.tipo_certificado] },
+  { header: 'Solicitante', accessor: (row) => row.funcionario ? `${row.funcionario.nombres} ${row.funcionario.apellidos}` : '—' },
   { header: 'Estado', accessor: (row) => <SolicitudStatusBadge estado={row.estado} /> },
-  { header: 'Fecha solicitud', accessor: 'fechaSolicitud' },
+  { header: 'Fecha solicitud', accessor: (row) => row.created_at ? formatDate(row.created_at) : '—' },
+  { header: 'Accion', accessor: (row) => <Link to={`${row.id}`}><Button type="button" variant="secondary">Revisar</Button></Link> },
 ];
 
 export function SolicitudesTable({ solicitudes }: { solicitudes: SolicitudCertificacion[] }) {

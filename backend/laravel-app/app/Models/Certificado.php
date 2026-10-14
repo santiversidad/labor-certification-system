@@ -6,6 +6,7 @@ use App\Enums\EstadoCertificadoEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Certificado extends Model
 {
@@ -20,18 +21,45 @@ class Certificado extends Model
         'fecha_generacion',
         'generado_por',
         'estado',
+        'motivo_anulacion',
+        'anulado_por',
+        'anulado_at',
+        'snapshot_schema_version',
+        'snapshot_datos',
+        'download_token_hash',
+        'download_token_expires_at',
     ];
 
     protected $hidden = [
         'archivo_pdf_path',
         'hash_pdf',
+        'download_token_hash',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $certificado): void {
+            if ($certificado->snapshot_schema_version === null || $certificado->snapshot_datos === null) {
+                throw new \DomainException('No se puede generar un certificado nuevo sin snapshot versionado.');
+            }
+        });
+
+        static::updating(function (self $certificado): void {
+            if ($certificado->isDirty(['snapshot_schema_version', 'snapshot_datos'])) {
+                throw new \DomainException('El snapshot de un certificado emitido es inmutable.');
+            }
+        });
+    }
 
     protected function casts(): array
     {
         return [
-            'estado'           => EstadoCertificadoEnum::class,
+            'estado' => EstadoCertificadoEnum::class,
             'fecha_generacion' => 'datetime',
+            'anulado_at' => 'datetime',
+            'snapshot_schema_version' => 'integer',
+            'snapshot_datos' => 'array',
+            'download_token_expires_at' => 'datetime',
         ];
     }
 
@@ -52,8 +80,18 @@ class Certificado extends Model
         return $this->belongsTo(User::class, 'generado_por');
     }
 
+    public function anuladoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anulado_por');
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(TokenValidacion::class);
+    }
+
+    public function tokenValidacion(): HasOne
+    {
+        return $this->hasOne(TokenValidacion::class)->where('tipo', 'validacion')->latestOfMany();
     }
 }

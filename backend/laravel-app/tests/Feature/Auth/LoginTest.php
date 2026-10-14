@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Enums\RoleEnum;
+use App\Models\Funcionario;
 use App\Models\User;
 use Database\Seeders\RolesPermisosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,15 +21,15 @@ class LoginTest extends TestCase
 
     public function test_usuario_puede_iniciar_sesion_con_cedula_y_password_correctos(): void
     {
-        $user = User::factory()->create([
-            'documento' => '12345678',
-            'password'  => bcrypt('password'),
-            'estado'    => true,
+        $user = User::factory()->backoffice()->create([
+            'username' => 'admin.test',
+            'password' => bcrypt('password'),
+            'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Admin->value);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'username' => 'ADMIN.TEST',
             'password' => 'password',
         ]);
 
@@ -37,7 +38,7 @@ class LoginTest extends TestCase
                 'success',
                 'message',
                 'data' => [
-                    'token',
+                    'status',
                     'user' => ['id', 'documento', 'roles'],
                 ],
             ])
@@ -47,7 +48,7 @@ class LoginTest extends TestCase
     public function test_login_falla_con_cedula_inexistente(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '99999999',
+            'cedula' => '99999999',
             'password' => 'password',
         ]);
 
@@ -59,11 +60,11 @@ class LoginTest extends TestCase
     {
         User::factory()->create([
             'documento' => '12345678',
-            'password'  => bcrypt('password'),
+            'password' => bcrypt('password'),
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'cedula' => '12345678',
             'password' => 'wrong-password',
         ]);
 
@@ -75,16 +76,16 @@ class LoginTest extends TestCase
     {
         User::factory()->create([
             'documento' => '12345678',
-            'password'  => bcrypt('password'),
-            'estado'    => false,
+            'password' => bcrypt('password'),
+            'estado' => false,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'cedula'   => '12345678',
+            'cedula' => '12345678',
             'password' => 'password',
         ]);
 
-        $response->assertForbidden()
+        $response->assertUnprocessable()
             ->assertJson(['success' => false]);
     }
 
@@ -99,9 +100,11 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create([
             'documento' => '12345678',
-            'estado'    => true,
+            'estado' => true,
         ]);
         $user->assignRole(RoleEnum::Funcionario->value);
+        Funcionario::create(['user_id' => $user->id, 'numero_documento' => $user->documento,
+            'nombres' => 'Persona', 'apellidos' => 'Test', 'estado' => 'activo']);
 
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/auth/me')
@@ -112,7 +115,8 @@ class LoginTest extends TestCase
 
     public function test_usuario_puede_cerrar_sesion(): void
     {
-        $user = User::factory()->create(['estado' => true]);
+        $user = User::factory()->backoffice()->create(['estado' => true]);
+        $user->assignRole('admin');
 
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/auth/logout')
@@ -124,5 +128,27 @@ class LoginTest extends TestCase
     {
         $this->getJson('/api/v1/auth/me')
             ->assertUnauthorized();
+    }
+
+    public function test_ruta_protegida_sin_accept_json_no_redirige_a_login(): void
+    {
+        $this->get('/api/v1/auth/me')
+            ->assertUnauthorized()
+            ->assertHeader('content-type', 'application/json');
+    }
+
+    public function test_login_aplica_limite_de_cinco_intentos_por_minuto(): void
+    {
+        for ($intento = 1; $intento <= 5; $intento++) {
+            $this->postJson('/api/v1/auth/login', [
+                'cedula' => '11111111',
+                'password' => 'incorrecta',
+            ])->assertStatus(422);
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'cedula' => '11111111',
+            'password' => 'incorrecta',
+        ])->assertStatus(429)->assertJsonPath('code', 'LOGIN_RATE_LIMIT');
     }
 }

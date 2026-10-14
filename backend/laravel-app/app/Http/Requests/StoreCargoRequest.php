@@ -15,12 +15,12 @@ class StoreCargoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'codigo'      => ['required', 'string', 'max:10', Rule::unique('cargos')->where('grado', $this->grado)],
-            'grado'       => ['required', 'string', 'max:5'],
+            'codigo' => ['required', 'string', 'max:10', Rule::unique('cargos')->where('grado', $this->grado)],
+            'grado' => ['required', 'string', 'max:5'],
             'denominacion' => ['required', 'string', 'max:150'],
-            'nivel'       => ['nullable', 'string', 'max:60'],
+            'nivel' => ['nullable', 'string', 'max:60'],
             'dependencia' => ['nullable', 'string', 'max:150'],
-            'estado'      => ['boolean'],
+            'estado' => ['boolean'],
         ];
     }
 

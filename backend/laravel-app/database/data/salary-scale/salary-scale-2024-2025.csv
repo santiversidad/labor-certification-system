@@ -1,0 +1,101 @@
+﻿anio,codigo,grado,denominacion,numero_cargos,asignacion_basica_mensual
+2024,005,03,Alcalde,1,20196617
+2025,005,03,Alcalde,1,21610381
+2024,020,02,Secretario de Despacho,15,18662446
+2025,020,02,Secretario de Despacho,15,20248754
+2024,006,02,Jefe de Oficina,5,18662446
+2025,006,02,Jefe de Oficina,5,20248754
+2024,009,01,Director Técnico,39,10132886
+2025,009,01,Director Técnico,39,10994181
+2024,115,06,Jefe de Oficina Asesora,1,16153855
+2025,115,06,Jefe de Oficina Asesora,1,17284625
+2024,105,05,Asesor,7,15895106
+2025,105,05,Asesor,7,17246190
+2024,201,13,Tesorero General,1,11284768
+2025,201,13,Tesorero General,1,12074702
+2024,202,13,Comisario de Familia,6,11284768
+2025,202,13,Comisario de Familia,6,12074702
+2024,215,12,Almacenista General,1,9128733
+2025,215,12,Almacenista General,1,9904675
+2024,222,12,Profesional Especializado,3,9128733
+2025,222,12,Profesional Especializado,3,9904675
+2024,222,11,Profesional Especializado,1,7995856
+2025,222,11,Profesional Especializado,1,8675504
+2024,222,10,Profesional Especializado,15,6856521
+2025,222,10,Profesional Especializado,15,7439325
+2024,290,10,Comandante de Tránsito,2,6856521
+2025,290,10,Comandante de Tránsito,2,7439325
+2024,233,09,Inspector de Policía Urbano 1ra Categoria,11,6376135
+2025,233,09,Inspector de Policía Urbano 1ra Categoria,11,6918106
+2024,222,09,Profesional Especializado,34,6376135
+2025,222,09,Profesional Especializado,34,6918106
+2024,227,08,Corregidor,7,6271724
+2025,227,08,Corregidor,7,6804821
+2024,222,08,Profesional Especializado,1,6271724
+2025,222,08,Profesional Especializado,1,6804821
+2024,219,07,Profesional Universitario,145,5653764
+2025,219,07,Profesional Universitario,145,6134334
+2024,219,06,Profesional Universitario,1,5430113
+2025,219,06,Profesional Universitario,1,5891673
+2024,219,05,Profesional Universitario,8,5206114
+2025,219,05,Profesional Universitario,8,5648634
+2024,219,04,Profesional Universitario,2,4982394
+2025,219,04,Profesional Universitario,2,5405897
+2024,219,03,Profesional Universitario,4,4758646
+2025,219,03,Profesional Universitario,4,5163131
+2024,219,02,Profesional Universitario,3,4534841
+2025,219,02,Profesional Universitario,3,4920302
+2024,219,01,Profesional Universitario,10,4311036
+2025,219,01,Profesional Universitario,10,4677474
+2024,312,08,Inspector de Tránsito,4,4183337
+2025,312,08,Inspector de Tránsito,4,4476171
+2024,367,08,Técnico Administrativo,3,4183337
+2025,367,08,Técnico Administrativo,3,4476171
+2024,367,07,Técnico Administrativo,1,4183337
+2025,367,07,Técnico Administrativo,1,4476171
+2024,367,06,Técnico Administrativo,6,3969945
+2025,367,06,Técnico Administrativo,6,4307390
+2024,367,05,Técnico Administrativo,26,3770014
+2025,367,05,Técnico Administrativo,26,4090465
+2024,367,03,Técnico Administrativo,8,3570848
+2025,367,03,Técnico Administrativo,8,3874370
+2024,367,02,Técnico Administrativo,5,3370437
+2025,367,02,Técnico Administrativo,5,3656924
+2024,367,01,Técnico Administrativo,1,3170547
+2025,367,01,Técnico Administrativo,1,3440043
+2024,314,08,Técnico Operativo,7,4183337
+2025,314,08,Técnico Operativo,7,4476171
+2024,314,07,Técnico Operativo,2,4183337
+2025,314,07,Técnico Operativo,2,4476171
+2024,314,06,Técnico Operativo,7,3969945
+2025,314,06,Técnico Operativo,7,4307390
+2024,314,05,Técnico Operativo,97,3770014
+2025,314,05,Técnico Operativo,97,4090465
+2024,314,03,Técnico Operativo,13,3570848
+2025,314,03,Técnico Operativo,13,3874370
+2024,340,02,Agente de Tránsito,75,3370437
+2025,340,02,Agente de Tránsito,75,3656924
+2024,438,12,Secretario Ejecutivo del Despacho del alcalde,1,4141829
+2025,438,12,Secretario Ejecutivo del Despacho del alcalde,1,4431758
+2024,480,12,Conductor,2,4141829
+2025,480,12,Conductor,2,4431758
+2024,482,12,Conductor Mecánico,1,4141829
+2025,482,12,Conductor Mecánico,1,4431758
+2024,407,12,Auxiliar Administrativo,1,4141829
+2025,407,12,Auxiliar Administrativo,1,4431758
+2024,407,09,Auxiliar Administrativo,5,3598408
+2025,407,09,Auxiliar Administrativo,5,3904273
+2024,407,08,Auxiliar Administrativo,1,3444059
+2025,407,08,Auxiliar Administrativo,1,3736804
+2024,407,07,Auxiliar Administrativo,19,3289126
+2025,407,07,Auxiliar Administrativo,19,3568702
+2024,407,06,Auxiliar Administrativo,1,3134675
+2025,407,06,Auxiliar Administrativo,1,3401122
+2024,407,05,Auxiliar Administrativo,55,2980533
+2025,407,05,Auxiliar Administrativo,55,3233878
+2024,407,03,Auxiliar Administrativo,32,2826075
+2025,407,03,Auxiliar Administrativo,32,3066291
+2024,407,01,Auxiliar Administrativo,2,2671889
+2025,407,01,Auxiliar Administrativo,2,2899000
+2024,470,01,Auxiliar de Servicios Generales,3,2671889
+2025,470,01,Auxiliar de Servicios Generales,3,2899000

@@ -10,15 +10,15 @@ class CargoResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'          => $this->id,
-            'codigo'      => $this->codigo,
-            'grado'       => $this->grado,
+            'id' => $this->id,
+            'codigo' => $this->codigo,
+            'grado' => $this->grado,
             'denominacion' => $this->denominacion,
-            'nivel'       => $this->nivel,
+            'nivel' => $this->nivel,
             'dependencia' => $this->dependencia,
-            'estado'      => $this->estado,
-            'created_at'  => $this->created_at?->toISOString(),
-            'updated_at'  => $this->updated_at?->toISOString(),
+            'estado' => $this->estado,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

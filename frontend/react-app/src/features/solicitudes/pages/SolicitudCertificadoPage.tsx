@@ -1,16 +1,19 @@
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { Navigate, useParams } from 'react-router-dom';
 import { SolicitudForm } from '../components/SolicitudForm';
+import { CERTIFICATE_TYPE_LABELS } from '../utils/certificateType';
 
 export function SolicitudCertificadoPage() {
+  const { tipo } = useParams();
+  if (tipo !== 'sencillo' && tipo !== 'funciones') return <Navigate replace to="/app/inicio" />;
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-govBlue/15 bg-surface p-6">
-        <p className="text-sm font-semibold text-govBlue">Solicitud de Certificado V2</p>
-        <h1 className="mt-2 text-2xl font-semibold text-text">Solicitar certificacion laboral</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-          Complete la informacion del tramite. La solicitud sera registrada en estado pendiente y quedara disponible para revision por la dependencia correspondiente.
-        </p>
-      </div>
-      <SolicitudForm />
+      <PageHeader
+        eyebrow="Autoservicio"
+        title="Solicitud de certificado"
+        description={`Revise los datos antes de generar su ${CERTIFICATE_TYPE_LABELS[tipo].toLowerCase()}.`}
+      />
+      <SolicitudForm tipo={tipo} />
     </div>
   );
 }

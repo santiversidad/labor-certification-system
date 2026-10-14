@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TipoActuacionAdministrativaEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,6 +22,7 @@ class ActuacionAdministrativa extends Model
     protected function casts(): array
     {
         return [
+            'tipo_actuacion' => TipoActuacionAdministrativaEnum::class,
             'fecha_acto' => 'date',
         ];
     }

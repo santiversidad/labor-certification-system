@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\RegistrarAuditoriaAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexQueryRequest;
 use App\Http\Requests\StoreCargoRequest;
 use App\Http\Requests\UpdateCargoRequest;
 use App\Http\Resources\CargoResource;
@@ -23,14 +24,14 @@ class CargoController extends Controller
     /**
      * GET /api/v1/cargos
      */
-    public function index(Request $request): JsonResponse
+    public function index(IndexQueryRequest $request): JsonResponse
     {
         $this->authorize('cargos.ver');
 
         $cargos = Cargo::query()
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->boolean('estado')))
             ->when($request->filled('q'), fn ($q) => $q->where('denominacion', 'ilike', "%{$request->q}%"))
-            ->orderBy('denominacion')
+            ->orderBy($request->validated('orden', 'denominacion'), $request->validated('direccion', 'asc'))
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
@@ -51,6 +52,7 @@ class CargoController extends Controller
             modelo: 'Cargo',
             modeloId: $cargo->id,
             descripcion: "Cargo creado: {$cargo->denominacion} ({$cargo->codigo}-{$cargo->grado})",
+            metadata: ['nuevo' => $cargo->getAttributes()],
         );
 
         return $this->createdResponse(new CargoResource($cargo), 'Cargo creado correctamente.');
@@ -74,6 +76,7 @@ class CargoController extends Controller
     public function update(UpdateCargoRequest $request, int $cargo): JsonResponse
     {
         $cargoModel = Cargo::findOrFail($cargo);
+        $anterior = $cargoModel->getAttributes();
         $cargoModel->update($request->validated());
 
         $this->registrarAuditoria->execute(
@@ -81,6 +84,7 @@ class CargoController extends Controller
             modelo: 'Cargo',
             modeloId: $cargoModel->id,
             descripcion: "Cargo actualizado: {$cargoModel->denominacion}",
+            metadata: ['anterior' => $anterior, 'nuevo' => $cargoModel->fresh()->getAttributes()],
         );
 
         return $this->successResponse(new CargoResource($cargoModel), 'Cargo actualizado correctamente.');

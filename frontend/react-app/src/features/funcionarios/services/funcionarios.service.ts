@@ -1,29 +1,34 @@
-import { env } from '../../../config/env';
-import { endpoints } from '../../../lib/api/endpoints';
 import { apiClient } from '../../../lib/api/apiClient';
-import { mockPaginatedResponse, mockResponse } from '../../../lib/api/mockAdapter';
-import { mockFuncionarios } from '../../../lib/mocks/mockFuncionarios';
+import { endpoints } from '../../../lib/api/endpoints';
 import type { ApiResponse } from '../../../lib/api/api.types';
-import type { PaginatedResponse } from '../../../types/pagination.types';
+import type { FuncionarioFormValues } from '../schemas/funcionario.schema';
 import type { Funcionario } from '../types/funcionario.types';
 
+export type FuncionarioFilters = { page?: number; per_page?: number; q?: string; cargo_id?: string; dependencia?: string; estado?: string };
+const payload = (values: FuncionarioFormValues) => {
+  const { manual_cargo_version_id: ficha, ...rest } = values;
+  return { ...rest, cargo_id: Number(values.cargo_id), ...(ficha ? { manual_cargo_version_id: Number(ficha) } : {}), fecha_retiro: values.fecha_retiro || null };
+};
+
 export const funcionariosService = {
-  async list(): Promise<ApiResponse<PaginatedResponse<Funcionario>>> {
-    if (env.useMocks) {
-      return mockPaginatedResponse(mockFuncionarios);
-    }
-
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Funcionario>>>(endpoints.funcionarios);
-    return response.data;
+  async list(filters: FuncionarioFilters = {}): Promise<ApiResponse<Funcionario[]>> {
+    return (await apiClient.get<ApiResponse<Funcionario[]>>(endpoints.funcionarios, { params: filters })).data;
   },
-
-  async getById(id: string): Promise<ApiResponse<Funcionario>> {
-    if (env.useMocks) {
-      const funcionario = mockFuncionarios.find((item) => item.id === id) ?? mockFuncionarios[0];
-      return mockResponse(funcionario);
-    }
-
-    const response = await apiClient.get<ApiResponse<Funcionario>>(`${endpoints.funcionarios}/${id}`);
-    return response.data;
+  async getById(id: string | number): Promise<ApiResponse<Funcionario>> {
+    return (await apiClient.get<ApiResponse<Funcionario>>(`${endpoints.funcionarios}/${id}`)).data;
+  },
+  async create(values: FuncionarioFormValues): Promise<ApiResponse<Funcionario>> {
+    return (await apiClient.post<ApiResponse<Funcionario>>(endpoints.funcionarios, payload(values))).data;
+  },
+  async update(id: string | number, values: FuncionarioFormValues, conservarVinculacion = false): Promise<ApiResponse<Funcionario>> {
+    const data: Partial<ReturnType<typeof payload>> = payload(values);
+    if (conservarVinculacion) { delete data.cargo_id; delete data.unidad_organizacional_id; delete data.manual_cargo_version_id; }
+    return (await apiClient.put<ApiResponse<Funcionario>>(`${endpoints.funcionarios}/${id}`, data)).data;
+  },
+  async resetAccess(id: string | number): Promise<void> {
+    await apiClient.post(endpoints.resetFuncionarioAccess(id));
+  },
+  async setEstado(id: number, estado: Funcionario['estado']): Promise<void> {
+    await apiClient.put(`${endpoints.funcionarios}/${id}`, { estado });
   },
 };

@@ -1,0 +1,26 @@
+@page { size: A4 portrait; margin: 39mm 22mm 27mm 22mm; }
+@page :left { margin: 39mm 22mm 27mm 22mm; }
+@page :right { margin: 39mm 22mm 27mm 22mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #22282d; font-family: "DejaVu Sans", sans-serif; font-size: 9.7pt; line-height: 1.55; }
+.document-kicker { color: #52616c; font-size: 7.7pt; letter-spacing: .8px; text-align: center; text-transform: uppercase; }
+h1 { margin: 2mm 0 0; color: #173d60; font-size: 16pt; line-height: 1.25; letter-spacing: .4px; text-align: center; }
+.type { margin: 1.5mm 0 7mm; font-size: 9pt; font-weight: bold; letter-spacing: .9px; text-align: center; }
+.certifies { margin: 0 0 5mm; font-size: 12pt; letter-spacing: 1.2px; text-align: center; page-break-after: avoid; }
+p { margin: 0 0 4mm; text-align: justify; }
+.employment-table { width: 100%; margin: 5mm 0 6mm; border-collapse: collapse; }
+.employment-table td { border-bottom: .45px solid #c9ced2; padding: 2mm 1.5mm; vertical-align: top; }
+.employment-table td:first-child { width: 42%; color: #53616b; font-size: 8.7pt; }
+.employment-table td:last-child { font-weight: bold; }
+.section-title { margin: 6mm 0 2.5mm; padding-bottom: 1.5mm; border-bottom: 1px solid #466681; color: #173d60; font-size: 9.5pt; letter-spacing: .5px; text-transform: uppercase; page-break-after: avoid; }
+.manual-grid { width: 100%; margin-bottom: 4mm; border-collapse: collapse; }
+.manual-grid td { padding: 1.3mm 0; vertical-align: top; }
+.manual-grid td:first-child { width: 34%; color: #53616b; font-size: 8.7pt; }
+.purpose { margin-bottom: 4mm; border-left: 2px solid #6b8599; padding-left: 3mm; }
+.functions-page.controlled-page { page-break-before: always; padding-top: 1px; }
+.functions-list { margin: 0; padding: 0; list-style: none; }
+.function-item { position: relative; margin: 0 0 4mm; padding-left: 9mm; text-align: justify; }
+.function-number { position: absolute; top: 0; left: 0; width: 7mm; color: #173d60; font-weight: bold; }
+.development-notice { margin: 4mm 0; border: 1px solid #59646c; padding: 3mm; font-size: 8pt; font-weight: bold; text-align: center; page-break-inside: avoid; }
+.issuance { margin-top: 7mm; page-break-inside: avoid; }
+.officialization { margin-top: 6mm; min-height: 19mm; border: 1px solid #a3abb0; padding: 5mm; color: #49555d; font-size: 8.7pt; text-align: center; page-break-inside: avoid; }

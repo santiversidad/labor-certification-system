@@ -1,0 +1,20 @@
+export type CertificateType = 'sencillo' | 'funciones';
+export type Alignment = 'left' | 'center' | 'right' | 'justify';
+export type Run = ({ type: 'text'; text: string } | { type: 'variable'; variable: string }) & { bold?: boolean; italic?: boolean };
+export type Paragraph = { id: string; position: 'body' | 'closing'; alignment: Alignment; runs: Run[] };
+export type TemplateContent = {
+  schema_version: 1; title: string;
+  header: { left_asset_id: number | null; right_asset_id: number | null };
+  typography: { font: string; size: number; line_height: number };
+  paragraphs: Paragraph[];
+  functions: { title: string; size: number; line_height: number } | null;
+  signature: { name: string; role: string; office: string; text: string; alignment: Alignment };
+  additional_signatures: { label: string; name: string; role: string }[];
+  footer: { direccion: string; nit: string; telefono: string; codigo_postal: string; sitio_web: string; cuenta_x: string; ciudad: string };
+};
+export type Variable = { id: string; etiqueta: string; grupo: string; descripcion: string; tipo: string; origen: string; formato: string; disponibilidad: string; ausencia: string };
+export type TemplateAsset = { id: number; posicion: 'left' | 'right'; sha256: string; mime: string; ancho: number; alto: number; bytes: number; procedencia: string; url: string };
+export type TemplateVersion = { id: number; plantilla_id: number; numero: number; revision: number; estado: 'borrador' | 'publicada' | 'archivada'; sha256: string; updated_at: string; publicado_at: string | null; ultimo_editor: string | null };
+export type TemplateDetail = TemplateVersion & { tipo: CertificateType; contenido: TemplateContent; assets: TemplateAsset[] };
+export type Template = { id: number; tipo: CertificateType; publicada: TemplateVersion | null; borrador: TemplateVersion | null };
+export type PreviewScenario = 'breve' | 'dos' | 'tres' | 'extenso';

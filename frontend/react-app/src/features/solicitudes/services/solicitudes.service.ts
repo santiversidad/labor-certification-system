@@ -1,48 +1,38 @@
-import { env } from '../../../config/env';
-import { endpoints } from '../../../lib/api/endpoints';
 import { apiClient } from '../../../lib/api/apiClient';
-import { mockPaginatedResponse, mockResponse } from '../../../lib/api/mockAdapter';
-import { mockSolicitudes } from '../../../lib/mocks/mockSolicitudes';
+import { endpoints } from '../../../lib/api/endpoints';
 import type { ApiResponse } from '../../../lib/api/api.types';
-import type { PaginatedResponse } from '../../../types/pagination.types';
 import type { SolicitudFormValues } from '../schemas/solicitud.schema';
-import type { SolicitudCertificacion } from '../types/solicitud.types';
+import type { DisponibilidadCertificacion, ExpedicionCertificacion, SolicitudCertificacion } from '../types/solicitud.types';
 
 export const solicitudesService = {
-  async list(): Promise<ApiResponse<PaginatedResponse<SolicitudCertificacion>>> {
-    if (env.useMocks) {
-      return mockPaginatedResponse(mockSolicitudes);
-    }
-
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<SolicitudCertificacion>>>(endpoints.solicitudes);
+  async disponibilidad(): Promise<ApiResponse<DisponibilidadCertificacion>> {
+    const response = await apiClient.get<ApiResponse<DisponibilidadCertificacion>>(endpoints.disponibilidadCertificacion);
     return response.data;
   },
-
-  async getById(id: string): Promise<ApiResponse<SolicitudCertificacion>> {
-    if (env.useMocks) {
-      const solicitud = mockSolicitudes.find((item) => item.id === id) ?? mockSolicitudes[0];
-      return mockResponse(solicitud);
-    }
-
+  async list(): Promise<ApiResponse<SolicitudCertificacion[]>> {
+    return solicitudesService.listPage(1);
+  },
+  async listPage(page: number): Promise<ApiResponse<SolicitudCertificacion[]>> {
+    const response = await apiClient.get<ApiResponse<SolicitudCertificacion[]>>(endpoints.solicitudes, { params: { page } });
+    return response.data;
+  },
+  async getById(id: string | number): Promise<ApiResponse<SolicitudCertificacion>> {
     const response = await apiClient.get<ApiResponse<SolicitudCertificacion>>(`${endpoints.solicitudes}/${id}`);
     return response.data;
   },
-
-  async create(payload: SolicitudFormValues): Promise<ApiResponse<SolicitudCertificacion>> {
-    if (env.useMocks) {
-      return mockResponse({
-        id: `sol-${Date.now()}`,
-        funcionarioId: 'fun-001',
-        radicado: `CLV-2026-${String(mockSolicitudes.length + 1).padStart(4, '0')}`,
-        tipo: payload.tipo,
-        incluyeSalario: payload.incluyeSalario,
-        estado: 'pendiente',
-        fechaSolicitud: new Date().toISOString().slice(0, 10),
-        observaciones: payload.observaciones,
-      }, 'Solicitud mock creada correctamente.');
-    }
-
-    const response = await apiClient.post<ApiResponse<SolicitudCertificacion>>(endpoints.solicitudes, payload);
+  async create(payload: SolicitudFormValues): Promise<ApiResponse<ExpedicionCertificacion>> {
+    const response = await apiClient.post<ApiResponse<ExpedicionCertificacion>>(endpoints.solicitudes, payload);
     return response.data;
+  },
+  async downloadImmediate(url: string): Promise<{ blob: Blob; filename: string }> {
+    // The API returns a root-relative path; Axios already has /api/v1 in baseURL.
+    // Reject other origins/routes so the bearer token never follows an arbitrary URL.
+    if (!/^\/api\/v1\/mi-certificacion\/descargar\/[a-f0-9]{64}$/.test(url)) {
+      throw new Error('El enlace de descarga no es válido.');
+    }
+    const response = await apiClient.get<Blob>(url.slice('/api/v1'.length), { responseType: 'blob' });
+    const disposition = response.headers['content-disposition'] as string | undefined;
+    const match = disposition?.match(/filename="?([^";]+)"?/i);
+    return { blob: response.data, filename: match?.[1] ?? 'certificacion-laboral.pdf' };
   },
 };

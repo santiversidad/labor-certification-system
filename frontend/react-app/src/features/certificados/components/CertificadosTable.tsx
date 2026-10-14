@@ -1,13 +1,20 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '../../../components/ui/Badge';
 import { Table, type TableColumn } from '../../../components/ui/Table';
+import { formatDate } from '../../../lib/formatters/dates';
+import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
 import type { Certificado } from '../types/certificado.types';
 
 const columns: TableColumn<Certificado>[] = [
-  { header: 'Codigo', accessor: (row) => <Link className="font-medium text-govBlue" to={`${row.id}`}>{row.codigoValidacion}</Link> },
-  { header: 'Solicitud', accessor: 'solicitudId' },
-  { header: 'Generado', accessor: 'fechaGeneracion' },
-  { header: 'Estado', accessor: (row) => <Badge tone={row.estado === 'anulado' || row.estado === 'vencido' ? 'red' : 'green'}>{row.estado}</Badge> },
+  { header: 'Código', accessor: (row) => <Link className="font-medium text-govBlue" to={`${row.id}`}>{row.codigo_unico}</Link> },
+  { header: 'Tipo', accessor: (row) => row.solicitud ? certificateTypeLabel(row.solicitud.tipo_certificado) : 'Registro histórico de modelo anterior' },
+  { header: 'Generado', accessor: (row) => row.fecha_generacion ? formatDate(row.fecha_generacion) : '—' },
+  {
+    header: 'Estado',
+    accessor: (row) => (
+      <Badge tone={row.estado === 'anulado' ? 'red' : 'green'}>{row.estado}</Badge>
+    ),
+  },
 ];
 
 export function CertificadosTable({ certificados }: { certificados: Certificado[] }) {

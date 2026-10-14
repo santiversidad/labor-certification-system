@@ -1,0 +1,8 @@
+{
+  "baseline_login_probe_directives": [
+    "script-src"
+  ],
+  "editor_pdf_directives": [],
+  "worker": "same-origin ES module, application/javascript",
+  "wasm": false
+}

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadoPagoEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PagoSoporte extends Model
 {
@@ -28,8 +29,8 @@ class PagoSoporte extends Model
     protected function casts(): array
     {
         return [
-            'estado'       => EstadoPagoEnum::class,
-            'validado_at'  => 'datetime',
+            'estado' => EstadoPagoEnum::class,
+            'validado_at' => 'datetime',
         ];
     }
 
@@ -48,5 +49,10 @@ class PagoSoporte extends Model
     public function validadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validado_por');
+    }
+
+    public function comprobantes(): HasMany
+    {
+        return $this->hasMany(PagoComprobante::class)->orderBy('version');
     }
 }

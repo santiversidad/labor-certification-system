@@ -1,93 +1,63 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Send } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, FileText, ListChecks, Send } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
-import { ErrorState } from '../../../components/feedback/ErrorState';
-import { useAuth } from '../../auth/hooks/useAuth';
-import { solicitudSchema, type SolicitudFormValues } from '../schemas/solicitud.schema';
+import { Textarea } from '../../../components/ui/Textarea';
+import { formatLongDate } from '../../../lib/formatters/dates';
+import { getErrorMessage } from '../../../lib/utils/errors';
 import { solicitudesService } from '../services/solicitudes.service';
+import type { TipoCertificado } from '../types/solicitud.types';
+import { CERTIFICATE_TYPE_DESCRIPTIONS, CERTIFICATE_TYPE_LABELS } from '../utils/certificateType';
 
-export function SolicitudForm() {
-  const { user } = useAuth();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<SolicitudFormValues>({
-    resolver: zodResolver(solicitudSchema),
-    defaultValues: { tipo: 'laboral', incluyeSalario: false, observaciones: '' },
-  });
-
-  const createMutation = useMutation({
+export function SolicitudForm({ tipo }: { tipo: TipoCertificado }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [observaciones, setObservaciones] = useState('');
+  const disponibilidadQuery = useQuery({ queryKey: ['disponibilidad-certificacion'], queryFn: solicitudesService.disponibilidad, refetchOnMount: 'always' });
+  const estado = disponibilidadQuery.data?.data[tipo];
+  const requierePago = disponibilidadQuery.data?.data.requiere_pago === true;
+  const puedeSolicitar = estado?.puede_solicitar === true && !disponibilidadQuery.isFetching;
+  const mutation = useMutation({
     mutationFn: solicitudesService.create,
-    onSuccess: () => {
-      reset({ tipo: 'laboral', incluyeSalario: false, observaciones: '' });
+    onError: () => { void queryClient.invalidateQueries({ queryKey: ['disponibilidad-certificacion'] }); },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ['disponibilidad-certificacion'] });
+      navigate('/app/solicitudes/confirmacion', { replace: true, state: response.data });
     },
   });
+  const mutationMessage = mutation.isError ? getErrorMessage(mutation.error) : '';
+  const visibleMutationMessage = tipo === 'sencillo' && /manual|ficha|funcion/i.test(mutationMessage)
+    ? 'No fue posible validar la vinculación laboral. Comuníquese con Talento Humano.'
+    : mutationMessage;
+  const Icon = tipo === 'sencillo' ? FileText : ListChecks;
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!puedeSolicitar || mutation.isPending || observaciones.length > 500) return;
+    mutation.mutate({ tipo_certificado: tipo, observaciones });
+  }
 
   return (
-    <Card title="Datos de la solicitud" description="Formulario validado con React Hook Form y Zod; el envio usa el servicio mock de solicitudes.">
-      <form className="space-y-6" onSubmit={handleSubmit((values) => createMutation.mutate(values))}>
-        <section className="grid gap-4 rounded-md border border-border bg-background p-4 md:grid-cols-3">
-          <div>
-            <p className="text-xs font-semibold uppercase text-muted">Funcionario</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.name ?? 'Funcionario mock'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-muted">Correo institucional</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.funcionario?.correo_institucional ?? 'Sin correo registrado'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-muted">Dependencia</p>
-            <p className="mt-1 text-sm font-medium text-text">{user?.funcionario?.dependencia ?? 'Sin dependencia registrada'}</p>
-          </div>
-        </section>
+    <form className="surface-section max-w-3xl p-5 sm:p-8" onSubmit={submit}>
+      <div className="flex items-start gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 sm:p-5">
+        <span className="shrink-0 rounded-lg bg-surface p-2.5 text-primary"><Icon aria-hidden="true" size={24} /></span>
+        <div className="min-w-0"><p className="eyebrow">Tipo seleccionado</p><h2 className="mt-1 text-xl font-bold text-text">{CERTIFICATE_TYPE_LABELS[tipo]}</h2><p className="mt-2 text-sm leading-6 text-text/85">{CERTIFICATE_TYPE_DESCRIPTIONS[tipo]}</p></div>
+      </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-          <label className="block space-y-1 text-sm">
-            <span className="font-medium text-text">Tipo de certificacion</span>
-            <select className="min-h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-govBlue focus:ring-2 focus:ring-govBlue/20" {...register('tipo')}>
-              <option value="laboral">Certificacion laboral</option>
-              <option value="salarial">Certificacion salarial</option>
-              <option value="funciones">Certificacion de funciones</option>
-            </select>
-            <span className="text-xs text-muted">Seleccione el documento requerido para su tramite.</span>
-          </label>
+      <div className="mt-6 space-y-5">
+        {disponibilidadQuery.isError ? <Alert title="No fue posible consultar la disponibilidad" variant="error">Intente de nuevo antes de generar el certificado.</Alert> : null}
+        {estado?.puede_solicitar === false ? <Alert title="Certificado no disponible actualmente" variant="warning">{estado.proxima_fecha_disponible ? <>Próxima disponibilidad: <strong>{formatLongDate(estado.proxima_fecha_disponible)}</strong>.</> : 'La próxima fecha está pendiente de confirmación.'} <Link className="font-semibold text-primary underline focus-visible:outline-2 focus-visible:outline-offset-2" to="/app/inicio">Volver al inicio</Link></Alert> : null}
+        {estado?.puede_solicitar === true ? <Alert title={requierePago ? 'Este certificado requiere pago' : 'Antes de generar'} variant="info">{requierePago ? 'Este certificado requiere validación de pago por Secretaría antes de su expedición. La solicitud reservará el cupo del tipo para el mes actual.' : <>Al generar este certificado utilizará la disponibilidad de este tipo para el mes actual. El sistema validará su información laboral{tipo === 'funciones' ? ' y la ficha del Manual' : ''}.</>}</Alert> : null}
+        <Textarea label="Observaciones (opcional)" maxLength={500} onChange={(event) => setObservaciones(event.target.value)} value={observaciones} />
+        {mutation.isError ? <Alert title="No fue posible expedir la certificación" variant="error">{visibleMutationMessage}</Alert> : null}
+      </div>
 
-          <label className="flex min-h-10 items-start gap-3 rounded-md border border-border bg-surface p-3 text-sm">
-            <input className="mt-1 h-4 w-4 rounded border-border text-govBlue focus:ring-govBlue" type="checkbox" {...register('incluyeSalario')} />
-            <span>
-              <span className="block font-medium text-text">Incluir salario</span>
-              <span className="text-xs text-muted">Agrega informacion salarial cuando el certificado lo requiera.</span>
-            </span>
-          </label>
-        </div>
-
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-text">Observaciones</span>
-          <textarea
-            className="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition placeholder:text-muted focus:border-govBlue focus:ring-2 focus:ring-govBlue/20"
-            placeholder="Indique detalles del tramite, entidad destino o informacion adicional."
-            {...register('observaciones')}
-          />
-          {errors.observaciones?.message ? <span className="text-xs text-villavoRed">{errors.observaciones.message}</span> : null}
-        </label>
-
-        {createMutation.isError ? <ErrorState message="No fue posible crear la solicitud mock." /> : null}
-        {createMutation.isSuccess ? (
-          <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-villavoGreen">
-            Solicitud enviada correctamente. El radicado mock quedo en estado pendiente.
-          </div>
-        ) : null}
-
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Link to="/app/solicitudes">
-            <Button className="w-full sm:w-auto" icon={<ArrowLeft size={16} />} type="button" variant="secondary">Volver</Button>
-          </Link>
-          <Button className="w-full sm:w-auto" disabled={createMutation.isPending} icon={<Send size={16} />} type="submit">
-            {createMutation.isPending ? 'Enviando...' : 'Enviar solicitud'}
-          </Button>
-        </div>
-      </form>
-    </Card>
+      <div className="mt-7 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-between">
+        <Button icon={<ArrowLeft aria-hidden="true" size={16} />} onClick={() => navigate('/app/inicio')} type="button" variant="secondary">Volver al inicio</Button>
+        <Button disabled={!puedeSolicitar || mutation.isPending} icon={<Send aria-hidden="true" size={16} />} type="submit">{mutation.isPending ? (requierePago ? 'Creando solicitud...' : 'Generando...') : `${requierePago ? 'Crear solicitud' : 'Generar certificado'} ${tipo === 'sencillo' ? 'sencillo' : 'con funciones'}`}</Button>
+      </div>
+    </form>
   );
 }

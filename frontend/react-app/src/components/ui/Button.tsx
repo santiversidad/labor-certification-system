@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/utils/cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -9,17 +9,18 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-govBlue text-white hover:bg-govBlueDark',
-  secondary: 'border border-border bg-surface text-text hover:bg-background',
-  ghost: 'text-govBlue hover:bg-blue-50',
-  danger: 'bg-villavoRed text-white hover:bg-red-800',
+  primary: 'bg-primary text-white shadow-sm hover:bg-primary-hover',
+  secondary: 'border border-border bg-surface text-text shadow-sm hover:border-secondary/50 hover:bg-surface-muted',
+  ghost: 'text-primary hover:bg-primary/8',
+  danger: 'bg-error text-white shadow-sm hover:bg-red-800',
+  success: 'bg-success text-white shadow-sm hover:bg-emerald-800',
 };
 
 export function Button({ className, variant = 'primary', icon, children, ...props }: ButtonProps) {
   return (
     <button
       className={cn(
-        'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:active:translate-y-0',
         variantClasses[variant],
         className,
       )}

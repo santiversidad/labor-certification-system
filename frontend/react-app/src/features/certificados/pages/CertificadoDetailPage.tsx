@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { Badge } from '../../../components/ui/Badge';
+import { Alert } from '../../../components/ui/Alert';
 import { Card } from '../../../components/ui/Card';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingState } from '../../../components/feedback/LoadingState';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { formatDate } from '../../../lib/formatters/dates';
 import { DownloadCertificateButton } from '../components/DownloadCertificateButton';
 import { certificadosService } from '../services/certificados.service';
+import { canDownloadCertificado } from '../utils/certificadoRules';
+import { certificateTypeLabel } from '../../solicitudes/utils/certificateType';
 
 export function CertificadoDetailPage() {
   const { id = '' } = useParams();
@@ -23,18 +28,24 @@ export function CertificadoDetailPage() {
     return <ErrorState />;
   }
 
+  const certificado = data.data;
+  const canDownload = canDownloadCertificado(certificado);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text">Detalle de certificado</h1>
-        <p className="mt-1 text-sm text-muted">Descarga placeholder y metadatos listos para API.</p>
-      </div>
-      <Card actions={<DownloadCertificateButton url={data.data.descargaUrl} />} title={data.data.codigoValidacion} description="Informacion del certificado laboral.">
+      <PageHeader title="Detalle de certificado" description="Información del certificado generado." />
+      <Card
+        actions={<DownloadCertificateButton certificadoId={certificado.id} disabled={!canDownload} />}
+        title={certificado.codigo_unico}
+        description="Información del certificado laboral."
+      >
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted">Solicitud</dt><dd className="font-medium">{data.data.solicitudId}</dd></div>
-          <div><dt className="text-muted">Estado</dt><dd><Badge tone="green">{data.data.estado}</Badge></dd></div>
-          <div><dt className="text-muted">Generacion</dt><dd className="font-medium">{data.data.fechaGeneracion}</dd></div>
-          <div><dt className="text-muted">Vencimiento</dt><dd className="font-medium">{data.data.fechaVencimiento}</dd></div>
+          <div><dt className="text-muted">Código único</dt><dd className="font-medium">{certificado.codigo_unico}</dd></div>
+          <div><dt className="text-muted">Estado</dt><dd><Badge tone={certificado.estado === 'anulado' ? 'red' : 'green'}>{certificado.estado}</Badge></dd></div>
+          <div><dt className="text-muted">Generación</dt><dd className="font-medium">{certificado.fecha_generacion ? formatDate(certificado.fecha_generacion) : '—'}</dd></div>
+          <div><dt className="text-muted">Generado por</dt><dd className="font-medium">{certificado.generado_por?.name ?? '—'}</dd></div>
+          <div><dt className="text-muted">Tipo</dt><dd className="font-medium">{certificado.solicitud ? certificateTypeLabel(certificado.solicitud.tipo_certificado) : 'Registro histórico de modelo anterior'}</dd></div>
+          {certificado.snapshot_schema_version && certificado.snapshot_schema_version < 3 ? <div className="sm:col-span-2"><Alert title="Registro histórico" variant="warning">Este certificado corresponde a un modelo anterior. Consulte sus datos y estado antes de utilizarlo.</Alert></div> : null}
         </dl>
       </Card>
     </div>

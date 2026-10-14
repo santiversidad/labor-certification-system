@@ -1,0 +1,361 @@
+ Container labor-certification-certificate-types-test-run-68f198afa3e2 Creating
+ Container labor-certification-certificate-types-test-run-68f198afa3e2 Created
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Feature\ActuacionAdministrativaTest
+  ✓ admin puede crear actuacion administrativa                           1.90s
+
+   PASS  Tests\Feature\Auth\AuthorizationRegressionTest
+  ✓ auth me identifica admin secretario y funcionario                    0.87s
+  ✓ auth me permanece disponible durante cambio obligatorio              0.75s
+  ✓ auth me rechaza anonimo con 401                                      0.72s
+  ✓ suite usa cache aislado para no contaminar spatie local              0.77s
+  ✓ admin tiene acceso a toda la matriz administrativa                   1.72s
+  ✓ funcionario conserva 403 administrativo y su disponibilidad          0.84s
+  ✓ secretario conserva solo su matriz definida                          0.93s
+
+   PASS  Tests\Feature\Auth\LoginTest
+  ✓ usuario puede iniciar sesion con cedula y password correctos         1.10s
+  ✓ login falla con cedula inexistente                                   0.86s
+  ✓ login falla con password incorrecta                                  0.74s
+  ✓ login rechaza usuario inactivo                                       0.73s
+  ✓ login valida que cedula y password son requeridos                    0.74s
+  ✓ usuario autenticado puede obtener sus datos                          0.76s
+  ✓ usuario puede cerrar sesion                                          0.80s
+  ✓ ruta protegida rechaza peticion sin token                            0.82s
+  ✓ ruta protegida sin accept json no redirige a login                   0.83s
+  ✓ login aplica limite de cinco intentos por minuto                     0.86s
+
+   PASS  Tests\Feature\BackofficeIdentityLifecycleTest
+  ✓ creation generates individual backoffice without employee with data… 0.87s
+  ✓ creation generates individual backoffice without employee with data… 0.92s
+  ✓ invalid creation is rejected with data set #0                        1.19s
+  ✓ invalid creation is rejected with data set #1                        0.76s
+  ✓ invalid creation is rejected with data set #2                        0.78s
+  ✓ invalid creation is rejected with data set #3                        0.81s
+  ✓ invalid creation is rejected with data set #4                        0.76s
+  ✓ invalid creation is rejected with data set #5                        0.86s
+  ✓ invalid creation is rejected with data set #6                        0.90s
+  ✓ invalid creation is rejected with data set #7                        0.81s
+  ✓ duplicate username is normalized and rejected                        0.83s
+  ✓ model disallows cross context and mixed roles with data set #0       0.62s
+  ✓ model disallows cross context and mixed roles with data set #1       0.79s
+  ✓ model disallows cross context and mixed roles with data set #2       0.82s
+  ✓ model disallows cross context and mixed roles with data set #3       1.09s
+  ✓ model disallows cross context and mixed roles with data set #4       0.81s
+  ✓ employee link to backoffice is rejected                              0.79s
+  ✓ unlinked employee identity cannot authenticate                       0.79s
+  ✓ database rejects missing employee even when model is bypassed        0.80s
+  ✓ database rejects backoffice link when model is bypassed              0.86s
+  ✓ temporal requires password change before business access with data…  0.90s
+  ✓ temporal requires password change before business access with data…  0.96s
+  ✓ login tracks success and not invalid credentials                     0.78s
+  ✓ employee login by document remains supported                         0.83s
+  ✓ deactivation revokes tokens preserves history and reactivation neve… 1.00s
+  ✓ reset revokes old credentials and never audits secret                0.80s
+  ✓ role change revokes and applies new authority                        1.17s
+  ✓ last admin cannot be deactivated or demoted                          0.84s
+  ✓ self deactivation and self demotion are blocked with two admins      0.76s
+  ✓ internal user management is admin only                               0.86s
+  ✓ backoffice cannot use employee selfservice even with broad permissi… 0.78s
+  ✓ backoffice cannot use employee selfservice even with broad permissi… 0.84s
+  ✓ two accounts for one person have independent tokens credentials and… 0.93s
+  ✓ username is immutable and deletion prohibited                        0.90s
+  ✓ cookie epoch rejects old session after reset and reactivation        0.83s
+  ✓ legacy username is explicit and preserves actor                      0.80s
+  ✓ cookie epoch also revokes role change without changing password      0.90s
+  ✓ legacy linked actor can be explicitly split without erasing history  1.06s
+  ✓ production seeders never install known credentials                   0.71s
+  ✓ database requires username for ready accounts                        0.76s
+  ✓ list uses existing root pagination and server filters                0.79s
+  ✓ bootstrap command works without an existing active admin             0.76s
+  ✓ password change cannot revive cookie revoked after middleware        0.79s
+
+   PASS  Tests\Feature\CertificadoValidacionTest
+  ✓ autoservicio genera certificado y token para su titular              1.25s
+  ✓ no genera certificado si pago requerido no esta aprobado             0.92s
+  ✓ token valido retorna certificado valido y no expone salario          1.13s
+  ✓ token invalido retorna respuesta controlada                          1.11s
+  ✓ certificado anulado no valida como vigente                           1.32s
+  ✓ descarga requiere autorizacion                                       1.35s
+  ✓ token nuevo tiene 256 bits y campos temporales inactivos             1.14s
+  ✓ archivo pdf alterado no se descarga ni valida como valido            1.10s
+  ✓ certificado anulado no puede descargarse y se identifica expresamen… 1.17s
+  ✓ archivo ausente retorna respuesta controlada sin ruta fisica         1.07s
+
+   PASS  Tests\Feature\CertificatePdfTest
+  ✓ sencillo genera pdf                                                  1.01s
+  ✓ funciones genera pdf                                                 1.10s
+  ✓ salida tiene cabecera pdf valida                                     1.10s
+  ✓ url and html in employee data cannot become remote pdf resources     1.39s
+  ✓ sencillo no imprime funciones aunque se inyecte manual               1.12s
+  ✓ funciones imprime funcion fixture sin reescribirla                   1.09s
+  ✓ pdf no imprime salario ni requisitos                                 0.97s
+  ✓ pdf conserva unicode y acentos                                       1.02s
+  ✓ muchas funciones producen pdf multipagina                            1.11s
+  ✓ pdf multipagina incluye pagina actual y total                        0.94s
+  ✓ marca borrador aparece en todas las paginas                          0.98s
+  ✓ pdf no contiene firma ni identidad de firmante                       1.14s
+  ✓ pdf no contiene qr oficial                                           1.22s
+  ✓ render requiere snapshot schema v3                                   0.97s
+  ✓ render desde snapshot no consulta relaciones vivas                   0.80s
+  ✓ funciones conservan el orden del snapshot                            1.01s
+  ✓ campos vacios no se imprimen como null ni na                         0.75s
+  ✓ evidencia mf0002 contiene once funciones reales en orden             2.62s
+
+   PASS  Tests\Feature\DependencyPositionSelectionTest
+  ✓ catalogo y cargos se filtran en servidor por unidad y busqueda       1.15s
+  ✓ cargo identico se desambigua por dependencia y funciones usan ficha… 0.86s
+  ✓ unidad cargo incorrectos y ficha de otra unidad son rechazados       0.79s
+  ✓ ambiguedad no se resuelve con id enviado por cliente                 0.74s
+  ✓ resolver expone codigos distintos sin candidatos ni funciones compl… 1.04s
+  ✓ fecha de vinculacion y estado de version continuan aplicando         0.79s
+  ✓ cambio de unidad conserva historico y cambia ficha desde hoy         0.86s
+  ✓ edicion personal legacy no reinterpreta ficha ni historico           0.73s
+  ✓ edicion personal conserva ficha exacta aunque catalogo sea ambiguo   0.80s
+  ✓ perfil incompleto no bloquea sencillo                                0.97s
+  ✓ normalizacion conservadora no inventa unidades ni modifica fuente    1.04s
+  ✓ autoservicio no accede a selectores ni modifica relacion             0.86s
+  ✓ perfil de todas las dependencias es aplicable sin inventar unidad    0.84s
+  ✓ perfil global y especifico coincidentes son ambiguos                 0.69s
+  ✓ payloads no pueden borrar dependencia ni enviar cargo como arreglo   0.74s
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.76s
+
+   PASS  Tests\Feature\FaseASolicitudMensualTest
+  ✓ un sencillo y un funciones por mes y renovacion en mes siguiente     2.06s
+  ✓ solicitud rechazada conserva cupo del mismo tipo                     1.38s
+  ✓ tipo canonico es obligatorio y payload salarial es rechazado         1.01s
+  ✓ funcionario id enviado por cliente es rechazado                      0.69s
+  ✓ disponibilidad expone sencillo y funciones                           0.91s
+  ✓ constraint postgresql impide colision del mismo tipo                 1.22s
+  ✓ rutas salariales fueron retiradas                                    0.93s
+
+   PASS  Tests\Feature\FaseBApiContractTest
+  ✓ paginacion filtros y orden rechazan valores invalidos o excesivos    0.83s
+  ✓ reporte mantiene contrato snake case                                 0.75s
+  ✓ errores api no exponen stack aunque debug este activo                1.08s
+
+   PASS  Tests\Feature\FaseBIntegridadDominioTest
+  ✓ funcionario con expediente no puede eliminarse y el intento se audi… 0.84s
+  ✓ funcionario sin historial tampoco se elimina                         0.86s
+  ✓ cardinalidad un usuario un funcionario se impone en bd               0.69s
+  ✓ cardinalidad un pago logico por solicitud se impone en bd            0.76s
+  ✓ generacion sencilla falla si no hay asignacion vigente               0.73s
+  ✓ generacion sencilla falla si hay asignaciones ambiguas               0.79s
+  ✓ generacion sencilla no exige ficha manual                            0.92s
+  ✓ snapshot emitido no puede modificarse                                1.02s
+
+   PASS  Tests\Feature\FaseCAutoservicioTest
+  ✓ admin crea funcionario usuario rol y asignacion atomicamente         0.97s
+  ✓ alta de funcionario no cambia identidad ni permisos del admin        1.01s
+  ✓ documento del admin no puede reutilizarse para crear funcionario     0.93s
+  ✓ primer login bloquea funciones hasta cambiar password                0.85s
+  ✓ password nueva igual a cedula es rechazada                           0.62s
+  ✓ pago desactivado genera y permite descarga inmediata solo al titula… 0.91s
+  ✓ sencillo no invoca resolucion de funciones                           1.06s
+  ✓ cupos son independientes y segunda modalidad igual se bloquea        1.25s
+  ✓ pago activado crea orden pendiente y no genera certificado           1.05s
+  ✓ inactivo no expide y admin configura pago con auditoria              1.06s
+  ✓ reset revoca tokens y reactiva cambio obligatorio                    0.73s
+  ✓ fallo pdf revierte todo y permite reintentar                         0.87s
+  ✓ fallo bd despues de pdf elimina archivo y libera cupo                1.47s
+  ✓ expedicion con funciones resuelve ficha sin sesiones administrativa… 1.05s
+  ✓ password pendiente bloquea urls directas y sesion es minima          0.95s
+  ✓ pago no puede confirmarse desde cliente                              0.99s
+  ✓ listado admin filtra pagina y no expone secretos                     0.68s
+  ✓ login temporal real cambio y nuevo login sin password anterior       0.79s
+  ✓ inactivar revoca sesiones y conserva certificado                     1.03s
+
+   PASS  Tests\Feature\ManualFuncionesTest
+  ✓ resuelve version vigente y no mezcla funciones de otro cargo         0.93s
+  ✓ version futura y vencida no aplican                                  0.62s
+  ✓ funcionario no administra manual y admin si puede                    0.68s
+  ✓ version rechaza fechas invalidas y ordenes no positivos o duplicado… 0.84s
+  ✓ no publica cargo sin funciones y no edita version publicada          0.77s
+
+   PASS  Tests\Feature\ManualImportTest
+  ✓ json real valido preserva ceros campos y funciones                   1.11s
+  ✓ json invalido no importa y registra rechazo                          1.00s
+  ✓ codigo numerico y orden duplicado se rechazan                        0.98s
+  ✓ dry run no escribe ni auditoria                                      0.83s
+  ✓ segunda importacion es idempotente y auditable                       1.12s
+  ✓ cambio borrador actualiza solo la ficha y conserva ids               1.02s
+  ✓ una candidata no se asigna durante la generacion                     1.14s
+  ✓ fk impide relacionar ficha con cargo diferente                       0.98s
+  ✓ fuente incompleta no se publica y endpoint legado no elige ficha     1.18s
+  ✓ publicada admite noop pero rechaza cambios y fichas omitidas         1.06s
+  ✓ source id duplicado y renumeracion se rechazan                       1.17s
+  ✓ mismo codigo grado resuelve dos fichas sin mezcla y snapshot pdf     1.43s
+  ✓ dos fichas sin asignacion explicita no elige primera                 0.97s
+  ✓ cero fichas validas no genera pdf                                    0.97s
+  ✓ borrador solo permite funcionario marcado de desarrollo              1.12s
+  ✓ precheck password no consume cupo                                    1.10s
+  ✓ precheck fuentes devuelve codigos y no genera pdf                    1.15s
+  ✓ comunes se resuelven separadas sin duplicar especificas              1.07s
+  ✓ autoservicio http usa identidad autenticada y ficha asignada         1.74s
+  ✓ admin seleccion explicita e historial con mismo cargo                1.32s
+  ✓ api rechaza ficha otro cargo y campo prueba inyectado                1.08s
+
+   PASS  Tests\Feature\ManualReconciliationTest
+  ✓ actual excel matches all json records without losing source represe… 3.65s
+  ✓ excel inspection retains empty cell types and rejects discarding ne… 2.03s
+  ✓ excel uses column headers even when columns are reordered            2.60s
+  ✓ excel rejects formulas instead of using cached results               0.84s
+  ✓ excel cross checks redundant fields in child sheets                  1.25s
+  ✓ excel rejects orphan functions                                       1.40s
+  ✓ excel rejects duplicate profile ids                                  1.46s
+  ✓ comparison does not match using source id alone                      1.36s
+  ✓ comparison keeps whitespace differences and does not choose first a… 1.27s
+  ✓ function diff keeps text source number group order and missing func… 1.33s
+  ✓ reconciled envelope preserves metadata and only reviewed area chang… 2.94s
+  ✓ reconciled metadata invalid count or hash is rejected                0.45s
+  ✓ proposal dry run is idempotent and never changes imported profiles… 10.65s
+  ✓ proposal cannot be imported even into an empty database              1.38s
+
+   PASS  Tests\Feature\ManualVersioningTest
+  ✓ actualizacion normativa conserva asignacion laboral y snapshot hist… 0.80s
+  ✓ ficha equivalente crea lineage sin confiar en source id              0.69s
+  ✓ ficha retirada no hace fallback y deja revision                      0.73s
+  ✓ dos candidatas equivalentes son ambiguas y no se elige la primera    0.67s
+  ✓ contenido de version publicada es inmutable en base de datos         0.67s
+  ✓ una ficha incompleta bloquea solo al funcionario asignado            0.75s
+  ✓ solo baseline interno diez admite fecha inicial desconocida          0.93s
+  ✓ publicacion futura no admite fecha nula ni excepcion adopcion        0.78s
+
+   PASS  Tests\Feature\PagoSoporteTest
+  ✓ funcionario no puede cargar soporte manual con pago apagado          0.86s
+  ✓ funcionario no puede usar ruta legacy de soporte                     0.79s
+  ✓ funcionario no carga comprobante manual aunque pago este activo      0.80s
+  ✓ ruta legacy de validacion no aprueba solicitud                       0.95s
+  ✓ ruta legacy de rechazo esta retirada                                 0.81s
+  ✓ funcionario no puede validar pago                                    0.71s
+  ✓ admin y secretario pueden descargar soporte privado con headers seg… 0.88s
+  ✓ soporte privado rechaza funcionario anonimo y archivo ausente        0.63s
+  ✓ reemplazo confirma nuevo soporte y elimina anterior                  0.95s
+  ✓ si falla bd elimina archivo nuevo y conserva anterior                1.03s
+  ✓ si falla eliminacion del anterior conserva registro nuevo y audita   1.16s
+
+   PASS  Tests\Feature\PaymentSecretaryWorkflowTest
+  ✓ pago on reserva cupo no genera y no duplica solicitud                0.99s
+  ✓ upload privado guarda hash metadata y auditoria                      1.03s
+  ✓ upload rechaza mime falso y extension incompatible                   0.81s
+  ✓ upload rechaza limite configurable                                   0.97s
+  ✓ upload rechaza mas de cinco mb y no crea evidencia                   0.82s
+  ✓ png y jpeg validos son admitidos y descargables                      1.08s
+  ✓ anonimo no ve detalle ni carga o descarga                            0.83s
+  ✓ secretaria sin permiso confirmar y comprobante ausente               1.12s
+  ✓ doble upload solo admite una evidencia en revision                   1.25s
+  ✓ secretaria lista detalle minimo y confirma con snapshot v3 pdf       1.38s
+  ✓ rechazo motivo obligatorio reemplazo misma solicitud con historial   1.30s
+  ✓ doble confirmacion no duplica y rechazo posterior falla              1.20s
+  ✓ confirmacion sin comprobante no avanza                               1.08s
+  ✓ fallo tecnico conserva pago y retry explicito                        1.34s
+  ✓ cambio parametro no cambia regimen historico                         1.41s
+  ✓ ownership detalle listado upload y descarga a b                      1.04s
+  ✓ 401 403 permiso y rol secretaria                                     1.04s
+  ✓ integridad y descarga con permiso explicito                          1.41s
+  ✓ ficha incompleta en expedicion conserva pago y sencillo no depende…  1.48s
+
+   PASS  Tests\Feature\ReporteAuditoriaTest
+  ✓ admin puede consultar resumen reportes                               1.04s
+  ✓ funcionario no puede consultar reportes                              0.69s
+  ✓ admin puede filtrar auditoria                                        0.85s
+
+   PASS  Tests\Feature\Security\AuthenticationSecurityTest
+  ✓ browser login returns no token and employee has cookie               0.80s
+  ✓ invalid unknown and disabled credentials have same response          0.68s
+  ✓ old bearer cannot authenticate browser even when tokens enabled      0.78s
+  ✓ unknown origin cannot use login or cookie                            0.73s
+  ✓ password policy accepts passphrase rejects common and requires 15 b… 0.76s
+  ✓ argon2id and existing bcrypt rehash progressively                    1.01s
+
+   PASS  Tests\Feature\Security\AuthorizationSecurityTest
+  ✓ payment responses minimize hashes and reviewer identity by context   1.17s
+  ✓ employee owns request receipt payment and certificate routes         1.20s
+  ✓ secretary has explicit review permission admin cannot confirm        1.06s
+  ✓ foreign receipt binding does not cross requests                      1.08s
+
+   PASS  Tests\Feature\Security\CorsSecurityTest
+  ✓ exact origin credentialed preflight                                  0.87s
+  ✓ untrusted preflight not reflected                                    0.71s
+  ✓ methods and headers are allowlisted                                  0.77s
+
+   PASS  Tests\Feature\Security\CsrfSecurityTest
+  ✓ all mutating methods require official token even same origin with d… 0.78s
+  ✓ all mutating methods require official token even same origin with d… 0.77s
+  ✓ all mutating methods require official token even same origin with d… 0.74s
+  ✓ all mutating methods require official token even same origin with d… 1.04s
+  ✓ login without csrf rejected and bootstrap cookie is not session cre… 0.63s
+
+   PASS  Tests\Feature\Security\FileSecurityTest
+  ✓ empty double extension long filename and invalid image rejected      0.71s
+  ✓ traversal filename cannot choose path and integrity checked          1.05s
+
+   PASS  Tests\Feature\Security\HeadersSecurityTest
+  ✓ security headers and sensitive cache on errors and public responses  0.74s
+  ✓ cookies http only lax and secure flag configurable                   0.71s
+  ✓ production debug and default database fail closed without secret ou… 0.80s
+  ✓ production https sets hsts when configuration valid                  0.78s
+  ✓ production checker rejects additional known e2e accounts without cr… 0.78s
+
+   PASS  Tests\Feature\Security\InformationDisclosureTest
+  ✓ 500 database and not found errors do not disclose details            0.73s
+  ✓ security log accepts only allowlisted fields and strips newlines     0.63s
+  ✓ json payload limit rejects before validation                         0.73s
+
+   PASS  Tests\Feature\Security\InputSecurityTest
+  ✓ client cannot assign owner payment state or privileges               0.91s
+  ✓ backoffice update rejects extra sensitive fields                     1.55s
+  ✓ synthetic xss stays text in observation and search                   0.88s
+
+   PASS  Tests\Feature\Security\MfaSecurityTest
+  ✓ setup uri matches pending secret and reload does not rotate          0.88s
+  ✓ cancel discards pending secret and next login creates new material   0.89s
+  ✓ pending expiration discards enrollment material                      0.73s
+  ✓ cancel login does not rotate active mfa or recovery codes            0.91s
+  ✓ enrollment material is absent from subsequent responses and logs     0.82s
+  ✓ enrollment requires password change and valid proof                  0.71s
+  ✓ totp replay rejected and recovery is single use                      0.82s
+  ✓ regeneration revokes previous recovery codes                         0.85s
+  ✓ reset requires other admin recent auth and revokes cookie            0.93s
+  ✓ employee cannot enroll or verify backoffice mfa                      1.22s
+  ✓ last active admin mfa reset is protected                             0.81s
+
+   PASS  Tests\Feature\Security\RateLimitSecurityTest
+  ✓ login pair is canonicalized and retry after present                  0.75s
+  ✓ ip limit stops password spraying                                     1.38s
+  ✓ mfa has separate limit and public validation is throttled            0.79s
+
+   PASS  Tests\Feature\Security\SessionSecurityTest
+  ✓ password alone is pending without authenticated guard                0.82s
+  ✓ deactivation role and password reset revoke existing cookie          0.86s
+  ✓ pending expiry and absolute session expiry fail closed               0.83s
+  ✓ logout invalidates server session                                    0.79s
+  ✓ password change rotates epoch and preserves the current browser ses… 0.75s
+  ✓ second login revokes prior epoch                                     0.72s
+
+   PASS  Tests\Feature\Security\SqlInjectionSecurityTest
+  ✓ search values are bound and order columns allowlisted with data set… 0.94s
+  ✓ search values are bound and order columns allowlisted with data set… 0.93s
+
+   PASS  Tests\Feature\SnapshotCertificadoTest
+  ✓ snapshot funciones contiene manual y nunca salario                   0.98s
+  ✓ snapshot sencillo no contiene manual funciones ni salario            1.00s
+  ✓ snapshot emitido permanece inmutable                                 1.11s
+  ✓ descarga existente conserva snapshot y pdf tras cambiar datos vivos  1.23s
+
+   PASS  Tests\Feature\SolicitudCertificacionTest
+  ✓ funcionario puede crear solicitud                                    1.16s
+  ✓ funcionario puede listar sus solicitudes                             1.04s
+  ✓ secretario y admin pueden listar solicitudes                         0.91s
+  ✓ flujo manual de rechazo esta retirado                                0.76s
+  ✓ secretario no puede aprobar en el flujo automatico                   1.09s
+  ✓ no se puede generar certificado de solicitud rechazada               0.84s
+  ✓ solicitud creada tiene radicado                                      0.92s
+
+  Tests:    288 passed (1698 assertions)
+  Duration: 292.63s

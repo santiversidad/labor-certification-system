@@ -1,0 +1,14 @@
+# Decisiones institucionales pendientes — 2.9
+
+| ID | Tipo | Riesgo / decisión | Control implementable ahora | Responsable pendiente |
+|---|---|---|---|---|
+| D01 | INSTITUTIONAL + CODE / HIGH | Password inicial de funcionario = cédula es predecible y permite apropiación antes del primer cambio. No es seguro. Aprobar contraseña temporal aleatoria o activación verificada y canal de entrega. | Cambio obligatorio, sin negocio, login genérico, 5/min pareja, 10/min identidad, 30/min IP, una sesión vigente. No elimina la apropiación inicial. | Talento Humano / seguridad institucional |
+| D02 | INSTITUTIONAL | Procedimiento presencial/documentado para verificar identidad antes de reset MFA. | Otro admin activo, autenticación reciente (5 min), bloqueo de self reset, auditoría, revocación, reenrollment. Sin email/SMS/preguntas/backdoor HTTP. | Seguridad / mesa de ayuda |
+| D03 | INSTITUTIONAL | Retención y acceso a audit/security logs, datos laborales y comprobantes; monitoreo y alertas. | Canal security separado, allowlist, sin credenciales, rotación 30 días configurable. | Protección de datos / operaciones |
+| D04 | INSTITUTIONAL | Nombre/cargo en validación pública: aprobar mínimo requerido; tokens existentes deben tener inventario/TTL. | Sin cédula completa, salario, snapshot ni archivos; throttle. No activar QR ni oficialización. | Jurídica / Talento Humano |
+| D05 | INFRASTRUCTURE + CONFIG / HIGH | HTTPS, proxies autorizados, DB least privilege, backups/restore, almacenamiento y APP_KEY. | Validación offline y fail closed prod; plantilla SPA CSP. CT sigue HTTP y DB sintética postgres. | Infraestructura |
+| D06 | INSTITUTIONAL | Recuperación de funcionario y MFA opcional futuro. | Flujo administrativo existente restablece password a cédula con cambio obligatorio y revocación; conserva riesgo D01. | Talento Humano |
+| D07 | CONFIG | Necesidad de API tokens no browser. | Capacidad Sanctum preservada para CLI/tests con opt-in; sin emisión HTTP ni bearer en browser. Deshabilitada por defecto; prod checker exige revisión. | Seguridad / integraciones |
+| D08 | CODE + SUPPLY CHAIN / HIGH | Cinco avisos de desarrollo de una cadena Tailwind 3 / braces. [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) no publica una versión parchada; npm propone migración incompatible a Tailwind 4. | Runtime npm sin avisos. No migrar Tailwind a ciegas ni eliminar cobertura; builds con fuentes confiables en proceso aislado. Resolver o aceptar expresamente el riesgo antes del despliegue. | Equipo desarrollo, revisión antes de despliegue |
+
+No modificar tarifas, cuotas, contenido de certificado, firma, QR ni PDF. APP_KEY no se rota automáticamente: coordinar recifrado de secretos TOTP y recuperación/restauración de backups antes de cualquier rotación. Custodia de un segundo administrador activo es requisito operativo. El usuario administrativamente desactivado nunca debe recuperar acceso por reutilizar una sesión vieja.

@@ -1,0 +1,38 @@
+
+> certificaciones-laborales-villavicencio@0.0.0 test
+> vitest run --pool=threads --maxWorkers=1
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/app[39m
+
+ [32m✓[39m src/features/funcionarios/components/FuncionarioForm.test.tsx [2m([22m[2m29 tests[22m[2m)[22m[33m 5488[2mms[22m[39m
+   [33m[2m✓[22m[39m dependencia es selector cerrado, cargo inicia deshabilitado y no consulta fichas completas [33m 356[2mms[22m[39m
+ [32m✓[39m src/features/escala-salarial/tests/SalaryScalePage.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[33m 1629[2mms[22m[39m
+ [32m✓[39m src/features/backoffice/BackofficeUsersPage.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 1099[2mms[22m[39m
+ [32m✓[39m src/features/auth/pages/Security.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 881[2mms[22m[39m
+ [32m✓[39m src/features/pagos/PaymentWorkflow.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 525[2mms[22m[39m
+ [32m✓[39m src/features/funcionarios/components/AdministracionAutoservicio.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 575[2mms[22m[39m
+   [33m[2m✓[22m[39m listado muestra estado de acceso, permite alta y pagina en servidor [33m 368[2mms[22m[39m
+ [32m✓[39m src/features/auth/pages/Onboarding.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 463[2mms[22m[39m
+ [32m✓[39m src/features/solicitudes/components/SolicitudForm.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m src/features/auth/context/AuthProvider.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 325[2mms[22m[39m
+ [32m✓[39m src/features/dashboard/pages/FuncionarioDashboardPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 266[2mms[22m[39m
+ [32m✓[39m src/features/solicitudes/pages/SolicitudConfirmacionPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m src/features/validacion-publica/components/ValidationResultCard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/features/funcionarios/services/funcionarios.service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/features/funcionarios/services/dependencias.service.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/components/layout/Header.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 150[2mms[22m[39m
+ [32m✓[39m src/components/ui/Alert.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m src/features/funcionarios/components/FichaManualSelect.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 194[2mms[22m[39m
+ [32m✓[39m src/components/react-bits/CountUp/CountUp.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 135[2mms[22m[39m
+ [32m✓[39m src/lib/api/apiClient.security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/features/certificados/services/certificados.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/features/solicitudes/services/solicitudes.service.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/features/configuracion/services/configuracion.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/features/auth/services/auth.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/auth/permissions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m24 passed[39m[22m[90m (24)[39m
+[2m      Tests [22m [1m[32m138 passed[39m[22m[90m (138)[39m
+[2m   Start at [22m 00:54:31
+[2m   Duration [22m 56.81s[2m (transform 21.32s, setup 3.14s, import 26.51s, tests 12.48s, environment 11.80s)[22m

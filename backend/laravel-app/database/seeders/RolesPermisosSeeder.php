@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesPermisosSeeder extends Seeder
 {
@@ -15,6 +16,10 @@ class RolesPermisosSeeder extends Seeder
         'usuarios.ver',
         'usuarios.crear',
         'usuarios.editar',
+
+        // Parámetros institucionales (solo admin por la matriz inferior)
+        'parametros.ver',
+        'parametros.editar',
 
         // Funcionarios
         'funcionarios.ver',
@@ -26,20 +31,19 @@ class RolesPermisosSeeder extends Seeder
         'cargos.ver',
         'cargos.crear',
         'cargos.editar',
-
-        // Rangos salariales
-        'rangos_salariales.ver',
-        'rangos_salariales.crear',
-        'rangos_salariales.editar',
+        'escala_salarial.gestionar',
 
         // Solicitudes
         'solicitudes.ver',
         'solicitudes.crear',
         'solicitudes.editar',
         'solicitudes.cambiar_estado',
+        'solicitudes.aprobar',
+        'solicitudes.rechazar',
 
         // Pagos
         'pagos.ver',
+        'pagos.cargar',
         'pagos.validar',
         'pagos.rechazar',
 
@@ -47,13 +51,34 @@ class RolesPermisosSeeder extends Seeder
         'certificados.ver',
         'certificados.generar',
         'certificados.descargar',
+        'certificados.anular',
+
+        // Validación pública
+        'tokens.validar',
 
         // Auditoría
         'auditoria.ver',
+
+        // Reportes
+        'reportes.ver',
+
+        // Actuaciones administrativas
+        'actuaciones.ver',
+        'actuaciones.crear',
+        'actuaciones.editar',
+
+        // Manual Específico de Funciones
+        'manual_funciones.ver',
+        'manual_funciones.crear',
+        'manual_funciones.editar',
+        'manual_funciones.publicar',
     ];
 
     public function run(): void
     {
+        // Invalidar cualquier catálogo asociado a otra instancia/restauración de BD.
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
         // Crear todos los permisos
         foreach ($this->permisos as $permiso) {
             Permission::firstOrCreate(['name' => $permiso, 'guard_name' => 'web']);
@@ -63,32 +88,27 @@ class RolesPermisosSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => RoleEnum::Admin->value, 'guard_name' => 'web']);
         $admin->syncPermissions($this->permisos);
 
-        // ─── Secretario: operaciones de revisión y generación ─────────────────
+        // Secretaría valida únicamente el pago; el contenido se expide automáticamente.
         $secretario = Role::firstOrCreate(['name' => RoleEnum::Secretario->value, 'guard_name' => 'web']);
         $secretario->syncPermissions([
-            'funcionarios.ver',
-            'cargos.ver',
-            'rangos_salariales.ver',
             'solicitudes.ver',
-            'solicitudes.editar',
-            'solicitudes.cambiar_estado',
             'pagos.ver',
             'pagos.validar',
             'pagos.rechazar',
             'certificados.ver',
-            'certificados.generar',
             'certificados.descargar',
         ]);
 
-        // ─── Funcionario: solo sus propias solicitudes y certificados ──────────
+        // Funcionario: únicamente inicia su propia expedición de autoservicio.
         $funcionario = Role::firstOrCreate(['name' => RoleEnum::Funcionario->value, 'guard_name' => 'web']);
         $funcionario->syncPermissions([
-            'solicitudes.ver',
             'solicitudes.crear',
-            'pagos.ver',
-            'certificados.ver',
-            'certificados.descargar',
+            'solicitudes.ver',
+            'pagos.cargar',
         ]);
+
+        // Garantiza que el siguiente proceso lea los IDs recién sincronizados.
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->command->info('Roles y permisos creados correctamente.');
     }

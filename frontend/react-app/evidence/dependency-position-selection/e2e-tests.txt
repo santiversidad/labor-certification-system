@@ -1,0 +1,97 @@
+Suite completa ejecutada: 44 aprobadas, 1 fallo de configuración del build E2E (URL absoluta localhost bajo CSP self).
+Reconstrucción con VITE_API_BASE_URL=/api/v1 y repetición del caso CSP y del flujo documental: 2/2 aprobados.
+Los 45 casos distintos quedaron verificados, sin fallos pendientes.
+
+
+Running 45 tests using 1 worker
+
+  ✓   1 e2e/autoservice.spec.ts:75:3 › Fase 2: tipos canónicos sin interfaz salarial › administración revalida identidad, conserva 37 permisos y separa la escala administrativa de certificados (17.9s)
+  ✓   2 e2e/autoservice.spec.ts:100:3 › Fase 2: tipos canónicos sin interfaz salarial › admin crea funcionario y el autoservicio sencillo genera y descarga PDF real (18.6s)
+  ✓   3 e2e/autoservice.spec.ts:131:3 › Fase 2: tipos canónicos sin interfaz salarial › certificado con funciones usa la ficha completa y conserva evidencia en snapshot y PDF (18.0s)
+  ✓   4 e2e/autoservice.spec.ts:164:3 › Fase 2: tipos canónicos sin interfaz salarial › la cuota bloquea el mismo tipo y permite el tipo contrario (7.4s)
+  ✓   5 e2e/autoservice.spec.ts:186:3 › Fase 2: tipos canónicos sin interfaz salarial › logout funcionario y nuevo login admin no reutilizan identidad ni disponibilidad (7.0s)
+  ✓   6 e2e/autoservice.spec.ts:198:3 › Fase 2: tipos canónicos sin interfaz salarial › ficha incompleta permite sencillo y rechaza únicamente funciones (7.0s)
+  ✓   7 e2e/autoservice.spec.ts:218:3 › Fase 2: tipos canónicos sin interfaz salarial › las pantallas críticas conservan navegación y contenido en 360 y 768 px (16.9s)
+  ✓   8 e2e/brand-assets.spec.ts:52:1 › assets institucionales: login, navegación y headers en 360, 768 y 1440 px (52.2s)
+  ✓   9 e2e/dependency-position-selection.spec.ts:15:3 › dependencia A: cargos filtrados, edición y certificados con ficha exacta (26.4s)
+  ✓  10 e2e/dependency-position-selection.spec.ts:15:3 › dependencia B: cargos filtrados, edición y certificados con ficha exacta (18.2s)
+  ✓  11 e2e/dependency-position-selection.spec.ts:97:1 › perfil transversal conserva la unidad elegida y no inventa una dependencia (6.4s)
+  ✓  12 e2e/dependency-position-selection.spec.ts:137:1 › ambigüedad real: explicación, foco, bloqueo y recuperación con cargo único (6.5s)
+  ✓  13 e2e/dependency-position-selection.spec.ts:174:1 › fallo técnico controlado permite reintentar y vuelve a consultar el backend real (6.2s)
+  ✓  14 e2e/dependency-position-selection.spec.ts:196:1 › páginas distintas: vista previa, selección explícita, edición histórica, snapshot y PDF de la segunda ficha (22.3s)
+  ✓  15 e2e/dependency-position-selection.spec.ts:294:1 › API rechaza ficha del mismo cargo y grado perteneciente a otra dependencia (3.5s)
+  ✓  16 e2e/mfa-enrollment-visual.spec.ts:12:3 › enrollment accesible y responsive a 360px con fixture visual no funcional (746ms)
+  ✓  17 e2e/mfa-enrollment-visual.spec.ts:12:3 › enrollment accesible y responsive a 768px con fixture visual no funcional (759ms)
+  ✓  18 e2e/mfa-enrollment-visual.spec.ts:12:3 › enrollment accesible y responsive a 1440px con fixture visual no funcional (1.0s)
+  ✓  19 e2e/payment-workflow.spec.ts:55:3 › Fase 2.7 pago real con evidencia ficticia › pago OFF mantiene expedición automática y descarga (11.6s)
+  ✓  20 e2e/payment-workflow.spec.ts:63:3 › Fase 2.7 pago real con evidencia ficticia › pago ON: aviso, upload, Secretaría confirma y titular descarga (35.2s)
+  ✓  21 e2e/payment-workflow.spec.ts:95:3 › Fase 2.7 pago real con evidencia ficticia › rechazo llega al titular y segundo comprobante usa misma solicitud; IDOR bloqueado (49.9s)
+  ✓  22 e2e/payment-workflow.spec.ts:119:3 › Fase 2.7 pago real con evidencia ficticia › concurrencia real: crear, upload, dos confirmaciones y confirmar/rechazar (16.4s)
+  ✓  23 e2e/salary-scale.spec.ts:14:1 › admin crea borrador desde base, revisa aumento, edita, publica y conserva históricos (14.9s)
+  ✓  24 e2e/salary-scale.spec.ts:65:1 › concurrencia real: año único, cálculo único, edición y publicación no duplicadas (10.1s)
+  ✓  25 e2e/salary-scale.spec.ts:87:3 › E2E-SECRETARIA: menú oculto, ruta protegida y API 403 (5.3s)
+  ✓  26 e2e/salary-scale.spec.ts:87:3 › E2E-INCOMPLETE: menú oculto, ruta protegida y API 403 (3.2s)
+  ✓  27 e2e/security-hardening.spec.ts:64:3 › Fase 2.9 seguridad de navegador A–L › A: funcionario usa cookie HttpOnly y autoservicio sin storage de credenciales (7.9s)
+  ✓  28 e2e/security-hardening.spec.ts:72:3 › Fase 2.9 seguridad de navegador A–L › B: administrador pendiente enrolla TOTP y conserva secreto cifrado y códigos solo en memoria (17.2s)
+  ✓  29 e2e/security-hardening.spec.ts:106:3 › Fase 2.9 seguridad de navegador A–L › C: Secretaría completa segundo factor y accede al contexto de pagos (6.6s)
+  ✓  30 e2e/security-hardening.spec.ts:111:3 › Fase 2.9 seguridad de navegador A–L › D: bearer viejo y storage legado no autentican ni sobreviven bootstrap (3.0s)
+  ✓  31 e2e/security-hardening.spec.ts:118:3 › Fase 2.9 seguridad de navegador A–L › E: mutación con cookie y sin CSRF se bloquea incluso en same-origin (2.6s)
+  ✓  32 e2e/security-hardening.spec.ts:123:3 › Fase 2.9 seguridad de navegador A–L › F: desactivación invalida cookie y muestra expiración en desktop y móvil (3.4s)
+  ✓  33 e2e/security-hardening.spec.ts:130:3 › Fase 2.9 seguridad de navegador A–L › G: cambio de rol revoca la sesión completa previa (4.8s)
+  ✓  34 e2e/security-hardening.spec.ts:137:3 › Fase 2.9 seguridad de navegador A–L › H: recovery code se consume una sola vez y no se reutiliza (35.8s)
+  ✓  35 e2e/security-hardening.spec.ts:159:3 › Fase 2.9 seguridad de navegador A–L › I: reset MFA por otro administrador invalida cookies y exige nuevo enrollment (4.0s)
+  ✓  36 e2e/security-hardening.spec.ts:166:3 › Fase 2.9 seguridad de navegador A–L › J: login limita intentos temporalmente y muestra mensaje controlado (5.9s)
+  ✓  37 e2e/security-hardening.spec.ts:177:3 › Fase 2.9 seguridad de navegador A–L › K: funcionario ajeno no consulta solicitud, certificado ni comprobante (12.9s)
+  ✘  38 e2e/security-hardening.spec.ts:190:3 › Fase 2.9 seguridad de navegador A–L › L: build real bajo CSP de producción conserva SPA y rechaza archivos privados (569ms)
+  ✓  39 e2e/identity-lifecycle.spec.ts:59:3 › Fase 2.8 identidades independientes › A: administrador individual ingresa por username y mantiene contexto (10.2s)
+  ✓  40 e2e/identity-lifecycle.spec.ts:73:3 › Fase 2.8 identidades independientes › B: Secretaría individual conserva pagos y rechaza administración de usuarios (9.6s)
+  ✓  41 e2e/identity-lifecycle.spec.ts:81:3 › Fase 2.8 identidades independientes › C: funcionario conserva login por cédula y su autoservicio (7.6s)
+  ✓  42 e2e/identity-lifecycle.spec.ts:89:3 › Fase 2.8 identidades independientes › D: una persona con dos cuentas tiene credenciales, tokens y cupos separados (21.8s)
+  ✓  43 e2e/identity-lifecycle.spec.ts:114:3 › Fase 2.8 identidades independientes › E: administrador crea Secretaría, muestra temporal una vez y obliga cambio (19.5s)
+  ✓  44 e2e/identity-lifecycle.spec.ts:159:3 › Fase 2.8 identidades independientes › F: desactivar corta sesión existente; reactivar y reset no la reviven (24.7s)
+  ✓  45 e2e/identity-lifecycle.spec.ts:208:3 › Fase 2.8 identidades independientes › G: último administrador y autodesactivación se protegen en servidor y UI (9.3s)
+
+
+  1) e2e/security-hardening.spec.ts:190:3 › Fase 2.9 seguridad de navegador A–L › L: build real bajo CSP de producción conserva SPA y rechaza archivos privados
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 3[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   "Connecting to 'http://localhost:8000/api/v1/auth/me' violates the following Content Security Policy directive: \"connect-src 'self'\". The action has been blocked.",[39m
+    [31m+ ][39m
+
+      196 |     expect(headers['x-content-type-options']).toBe('nosniff'); expect(headers['x-frame-options']).toBe('DENY'); expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+      197 |     expect(headers['strict-transport-security']).toBeUndefined(); await expect(page.getByLabel('Usuario', { exact: true })).toBeVisible();
+    > 198 |     expect(violations).toEqual([]); expect((await page.request.get('http://e2e-production/.env')).status()).toBe(403);
+          |                        ^
+      199 |   });
+      200 | });
+      201 |
+        at /work/e2e/security-hardening.spec.ts:198:24
+
+  1 failed
+    e2e/security-hardening.spec.ts:190:3 › Fase 2.9 seguridad de navegador A–L › L: build real bajo CSP de producción conserva SPA y rechaza archivos privados
+  44 passed (10.0m)
+npm notice
+npm notice New minor version of npm available! 11.6.2 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice
+
+REVERIFICACIÓN FINAL
+
+Running 2 tests using 1 worker
+
+  ✓  1 e2e/dependency-position-selection.spec.ts:198:1 › páginas distintas: vista previa, selección explícita, edición histórica, snapshot y PDF de la segunda ficha (24.9s)
+  ✓  2 e2e/security-hardening.spec.ts:190:3 › Fase 2.9 seguridad de navegador A–L › L: build real bajo CSP de producción conserva SPA y rechaza archivos privados (486ms)
+
+  2 passed (30.5s)
+npm notice
+npm notice New minor version of npm available! 11.6.2 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice

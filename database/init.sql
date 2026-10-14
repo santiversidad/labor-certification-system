@@ -1,5 +1,5 @@
 -- Script de inicialización para Docker
--- Crea las bases de datos principal y de pruebas
+-- scl_db ya es creada por POSTGRES_DB en docker-compose.yml
+-- Aquí solo creamos la base de datos para pruebas automatizadas
 
-CREATE DATABASE scl_db;
 CREATE DATABASE scl_db_test;
